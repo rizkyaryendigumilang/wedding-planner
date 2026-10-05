@@ -1,0 +1,387 @@
+[
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking Gedung",
+    "deadline_date": "2026-10-30",
+    "is_completed": true,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking MUA",
+    "deadline_date": "2026-10-11",
+    "is_completed": true,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking Decor wedding",
+    "deadline_date": "2026-10-12",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking Fotografer/Videografer",
+    "deadline_date": "2026-10-30",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking Catering",
+    "deadline_date": "2026-10-22",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking Vendor untuk Prewedding  (JIka diperlukan)",
+    "deadline_date": "2026-10-31",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Booking EO dan MC wedding",
+    "deadline_date": "2026-10-16",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Booking Vendor",
+    "activity_name": "Hiburan / Entertainment (JIka diperlukan)",
+    "deadline_date": "2026-10-31",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Cincin Wedding",
+    "deadline_date": "2026-10-01",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Foto Latar Biru",
+    "deadline_date": "2026-10-02",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Tes Kesehatan suntik TT (Calon Pengantin Wanita)",
+    "deadline_date": "2026-10-28",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Baju Wedding CPW & CP",
+    "deadline_date": "2026-10-04",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Baju Wedding Orang tua CPW & CP",
+    "deadline_date": "2026-10-30",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Sepatu Wedding CPP",
+    "deadline_date": "2026-10-06",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Sepatu Wedding CPW",
+    "deadline_date": "2026-10-07",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Accessories Pengantin (Jika di perlukan)",
+    "deadline_date": "2026-10-08",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Seserahan",
+    "deadline_date": "2026-10-09",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Undangan Digital",
+    "deadline_date": "2026-10-10",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Undangan Fisik Wedding",
+    "deadline_date": "2026-10-11",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Souvenir Wedding",
+    "deadline_date": "2026-10-12",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Beli Buku Tamu",
+    "deadline_date": "2026-10-13",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Food Testing",
+    "deadline_date": "2026-10-14",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Susun Moodboard Wedding",
+    "deadline_date": "2026-10-15",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Cari Baju Bridesmaid (Jika diperlukan)",
+    "deadline_date": "2026-10-16",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Isi List Sheet Daftar tamu Undangan",
+    "deadline_date": "2026-10-17",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Design undangan online dan fisik",
+    "deadline_date": "2026-10-31",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Finalisasi Daftar Tamu",
+    "deadline_date": "2026-10-19",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Kirim undangan online ke tamu undangan",
+    "deadline_date": "2026-11-20",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Things To Do",
+    "activity_name": "Kirim undangan fisik ke tamu undangan",
+    "deadline_date": "2026-10-21",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Konfirmasi ulang Vendor",
+    "deadline_date": "2026-10-02",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Finalisasi detail Dekorasi",
+    "deadline_date": "2026-10-01",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Finalisasi Menu Catering",
+    "deadline_date": "2026-10-02",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Finalisasi Konsep Foto & Video",
+    "deadline_date": "2026-10-03",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Finalisasi Rundown dengan EO/ WO",
+    "deadline_date": "2026-10-04",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Technikal Meeting",
+    "deadline_date": "2026-10-05",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Konfirmasi Jadwal kedatangan Vendor",
+    "deadline_date": "2026-10-06",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Konfirmasi PIC Vendor",
+    "deadline_date": "2026-10-07",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Administrasi Pernikahan",
+    "activity_name": "Siapkan konsumsi / uang tip vendor (Opsional)",
+    "deadline_date": "2026-10-08",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Pertemuan keluarga pertama",
+    "deadline_date": "2026-08-01",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Lamaran",
+    "deadline_date": "2026-08-02",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Meeting dengan EO",
+    "deadline_date": "2026-08-03",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Meeting dengan vendor fotografer",
+    "deadline_date": "2026-08-04",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Kasi bahan/bakal kain ke bridesmaid",
+    "deadline_date": "2026-08-05",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Cek lokasi gedung lamaran dan wedding",
+    "deadline_date": "2026-08-06",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Meeting dengan vendor dekorasi",
+    "deadline_date": "2026-08-07",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Visit wedding day client dari vendor dekorasi (lihat hasil vendor dekor secara langsung)",
+    "deadline_date": "2026-08-08",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Prewedding",
+    "deadline_date": "2026-09-06",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Gladi bersih (technical meeting)",
+    "deadline_date": "2026-09-07",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Finalisasi Rundown",
+    "deadline_date": "2026-09-08",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Briefing Keluarga",
+    "deadline_date": "2026-09-09",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Brifieng Bridesmaid (Jika diperlukan)",
+    "deadline_date": "2026-09-10",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Pembagian PIC Hari H",
+    "deadline_date": "2026-09-11",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Konfirmasi Final Seluruh Vendor",
+    "deadline_date": "2026-09-12",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Persiapan Hari H",
+    "deadline_date": "2026-09-13",
+    "is_completed": false,
+    "notes": ""
+  },
+  {
+    "category": "Rangkaian Acara",
+    "activity_name": "Wedding Day",
+    "deadline_date": "2026-09-14",
+    "is_completed": false,
+    "notes": ""
+  }
+]

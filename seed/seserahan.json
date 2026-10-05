@@ -1,0 +1,452 @@
+[
+  {
+    "category": "ALAT SHOLAT",
+    "detail": "Mukena",
+    "brand": "Alluna",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/1BJAd7IURD",
+    "budget": 100000.0,
+    "checklist": true,
+    "actually_harga": 100000.0
+  },
+  {
+    "category": "ALAT SHOLAT",
+    "detail": "Sajadah",
+    "brand": "Sejadah Cutting Ka bah",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/2LV81IcoWe",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ALAT SHOLAT",
+    "detail": "Al-Qur'an",
+    "brand": "Al qur 'an Kustom Nama",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ALAT SHOLAT",
+    "detail": "Tasbih",
+    "brand": "Tasbih Mutiara 33 Butir",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Dress",
+    "brand": "Wearsky",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/5VS9nIFRNz",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Kemeja",
+    "brand": "House Of Holic",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/5q50ByNy3v",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Kebaya",
+    "brand": "Nyonya piyama",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Piyama Pria",
+    "brand": "Nyonya Piyama",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Piyama Wanita",
+    "brand": "Lozy",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Hijab",
+    "brand": "Diario",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Pakaian dalam",
+    "brand": "Greney",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "PAKAIAN",
+    "detail": "Baju halal",
+    "brand": "Klamby",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Tas",
+    "brand": "Prior",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/8piblb5WfD",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Sepatu/ Heels",
+    "brand": "Adorable Project",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/1LcapvJhVx",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Sandal",
+    "brand": "CEKHAS",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Dompet",
+    "brand": "Jims Honey",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Jam Tangan",
+    "brand": "Jims Honey",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "ACCESSORIES",
+    "detail": "Bedcover",
+    "brand": "Kintakun",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "HAIR CARE",
+    "detail": "Shampo",
+    "brand": "Tresemme",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/17DFW5xy8",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "HAIR CARE",
+    "detail": "Keratin",
+    "brand": "Tresemme",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/8fPBZUIm4V",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "HAIR CARE",
+    "detail": "Hair Mask",
+    "brand": "Makarizo",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Handuk Couple",
+    "brand": "Terry palmer",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/5L8jbSxlnF",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Bodycare Body Scrub",
+    "brand": "Scarlett",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/9UyIZDxloT",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Body Lotion",
+    "brand": "Scarlett",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Body Serum",
+    "brand": "Scarlett",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Pasta Gigi",
+    "brand": "Pepsodent",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Sikat Gigi",
+    "brand": "Pepsodent",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Parfum",
+    "brand": "HMNS",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "BODY CARE & TOILETRIES",
+    "detail": "Deodorant",
+    "brand": "Wardah",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Micellar Water",
+    "brand": "N pure",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/1gFREsuLuB",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Face Wash",
+    "brand": "Senka",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/40dM1D6rmJ",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Moisturizer",
+    "brand": "The Originote",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Hadalabo",
+    "brand": "Hadalabo Toner",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Sunscreen",
+    "brand": "Skin Aqua",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Serum",
+    "brand": "Somethinc",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Lip balm",
+    "brand": "Wardah",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "SKINCARE",
+    "detail": "Breylee",
+    "brand": "Breyle",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Eyeliner",
+    "brand": "Somethinc",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/5q50CfYvB6",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Primer",
+    "brand": "Luxcrime",
+    "qty": 1,
+    "link": "https://s.shopee.co.id/7AaNnBDaRt",
+    "budget": 100000.0,
+    "checklist": true,
+    "actually_harga": 87500.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Loose Powder",
+    "brand": "Somethinc",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Eyebrow",
+    "brand": "Wardah",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Lipmatte",
+    "brand": "BLP",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Lip cream",
+    "brand": "Wardah",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Mascara",
+    "brand": "Somethinc",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  },
+  {
+    "category": "MAKEUP",
+    "detail": "Setting Spray",
+    "brand": "Make Over",
+    "qty": 1,
+    "link": "",
+    "budget": 0.0,
+    "checklist": false,
+    "actually_harga": 0.0
+  }
+]

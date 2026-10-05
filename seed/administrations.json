@@ -1,0 +1,533 @@
+[
+  {
+    "section": "A. Persiapan Awal",
+    "item": "Pertemuan keluarga",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "A. Persiapan Awal",
+    "item": "Menentukan tanggal pernikahan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "A. Persiapan Awal",
+    "item": "Menentukan tema pernikahan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "A. Persiapan Awal",
+    "item": "Menentukan estimasi budget yang akan dikeluarkan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat Pengantar dari RT/RW",
+    "progress": "",
+    "cpp_complete": true,
+    "cpw_complete": true,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy KTP (CPP dan CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy KK (CPP dan CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy Akta kelahiran (CPP dan CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy Ijazah terakhir (CPP dan CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat keterangan menikah (N1)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat keterangan asal-usul mempelai (N2)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat pernyataan persetujuan mempelai (N3)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat pernyataan tentang orang tua (N4)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Foto ukuran 3x2 latar biru 5 lembar (CPP dan CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat Akta Cerai  (duda/janda cerai hidup)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Surat Akta Kematian (duda/janda cerai mati)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy KTP Wali Nikah",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Fotocopy KTP 2 Orang saksi Nikah",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "B. Administrasi Persiapan Pernikahan",
+    "item": "Keterangan sudah Vaksin TT (CPW)",
+    "progress": "",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": true,
+    "details": ""
+  },
+  {
+    "section": "C. Daftar ke KUA dan Bimbingan Pra Nikah",
+    "item": "Daftar ke KUA",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "C. Daftar ke KUA dan Bimbingan Pra Nikah",
+    "item": "Bimbingan pra-nikah dari KUA",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "D. Tempat",
+    "item": "Venue",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "D. Tempat",
+    "item": "Dekorasi",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "E. Mahar & Seserahan",
+    "item": "Mahar",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "E. Mahar & Seserahan",
+    "item": "Cincin nikah",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "E. Mahar & Seserahan",
+    "item": "Seserahan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "E. Mahar & Seserahan",
+    "item": "Tempat cincin nikah",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "E. Mahar & Seserahan",
+    "item": "Kotak seserahan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Rias pengantin",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "HijabDo",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Nail art",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Rias orang tua",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Rias besan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Rias pendamping (pager ayu)",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Baju pengantin akad (CPP & CPW)",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Baju pengantin resepsi (CPP & CPW)",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Baju orang tua dan besan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Baju pendamping (pager ayu dan pager bagus)",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "F. Makeup dan Busana",
+    "item": "Sarimbit Keluarga",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "G. Dokumentasi",
+    "item": "Prewedding",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "G. Dokumentasi",
+    "item": "Foto",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "G. Dokumentasi",
+    "item": "Video",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "G. Dokumentasi",
+    "item": "Album foto",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "H. Makanan",
+    "item": "Catering",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "I. Undangan & Souvenir",
+    "item": "Daftar tamu undangan",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "I. Undangan & Souvenir",
+    "item": "Undangan digital",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "I. Undangan & Souvenir",
+    "item": "Undangan kertas",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "I. Undangan & Souvenir",
+    "item": "Buku tamu",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "I. Undangan & Souvenir",
+    "item": "Souvenir",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "J. Pengisi Acara",
+    "item": "MC",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "J. Pengisi Acara",
+    "item": "Penyanyi / Band",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "K. Panitia",
+    "item": "Pengiring pengantin wanita",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "K. Panitia",
+    "item": "Pegang buku tamu dan souvenir",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "K. Panitia",
+    "item": "Kotak Amplop",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "K. Panitia",
+    "item": "Kebersihan (Untuk ambil bekas piring,dll)",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "L. Persiapan lainnya",
+    "item": "Rundown acara",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "L. Persiapan lainnya",
+    "item": "WO",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "M. Tambahan",
+    "item": "Bridesmaid",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  },
+  {
+    "section": "M. Tambahan",
+    "item": "Photobooth",
+    "progress": "Belum",
+    "cpp_complete": false,
+    "cpw_complete": false,
+    "is_document": false,
+    "details": ""
+  }
+]

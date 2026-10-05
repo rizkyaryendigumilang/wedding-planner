@@ -1,0 +1,42 @@
+[
+  {
+    "date": "2026-02-06",
+    "description": "Tabungan",
+    "income_cpp": 50000000.0,
+    "income_cpw": 0.0,
+    "expense_cpp": 0.0,
+    "expense_cpw": 0.0
+  },
+  {
+    "date": "2026-02-06",
+    "description": "Tabungan",
+    "income_cpp": 0.0,
+    "income_cpw": 20000000.0,
+    "expense_cpp": 0.0,
+    "expense_cpw": 0.0
+  },
+  {
+    "date": "2026-04-29",
+    "description": "DP Gedung",
+    "income_cpp": 0.0,
+    "income_cpw": 0.0,
+    "expense_cpp": 5000000.0,
+    "expense_cpw": 0.0
+  },
+  {
+    "date": "2026-04-29",
+    "description": "DP MUA",
+    "income_cpp": 0.0,
+    "income_cpw": 0.0,
+    "expense_cpp": 0.0,
+    "expense_cpw": 3000000.0
+  },
+  {
+    "date": "2026-04-29",
+    "description": "DP Dekorasi",
+    "income_cpp": 0.0,
+    "income_cpw": 0.0,
+    "expense_cpp": 0.0,
+    "expense_cpw": 0.0
+  }
+]
