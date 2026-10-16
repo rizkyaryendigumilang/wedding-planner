@@ -1,0 +1,182 @@
+name: Build Mobile Apps (APK & IPA) and Sync to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # =========================================================================
+  # JOB 1: Build Android APK
+  # =========================================================================
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web application
+        env:
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Compile APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK file
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: Output APK file was not found!"
+            exit 1
+          fi
+          echo "Found APK: $APK_PATH"
+          cp "$APK_PATH" app-latest.apk
+
+      - name: Upload APK to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-latest-android-apk
+          path: app-latest.apk
+          retention-days: 14
+
+      - name: Send APK to VPS via SCP
+        if: ${{ secrets.VPS_HOST != '' && secrets.VPS_SSH_KEY != '' }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_TARGET_DIR'"
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa -P "$VPS_PORT" app-latest.apk "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/app-latest.apk"
+          echo "Successfully uploaded app-latest.apk to $VPS_HOST:$VPS_TARGET_DIR/app-latest.apk"
+
+      - name: Notice if VPS credentials not set
+        if: ${{ secrets.VPS_HOST == '' || secrets.VPS_SSH_KEY == '' }}
+        run: |
+          echo "VPS secrets (VPS_HOST, VPS_SSH_KEY) are not set. Skipped SCP transfer. APK artifact is still available for download from GitHub Actions."
+
+  # =========================================================================
+  # JOB 2: Build iOS IPA
+  # =========================================================================
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web application
+        env:
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
+        run: npm run build
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Archive Xcode Project (Unsigned)
+        run: |
+          cd ios/App
+          if [ -d "App.xcworkspace" ]; then
+            TARGET="-workspace App.xcworkspace"
+          else
+            TARGET="-project App.xcodeproj"
+          fi
+          echo "Building Xcode target: $TARGET"
+          xcodebuild clean archive \
+            $TARGET \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Extract Payload and Compress IPA
+        run: |
+          APP_PATH=$(find ios/App/build/App.xcarchive/Products/Applications -name "*.app" -maxdepth 1 | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app bundle not found in archive!"
+            exit 1
+          fi
+          echo "Found iOS App bundle: $APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r -y app-latest.ipa Payload
+          rm -rf Payload
+          echo "IPA successfully created: app-latest.ipa"
+
+      - name: Upload IPA to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-latest-ios-ipa
+          path: app-latest.ipa
+          retention-days: 14
+
+      - name: Send IPA to VPS via SCP
+        if: ${{ secrets.VPS_HOST != '' && secrets.VPS_SSH_KEY != '' }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_TARGET_DIR'"
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa -P "$VPS_PORT" app-latest.ipa "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/app-latest.ipa"
+          echo "Successfully uploaded app-latest.ipa to $VPS_HOST:$VPS_TARGET_DIR/app-latest.ipa"
+
+      - name: Notice if VPS credentials not set
+        if: ${{ secrets.VPS_HOST == '' || secrets.VPS_SSH_KEY == '' }}
+        run: |
+          echo "VPS secrets (VPS_HOST, VPS_SSH_KEY) are not set. Skipped SCP transfer. IPA artifact is still available for download from GitHub Actions."

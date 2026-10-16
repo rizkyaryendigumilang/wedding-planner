@@ -96,6 +96,58 @@ export function pct(part, total) {
   return Math.min(100, Math.max(0, (Number(part) / Number(total)) * 100));
 }
 
+/** "2026-10-05T09:12:00Z" -> "5 Okt 2026, 16.12" (waktu lokal) */
+export function formatDateTime(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  const jam = String(d.getHours()).padStart(2, "0");
+  const menit = String(d.getMinutes()).padStart(2, "0");
+  return `${formatDateShort(d)}, ${jam}.${menit}`;
+}
+
+/** Selisih waktu dalam kata: "3 jam lalu", "kemarin", "baru saja". */
+export function timeAgo(value) {
+  if (!value) return "-";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "-";
+  const seconds = Math.round((Date.now() - then) / 1000);
+  if (seconds < 60) return "baru saja";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} menit lalu`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.round(hours / 24);
+  if (days === 1) return "kemarin";
+  if (days < 30) return `${days} hari lalu`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months} bulan lalu`;
+  return `${Math.round(months / 12)} tahun lalu`;
+}
+
+/**
+ * Bersihkan isi kolom rupiah menjadi angka.
+ * "Rp 1.500.000" dan "1500000" sama-sama menjadi 1500000.
+ */
+export function parseRupiahInput(value) {
+  const digits = String(value ?? "").replace(/[^\d]/g, "");
+  return digits ? Number(digits) : 0;
+}
+
+/** 1500000 -> "1.500.000" (untuk isi <input>, tanpa prefix "Rp"). */
+export function formatRupiahInput(value) {
+  const n = Number(value) || 0;
+  return n ? n.toLocaleString("id-ID") : "";
+}
+
+/** Perkiraan jumlah tabungan per bulan agar target tercapai tepat waktu. */
+export function monthlySavingNeeded(remaining, targetDate) {
+  const days = daysUntil(targetDate);
+  if (days === null || days <= 0) return 0;
+  const months = Math.max(days / 30.44, 1);
+  return Math.ceil(Number(remaining || 0) / months);
+}
+
 export function clsx(...args) {
   return args.filter(Boolean).join(" ");
 }

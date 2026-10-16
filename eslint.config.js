@@ -31,10 +31,16 @@ export default defineConfig([
     },
   },
   {
-    // Migrasi PocketBase memakai global yang disuntikkan server (migrate, Collection, Field).
+    // Migrasi PocketBase memakai global yang disuntikkan server
+    // (migrate, Collection, Field, Record).
     files: ['pb_migrations/**/*.js'],
     languageOptions: {
-      globals: { migrate: 'readonly', Collection: 'readonly', Field: 'readonly' },
+      globals: {
+        migrate: 'readonly',
+        Collection: 'readonly',
+        Field: 'readonly',
+        Record: 'readonly',
+      },
     },
   },
   {

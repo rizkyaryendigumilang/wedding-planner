@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <rect width="128" height="128" rx="28" fill="url(#bgGrad)" />
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b94460" />
+      <stop offset="1" stop-color="#8c283f" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="20" y1="30" x2="108" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fef0cd" />
+      <stop offset="0.3" stop-color="#e5bd68" />
+      <stop offset="0.7" stop-color="#c59235" />
+      <stop offset="1" stop-color="#9a6e21" />
+    </linearGradient>
+    <linearGradient id="diamondGrad" x1="56" y1="22" x2="72" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" />
+      <stop offset="0.5" stop-color="#eaf5ff" />
+      <stop offset="1" stop-color="#c5e3fb" />
+    </linearGradient>
+  </defs>
+  <!-- Diamond -->
+  <polygon points="64,22 75,33 64,45 53,33" fill="url(#diamondGrad)" stroke="#ffffff" stroke-width="1.2" />
+  <polyline points="53,33 64,36 75,33" fill="none" stroke="#b0d6f5" stroke-width="0.8" />
+  <line x1="64" y1="22" x2="64" y2="45" stroke="#ffffff" stroke-width="1" />
+  <!-- Rings Interlocked -->
+  <circle cx="52" cy="74" r="23" stroke="url(#goldGrad)" stroke-width="6.5" fill="none" />
+  <circle cx="76" cy="74" r="23" stroke="url(#goldGrad)" stroke-width="6.5" fill="none" />
+</svg>

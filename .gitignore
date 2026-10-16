@@ -27,3 +27,9 @@ pocketbase_*.zip
 *.njsproj
 *.sln
 *.sw?
+
+# Mobile build outputs
+*.apk
+*.aab
+*.ipa
+

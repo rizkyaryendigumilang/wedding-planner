@@ -2,8 +2,249 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+/* ===========================================================================
+   Fondasi tampilan — dipakai lintas halaman.
+   Ditulis sebagai layer agar utility Tailwind tetap menang bila bertabrakan.
+   =========================================================================== */
+@layer base {
+  :root {
+    /* Slot aman perangkat: notch atas & home indicator bawah. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --nav-height: 4.25rem;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Cegah karet-banding memantulkan seluruh halaman di iOS. */
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    margin: 0;
+    min-height: 100dvh;
+    /* 100dvh, bukan 100vh: bar URL mobile tidak lagi memotong konten. */
+  }
+
+  html.dark body {
+    @apply bg-night text-stone-100;
+  }
+
+  /* iOS Safari memperbesar halaman bila input < 16px. Ini penyebabnya. */
+  input,
+  select,
+  textarea,
+  button {
+    font-size: max(16px, 1em);
+    font-family: inherit;
+  }
+
+  /* Highlight biru saat elemen disentuh terasa seperti web, bukan app. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Teks tombol/label tidak ikut terpilih saat ditekan lama. */
+  button,
+  [role='button'],
+  nav a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Hormati preferensi aksesibilitas: matikan seluruh animasi. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
+
+@layer components {
+  /* Kartu dasar seluruh aplikasi. */
+  .surface {
+    @apply bg-canvas-card dark:bg-night-card border border-line dark:border-night-line rounded-3xl shadow-soft;
+  }
+
+  /* Area yang bisa digulir tanpa menggeser halaman di belakangnya. */
+  .scroll-area {
+    @apply overflow-y-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sembunyikan scrollbar tipis ala iOS untuk deretan chip yang bisa digeser. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Bidang input seragam di seluruh formulir. */
+  .field {
+    @apply w-full px-3.5 py-3 rounded-2xl border border-line dark:border-night-line
+           bg-canvas-card dark:bg-night-card text-ink dark:text-stone-100
+           placeholder:text-ink-faint outline-none
+           text-base sm:text-sm
+           focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 transition;
+  }
+
+  /* Baris fokus keyboard yang tetap jelas di atas latar berwarna. */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent;
+  }
+
+  /* Latar berbutir halus — satu-satunya "tekstur" yang dipakai di app. */
+  .grain {
+    background-image: radial-gradient(
+      rgba(28, 25, 23, 0.055) 1px,
+      transparent 1px
+    );
+    background-size: 4px 4px;
+  }
+
+  /* Efek permukaan kaca untuk bilah navigasi bawah. */
+  .glass {
+    @apply bg-canvas-card/85 dark:bg-night-card/85 backdrop-blur-xl
+           border-t border-line dark:border-night-line;
+  }
+}
+
+@layer utilities {
+  /* Sembunyikan elemen secara visual namun tetap terbaca screen reader. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Optimasi Performa Virtual DOM via CSS Compositor & Hardware Acceleration */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 68px;
+  }
+
+  .cv-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 120px;
+  }
+
+  .contain-paint {
+    contain: paint;
+  }
+
+  .gpu-layer {
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+}
+
+/* Ambient glow GPU-accelerated keyframes (menggantikan JS looping di main thread) */
+@keyframes ambient-glow-1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(50px, -30px, 0);
+  }
+  75% {
+    transform: translate3d(-30px, 25px, 0);
+  }
+}
+
+@keyframes ambient-glow-2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-40px, 30px, 0);
+  }
+}
+
+.animate-ambient-1 {
+  animation: ambient-glow-1 28s ease-in-out infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.animate-ambient-2 {
+  animation: ambient-glow-2 22s ease-in-out infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ===========================================================================
+   Gaya cetak PDF & Printer
+   =========================================================================== */
+@media print {
+  aside,
+  nav,
+  header,
+  footer,
+  .no-print,
+  button:not(.print-include) {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .surface,
+  .rounded-3xl,
+  .rounded-4xl {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+  }
+}
+
+/* ===========================================================================
+   Pencegahan Bug Auto-Zoom di iPhone (iOS Safari)
+   iOS Safari secara otomatis memperbesar (zoom in) seluruh layar bila ukuran font
+   pada kolom input < 16px, menyebabkan tampilan web bergeser/miring.
+   CSS ini mengunci font-size minimal 16px pada perangkat mobile/tablet.
+   =========================================================================== */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  .field,
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  input[type="url"],
+  input[type="search"] {
+    font-size: 16px !important;
+  }
+}
+
+

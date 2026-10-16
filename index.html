@@ -1,10 +1,44 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <!-- viewport-fit=cover: konten boleh masuk ke area notch, lalu kita ganjal
+         sendiri dengan env(safe-area-inset-*). Tanpa ini, layar iPhone akan
+         menyisakan pita hitam di sekitar konten. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <!-- Status bar iOS mengikuti warna latar aplikasi, bukan putih. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141118" />
+    <!-- Terpasang di layar utama terasa seperti aplikasi, bukan tab browser. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Wedding Planner" />
+    <meta name="application-name" content="Wedding Planner" />
+    <meta name="msapplication-TileColor" content="#b94460" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Favicon & PWA Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wedding-planner</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <title>Wedding Planner — Rizky &amp; Reina</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

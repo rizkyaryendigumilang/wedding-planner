@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { FileCheck2, Check, X as XIcon, Search, ShieldCheck, ClipboardList } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  FileCheck2,
+  Check,
+  Search,
+  ShieldCheck,
+  ClipboardList,
+  Users,
+} from "lucide-react";
 import {
   Page,
   PageHeader,
@@ -10,14 +18,19 @@ import {
   ErrorState,
   Badge,
   EmptyState,
+  SectionTitle,
+  Input,
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { pct } from "../lib/format";
 
+const EASE = [0.22, 1, 0.36, 1];
+
 export default function Administration() {
   const { administrations, adminSummary, loading, error, reload, addLog } = useWedding();
   const [query, setQuery] = useState("");
+  const reduce = useReducedMotion();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -34,7 +47,7 @@ export default function Administration() {
       if (!map.has(a.section)) map.set(a.section, []);
       map.get(a.section).push(a);
     }
-    return [...map.entries()];
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
 
   const toggleDoc = async (item, side) => {
@@ -54,151 +67,192 @@ export default function Administration() {
     reload();
   };
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorState message={error} />;
+  if (loading) return <Loading label="Memuat administrasi…" />;
+  if (error) return <ErrorState message={error} onRetry={reload} />;
+
+  const docPct = pct(adminSummary.docsDone, adminSummary.docsTotal || 1);
 
   return (
     <Page>
       <PageHeader
-        title="Administrasi & Dokumen"
-        subtitle="Kelengkapan berkas legal pernikahan CPP & CPW serta checklist persiapan."
+        eyebrow="Kelengkapan"
+        title="Administrasi & dokumen"
+        subtitle="Berkas legal CPP dan CPW, plus daftar periksa persiapan pernikahan."
         icon={FileCheck2}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
-          label="Total Item"
+          label="Total item"
           value={adminSummary.total}
-          sub={`${sections.length} seksi persiapan`}
+          sub={`${adminSummary.done} selesai`}
           icon={ClipboardList}
-          tone="primary"
+          tone="neutral"
+          delay={0}
         />
         <StatCard
           label="Selesai"
-          value={adminSummary.done}
-          sub={`${pct(adminSummary.done, adminSummary.total).toFixed(0)}% dari keseluruhan`}
+          value={`${pct(adminSummary.done, adminSummary.total || 1).toFixed(0)}%`}
+          sub="dari keseluruhan"
           icon={ShieldCheck}
-          tone="green"
+          tone="sage"
+          delay={0.05}
         />
         <StatCard
-          label="Dokumen Legal"
+          label="Dokumen legal"
           value={`${adminSummary.docsDone}/${adminSummary.docsTotal}`}
           sub="CPP & CPW lengkap"
           icon={FileCheck2}
-          tone="blue"
+          tone="sky"
+          delay={0.1}
         />
         <StatCard
-          label="Checklist Persiapan"
+          label="Daftar periksa"
           value={`${adminSummary.progressDone}/${adminSummary.progressTotal}`}
           sub="item non-dokumen"
-          icon={ClipboardList}
+          icon={Users}
           tone="amber"
+          delay={0.15}
         />
-      </div>
+      </section>
 
       <Card>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold">Progres Kelengkapan Berkas</h3>
-          <Badge tone="purple">
-            {pct(adminSummary.docsDone, adminSummary.docsTotal || 1).toFixed(0)}%
-          </Badge>
+        <SectionTitle
+          action={
+            <Badge tone={docPct === 100 ? "sage" : "plum"}>
+              {docPct.toFixed(0)}%
+            </Badge>
+          }
+        >
+          Progres kelengkapan berkas
+        </SectionTitle>
+        <div className="mt-4">
+          <ProgressBar value={docPct} tone="bg-sky-500" height="h-2.5" />
         </div>
-        <ProgressBar
-          value={pct(adminSummary.docsDone, adminSummary.docsTotal || 1)}
-          tone="bg-sky-500"
-          height="h-3"
-        />
+        <p className="text-xs text-ink-muted mt-3">
+          {adminSummary.docsDone} dari {adminSummary.docsTotal} dokumen sudah lengkap di kedua pihak.
+        </p>
       </Card>
 
       <div className="relative">
-        <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
+        <Search
+          size={17}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
+        />
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari dokumen atau item persiapan…"
-          className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-darksurface text-sm"
+          className="!pl-11"
+          aria-label="Cari administrasi"
         />
       </div>
 
       {sections.length === 0 ? (
         <Card>
-          <EmptyState message="Tidak ada item administrasi yang cocok." icon={FileCheck2} />
+          <EmptyState
+            icon={FileCheck2}
+            message="Tidak ada item yang cocok."
+            hint="Coba kata kunci lain atau hapus isi kolom pencarian."
+          />
         </Card>
       ) : (
-        sections.map(([section, items]) => {
+        sections.map(([section, items], sectionIndex) => {
           const done = items.filter(
             (i) => (i.is_document && i.cpp_complete && i.cpw_complete) || i.progress === "Sudah"
           ).length;
-          return (
-            <Card key={section}>
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                  <h3 className="font-semibold">{section}</h3>
-                  <p className="text-xs text-gray-400">{items.length} item</p>
-                </div>
-                <div className="flex items-center gap-3 min-w-[160px]">
-                  <ProgressBar value={pct(done, items.length)} height="h-1.5" />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {done}/{items.length}
-                  </span>
-                </div>
-              </div>
+          const sectionPct = pct(done, items.length);
 
-              <div className="space-y-1.5">
-                {items.map((item) =>
-                  item.is_document ? (
-                    <div
-                      key={item.id}
-                      className="flex flex-wrap items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/40"
-                    >
-                      <span className="flex-1 min-w-[200px] text-sm">{item.item}</span>
-                      <span className="text-xs text-gray-400 hidden sm:block">{item.details}</span>
-                      <button
-                        onClick={() => toggleDoc(item, "CPP")}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium ${
-                          item.cpp_complete
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-gray-100 text-gray-400 dark:bg-gray-800"
-                        }`}
-                      >
-                        {item.cpp_complete ? <Check size={13} /> : <XIcon size={13} />} CPP
-                      </button>
-                      <button
-                        onClick={() => toggleDoc(item, "CPW")}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium ${
-                          item.cpw_complete
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-gray-100 text-gray-400 dark:bg-gray-800"
-                        }`}
-                      >
-                        {item.cpw_complete ? <Check size={13} /> : <XIcon size={13} />} CPW
-                      </button>
+          return (
+            <motion.div
+              key={section}
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: Math.min(sectionIndex * 0.04, 0.24),
+                duration: 0.35,
+                ease: EASE,
+              }}
+            >
+              <Card>
+                <SectionTitle
+                  count={`${done}/${items.length}`}
+                  action={
+                    <div className="w-24 sm:w-36">
+                      <ProgressBar value={sectionPct} height="h-1.5" />
                     </div>
-                  ) : (
-                    <div
+                  }
+                >
+                  {section}
+                </SectionTitle>
+
+                <ul className="mt-4 -mx-2 divide-y divide-line/70 dark:divide-night-line/70">
+                  {items.map((item) => (
+                    <li
                       key={item.id}
-                      className="flex flex-wrap items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                      className="flex flex-wrap items-center gap-3 px-2 py-3 rounded-2xl hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
                     >
-                      <span className="flex-1 min-w-[200px] text-sm">{item.item}</span>
-                      <span className="text-xs text-gray-400 hidden sm:block">{item.details}</span>
-                      <button
-                        onClick={() => toggleProgress(item)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium ${
-                          item.progress === "Sudah"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-gray-100 text-gray-400 dark:bg-gray-800"
-                        }`}
-                      >
-                        {item.progress === "Sudah" ? "Sudah" : item.progress || "Belum"}
-                      </button>
-                    </div>
-                  )
-                )}
-              </div>
-            </Card>
+                      <span className="flex-1 min-w-[12rem] text-sm">{item.item}</span>
+
+                      {item.details && (
+                        <span className="hidden md:block text-xs text-ink-faint max-w-[16rem] truncate">
+                          {item.details}
+                        </span>
+                      )}
+
+                      {item.is_document ? (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <SideToggle
+                            label="CPP"
+                            done={Boolean(item.cpp_complete)}
+                            onClick={() => toggleDoc(item, "CPP")}
+                          />
+                          <SideToggle
+                            label="CPW"
+                            done={Boolean(item.cpw_complete)}
+                            onClick={() => toggleDoc(item, "CPW")}
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => toggleProgress(item)}
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors focus-ring ${
+                            item.progress === "Sudah"
+                              ? "bg-sage-500/14 text-sage-700 dark:text-sage-300"
+                              : "bg-canvas-sunken text-ink-muted dark:bg-night-sunken dark:text-stone-400"
+                          }`}
+                        >
+                          {item.progress === "Sudah" && <Check size={13} />}
+                          {item.progress === "Sudah" ? "Sudah" : item.progress || "Belum"}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </motion.div>
           );
         })
       )}
     </Page>
+  );
+}
+
+/** Tombol centang per pihak (CPP / CPW). */
+function SideToggle({ label, done, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={done}
+      aria-label={`Tandai ${label} ${done ? "belum lengkap" : "lengkap"}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-colors focus-ring ${
+        done
+          ? "bg-sage-500/14 text-sage-700 dark:text-sage-300"
+          : "bg-canvas-sunken text-ink-faint dark:bg-night-sunken dark:text-stone-500"
+      }`}
+    >
+      {done ? <Check size={13} /> : <span className="w-[13px] h-[13px] rounded-full border border-current opacity-50" />}
+      {label}
+    </button>
   );
 }

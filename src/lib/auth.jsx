@@ -4,11 +4,13 @@ import pb from "./pocketbase";
 /**
  * AuthContext
  * ---------------------------------------------------------------------------
- * Semua koleksi data (budgets, administrations, seserahan_items,
- * vendor_checklists, wedding_guests, cashflow_entries, activity_logs)
- * dilindungi aturan `@request.auth.id != ""`, jadi aplikasi WAJIB login
- * sebelum membaca data. Sesi disimpan PocketBase di localStorage sehingga
- * tetap aktif setelah halaman dimuat ulang.
+ * Seluruh koleksi data dilindungi aturan `@request.auth.id != ""`, jadi
+ * aplikasi wajib punya sesi sebelum membaca apa pun. Sesi disimpan PocketBase
+ * di penyimpanan lokal, sehingga tetap aktif setelah halaman dimuat ulang.
+ *
+ * Akun yang tersedia:
+ *   - admin / admin            -> koleksi `users` (peran super admin aplikasi)
+ *   - email superuser PocketBase -> koleksi `_superusers`
  */
 const AuthContext = createContext(null);
 
@@ -19,40 +21,165 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  // `ready` = kita sudah selesai memeriksa sesi tersimpan di localStorage.
   const [user, setUser] = useState(() => pb.authStore.record || null);
-  // Sesi tersimpan sudah bisa dibaca sinkron, jadi `ready` bisa langsung true.
-  const ready = true;
+  const [ready, setReady] = useState(false);
 
   // Ikuti perubahan authStore (login, logout, token kedaluwarsa).
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
       setUser(record || pb.authStore.record || null);
     });
+
+    // Verifikasi sesi tersimpan sekali di awal. Bila token sudah kedaluwarsa,
+    // refresh; bila gagal, bersihkan agar tidak ada permintaan yang sia-sia.
+    (async () => {
+      if (pb.authStore.isValid) {
+        try {
+          await pb.collection(pb.authStore.record.collectionName).authRefresh();
+        } catch {
+          pb.authStore.clear();
+        }
+      } else if (pb.authStore.token) {
+        pb.authStore.clear();
+      }
+      setReady(true);
+    })();
+
     return unsubscribe;
   }, []);
 
-  /** Login dengan akun PocketBase lalu simpan sesi secara otomatis. */
+  /**
+   * Masuk dengan akun PocketBase. Identitas boleh berupa username ("admin")
+   * maupun email — PocketBase menerima keduanya setelah kolom `username`
+   * didaftarkan sebagai identityFields.
+   */
   const login = useCallback(async (identity, password) => {
     let record;
-    // Superuser memakai koleksi `_superusers`; akun biasa memakai `users`.
+
+    // 1. Coba koleksi `users` lebih dahulu (akun aplikasi sehari-hari).
     try {
-      const res = await pb.collection("_superusers").authWithPassword(identity, password);
+      const res = await pb.collection("users").authWithPassword(identity, password);
       record = res?.record;
-    } catch (err) {
-      // Bukan superuser -> coba koleksi `users` (admin/owner biasa).
+    } catch (userErr) {
+      // 2. Bila bukan pengguna biasa, coba superuser PocketBase.
       try {
-        const res = await pb.collection("users").authWithPassword(identity, password);
+        const res = await pb.collection("_superusers").authWithPassword(identity, password);
         record = res?.record;
-      } catch (_) {
-        throw err;
+      } catch {
+        // Lempar galat dari percobaan pertama — pesannya lebih relevan bagi
+        // pengguna aplikasi dibandingkan galat koleksi superuser.
+        throw userErr;
       }
     }
-    // Set state langsung (tidak hanya bergantung pada onChange) agar redirect
-    // ke dashboard terjadi seketika setelah login berhasil.
+
     const current = record || pb.authStore.record || null;
     setUser(current);
     return current;
+  }, []);
+
+  /**
+   * Mendaftar akun baru di koleksi `users`.
+   */
+  const register = useCallback(
+    async ({ name, username, email, password, passwordConfirm }) => {
+      const payload = {
+        email: email.trim(),
+        password,
+        passwordConfirm: passwordConfirm || password,
+        name: name?.trim() || "",
+        emailVisibility: false,
+      };
+
+      const cleanUsername = username?.trim().toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, "");
+      if (cleanUsername) {
+        payload.username = cleanUsername;
+      }
+
+      // Buat akun baru di koleksi `users`
+      const newRecord = await pb.collection("users").create(payload);
+
+      // Masuk secara otomatis setelah berhasil mendaftar
+      await login(cleanUsername || payload.email, password);
+      return newRecord;
+    },
+    [login]
+  );
+
+  /**
+   * Masuk atau daftar via penyedia OAuth2 bawaan PocketBase (Google, GitHub, dll).
+   */
+  const loginWithOAuth = useCallback(async (providerName) => {
+    try {
+      const res = await pb.collection("users").authWithOAuth2({ provider: providerName });
+      const current = res?.record || pb.authStore.record || null;
+      setUser(current);
+      return current;
+    } catch (err) {
+      console.warn(`OAuth login failed for ${providerName}:`, err);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Masuk atau daftar cepat menggunakan akun Telegram.
+   */
+  const loginWithTelegram = useCallback(
+    async (telegramData) => {
+      const rawUser = (telegramData.username || telegramData.id || "telegram_user")
+        .toString()
+        .replace(/^@/, "")
+        .replace(/[^a-zA-Z0-9_.-]/g, "")
+        .toLowerCase();
+      const tgUsername = rawUser.length >= 3 ? rawUser : `tg_${rawUser}_${Date.now().toString().slice(-4)}`;
+      const tgEmail = `${tgUsername}@telegram.wedding.local`;
+      const deterministicPassword = `tg_${tgUsername}_wedding2028!`;
+
+      // Coba masuk jika akun sudah ada
+      try {
+        return await login(tgUsername, deterministicPassword);
+      } catch (_) {
+        try {
+          return await login(tgEmail, deterministicPassword);
+        } catch (_) {
+          // Akun belum ada -> buat akun baru untuk Telegram
+          try {
+            await pb.collection("users").create({
+              email: tgEmail,
+              username: tgUsername,
+              name: telegramData.name || telegramData.first_name || tgUsername,
+              password: deterministicPassword,
+              passwordConfirm: deterministicPassword,
+              emailVisibility: false,
+              verified: true,
+            });
+            return await login(tgUsername, deterministicPassword);
+          } catch (_createErr) {
+            // Bila username bentrok, tambahkan sufiks acak
+            const fallbackUsername = `${tgUsername}_${Math.floor(100 + Math.random() * 900)}`;
+            const fallbackEmail = `${fallbackUsername}@telegram.wedding.local`;
+            await pb.collection("users").create({
+              email: fallbackEmail,
+              username: fallbackUsername,
+              name: telegramData.name || telegramData.first_name || tgUsername,
+              password: deterministicPassword,
+              passwordConfirm: deterministicPassword,
+              emailVisibility: false,
+              verified: true,
+            });
+            return await login(fallbackUsername, deterministicPassword);
+          }
+        }
+      }
+    },
+    [login]
+  );
+
+  const getAuthMethods = useCallback(async () => {
+    try {
+      return await pb.collection("users").listAuthMethods();
+    } catch (_) {
+      return null;
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -60,17 +187,34 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const isSuperuser = !!pb.authStore.isSuperuser || pb.authStore.record?.collectionName === "_superusers";
+    const isAdmin = user?.username === "admin" || isSuperuser;
+    const appRole = user?.app_role || (isAdmin ? "owner" : "couple");
+    const isPanitia = appRole === "panitia" || appRole === "wo";
+    const isOwner = !isPanitia;
+    const canViewBudget = isOwner;
+
+    return {
       user,
       ready,
       isAuthed: !!user && pb.authStore.isValid,
-      isSuperuser: !!user?.collectionName && pb.authStore.isSuperuser,
+      isSuperuser,
+      isAdmin,
+      appRole,
+      isOwner,
+      isPanitia,
+      canViewBudget,
+      /** Nama yang layak ditampilkan — username lebih dikenali daripada email. */
+      displayName: user?.name || user?.username || user?.email || "Pemilik",
       login,
+      register,
+      loginWithOAuth,
+      loginWithTelegram,
+      getAuthMethods,
       logout,
-    }),
-    [user, ready, login, logout]
-  );
+    };
+  }, [user, ready, login, register, loginWithOAuth, loginWithTelegram, getAuthMethods, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
