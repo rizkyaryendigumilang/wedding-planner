@@ -87,6 +87,9 @@ jobs:
 
       - name: Notice if VPS credentials not set
         if: ${{ env.VPS_HOST == '' || env.VPS_KEY == '' }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           echo "VPS secrets (VPS_HOST, VPS_SSH_KEY) are not set. Skipped SCP transfer. APK artifact is still available for download from GitHub Actions."
 
