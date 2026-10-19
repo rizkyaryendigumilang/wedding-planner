@@ -12,12 +12,12 @@ dist
 dist-ssr
 *.local
 
-# PocketBase runtime data (never commit)
-pb_data
-pocketbase.exe
-pocketbase_*.zip
+# Local production environment files (never commit)
+.env.production
+.env.production.local
 
-# Editor directories and files
+# Local editor / backup artifacts
+*.bak
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -28,8 +28,12 @@ pocketbase_*.zip
 *.sln
 *.sw?
 
+# PocketBase runtime data (never commit)
+pb_data
+pocketbase.exe
+pocketbase_*.zip
+
 # Mobile build outputs
 *.apk
 *.aab
 *.ipa
-
