@@ -11,6 +11,16 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.js'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
       - '.github/workflows/deploy-web-vps.yml'
   workflow_dispatch:
     inputs:
@@ -93,7 +103,7 @@ jobs:
           path: ./web-artifact
 
       - name: Configure SSH and deploy with rollback protection
-        if: ${{ github.event_name == 'push' || inputs.deploy_production }}
+        if: ${{ (github.event_name == 'push' && vars.ENABLE_WEDDING_WEB_AUTO_DEPLOY == 'true') || (github.event_name == 'workflow_dispatch' && inputs.deploy_production && github.ref == 'refs/heads/main') }}
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
@@ -202,7 +212,7 @@ jobs:
             echo "The previous frontend is retained in a backup directory on the VPS."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Report deployment skipped on manual run
-        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.deploy_production }}
+      - name: Report production deployment skipped
+        if: ${{ (github.event_name == 'push' && vars.ENABLE_WEDDING_WEB_AUTO_DEPLOY != 'true') || (github.event_name == 'workflow_dispatch' && (!inputs.deploy_production || github.ref != 'refs/heads/main')) }}
         run: |
-          echo "Manual run built and validated the artifact only. Production deployment was not requested."
+          echo "Build and validation completed, but production deployment is disabled or was not explicitly requested for the main branch."
