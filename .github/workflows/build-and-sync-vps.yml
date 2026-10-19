@@ -69,7 +69,7 @@ jobs:
           retention-days: 14
 
       - name: Send APK to VPS via SCP
-        if: ${{ secrets.VPS_HOST != '' && secrets.VPS_SSH_KEY != '' }}
+        if: ${{ env.VPS_HOST != '' && env.VPS_KEY != '' }}
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
@@ -86,7 +86,7 @@ jobs:
           echo "Successfully uploaded app-latest.apk to $VPS_HOST:$VPS_TARGET_DIR/app-latest.apk"
 
       - name: Notice if VPS credentials not set
-        if: ${{ secrets.VPS_HOST == '' || secrets.VPS_SSH_KEY == '' }}
+        if: ${{ env.VPS_HOST == '' || env.VPS_KEY == '' }}
         run: |
           echo "VPS secrets (VPS_HOST, VPS_SSH_KEY) are not set. Skipped SCP transfer. APK artifact is still available for download from GitHub Actions."
 
@@ -160,7 +160,7 @@ jobs:
           retention-days: 14
 
       - name: Send IPA to VPS via SCP
-        if: ${{ secrets.VPS_HOST != '' && secrets.VPS_SSH_KEY != '' }}
+        if: ${{ env.VPS_HOST != '' && env.VPS_KEY != '' }}
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
@@ -177,6 +177,6 @@ jobs:
           echo "Successfully uploaded app-latest.ipa to $VPS_HOST:$VPS_TARGET_DIR/app-latest.ipa"
 
       - name: Notice if VPS credentials not set
-        if: ${{ secrets.VPS_HOST == '' || secrets.VPS_SSH_KEY == '' }}
+        if: ${{ env.VPS_HOST == '' || env.VPS_KEY == '' }}
         run: |
           echo "VPS secrets (VPS_HOST, VPS_SSH_KEY) are not set. Skipped SCP transfer. IPA artifact is still available for download from GitHub Actions."
