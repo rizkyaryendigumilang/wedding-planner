@@ -14,7 +14,6 @@ on:
       - 'capacitor.config.json'
       - 'android/**'
       - 'ios/**'
-      - '.github/workflows/build-and-sync-vps.yml'
   workflow_dispatch:
 
 permissions:
