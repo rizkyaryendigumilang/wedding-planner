@@ -1,5 +1,9 @@
 {
   "appId": "com.weddingplanner.app",
   "appName": "Wedding Planner",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
 }

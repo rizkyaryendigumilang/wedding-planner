@@ -36,8 +36,14 @@ export function AuthProvider({ children }) {
       if (pb.authStore.isValid) {
         try {
           await pb.collection(pb.authStore.record.collectionName).authRefresh();
-        } catch {
-          pb.authStore.clear();
+        } catch (err) {
+          // Hanya bersihkan authStore jika token ditolak server (400, 401, 403).
+          // Jika offline atau masalah jaringan (status 0 atau network error), pertahankan sesi lokal!
+          if (err?.status === 401 || err?.status === 403 || err?.status === 400) {
+            pb.authStore.clear();
+          } else {
+            console.warn("Koneksi offline/gagal saat authRefresh, sesi lokal dipertahankan:", err);
+          }
         }
       } else if (pb.authStore.token) {
         pb.authStore.clear();

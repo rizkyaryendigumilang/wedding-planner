@@ -1,16 +1,19 @@
 const CACHE_NAME = "wedding-planner-v1";
 
+// Resolve scope directory as base path (e.g. "/wedding/" or "/")
+const basePath = new URL(self.registration.scope).pathname.replace(/\/?$/, "/");
+
 const PRECACHE_ASSETS = [
-  "/",
-  "/index.html",
-  "/favicon.ico",
-  "/favicon-32x32.png",
-  "/favicon-16x16.png",
-  "/apple-touch-icon.png",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/logo-transparent.png",
-  "/manifest.webmanifest"
+  basePath,
+  `${basePath}index.html`,
+  `${basePath}favicon.ico`,
+  `${basePath}favicon-32x32.png`,
+  `${basePath}favicon-16x16.png`,
+  `${basePath}apple-touch-icon.png`,
+  `${basePath}icon-192.png`,
+  `${basePath}icon-512.png`,
+  `${basePath}logo-transparent.png`,
+  `${basePath}manifest.webmanifest`
 ];
 
 // Install: precache essential shell assets
@@ -105,9 +108,9 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // If offline and request is navigation, return cached index.html
+          // If offline and request is navigation, return cached index.html or basePath
           if (request.mode === "navigate") {
-            return caches.match("/index.html");
+            return caches.match(`${basePath}index.html`).then((res) => res || caches.match(basePath));
           }
           return cachedResponse;
         });

@@ -4,13 +4,27 @@
 
 ### Web: `deploy-web-vps.yml`
 
-- Pull requests run ESLint, build the web bundle with base path `/wedding/`, validate referenced assets, and publish a 14-day GitHub Actions artifact.
-- Pushes to `main` run the same checks when app/build files change.
-- Production deployment is deliberately gated. It only runs automatically when the repository variable `ENABLE_WEDDING_WEB_AUTO_DEPLOY` is set to `true`, or from `workflow_dispatch` on `main` with **Publish the build to the production VPS** checked.
-- The deployment uploads a build archive to the SSH user's home directory, stages it under `/srv/www`, validates the entry point and hashed assets, then moves the previous site to a rollback directory before publishing. It does not run database migrations or restart PocketBase/Caddy.
-- The workflow fails safely if the SSH user cannot write to `/srv/www`, if the expected live directory is missing, or if staged assets do not validate.
-
-**Important:** Do not manually deploy until the intended local Wedding Planner changes (including the `/wedding/` PWA paths and service-worker changes) have been reviewed and committed to GitHub. The VPS currently contains local changes that are not automatically included in a GitHub Actions checkout.
+- **Target Workflow**:
+  - `Local → GitHub Push → CI/Test/Build → Automatic Deploy VPS → Production Health Check`
+- **Triggers**:
+  - **Push to `main`**: Runs all CI validations (lint, build, asset verification) and automatically deploys to the VPS when application files change.
+  - **Pull Request to `main`**: Runs CI validations (ESLint, build `--base=/wedding/`, asset verification) and uploads a 14-day artifact. Production deployment is cleanly skipped.
+  - **Manual `workflow_dispatch`**: Runs CI validations with manual control. Deploys to VPS by default (`deploy_production: true`).
+- **Secret Validation**:
+  - Strictly requires `VPS_HOST`, `VPS_USERNAME`, `VPS_SSH_KEY`, and `VPS_SSH_KNOWN_HOSTS`.
+  - If deployment was requested but any required secret is missing, the workflow fails with exit code `1` (red status) and logs an actionable error message. It never produces a false-positive success.
+  - SSH port can be specified via `VPS_SSH_PORT` or `VPS_PORT` (defaults to `22`).
+- **Atomic VPS Deployment**:
+  - Uploads release archive to SSH home directory on VPS (`43.156.236.102`).
+  - Staging area: `/srv/www/.wedding-planner-staging-<sha>-<run_id>`.
+  - Validates staging integrity (`index.html`, `manifest.webmanifest`, `sw.js`, and hashed bundles in `/wedding/assets/`).
+  - Atomically swaps current live (`/srv/www/wedding-planner`) to backup (`/srv/www/.wedding-planner-backup-<sha>-<run_id>`) and moves staging to live.
+  - Prunes older backup snapshots, retaining the 5 most recent for safety and disk space management.
+- **Dual Health Check & Automatic Rollback**:
+  - Strict TLS verification is enforced on all curl requests (no `-k` / `--insecure`). The VPS serves a valid public Let's Encrypt certificate for `43.156.236.102`.
+  - Health check 1 (Frontend): Requests `https://<VPS_HOST>/wedding/` and verifies HTTP 200, valid `<title>`, and `<div id="root">`.
+  - Health check 2 (PocketBase API): Requests `https://<VPS_HOST>/api/health` and verifies HTTP 200 with JSON payload `{"code":200,"message":"API is healthy."}`.
+  - If either health check fails within 30 seconds, an automated rollback script restores the previous backup to `/srv/www/wedding-planner` and halts the pipeline with an error (red status).
 
 ### Mobile: `build-and-sync-vps.yml`
 
@@ -19,37 +33,40 @@
 - Runs on relevant application/mobile changes to `main`, or manually through `workflow_dispatch`.
 - Upload to the VPS is optional and uses the separate `VPS_TARGET_DIR`. It requires a verified SSH host key. An unsigned IPA is not ready for normal installation on an iPhone; signing and distribution are separate work.
 
-## GitHub Actions configuration
+## GitHub Actions Configuration
 
 Open **Repository → Settings → Secrets and variables → Actions**.
 
-### Required secrets
+### Required Secrets
 
-| Name | Purpose |
-|---|---|
-| `VITE_PB_URL` | PocketBase API URL embedded during the frontend build |
-| `VPS_HOST` | VPS hostname or IP address |
-| `VPS_USERNAME` | SSH deployment account (currently expected to be `ubuntu`) |
-| `VPS_SSH_KEY` | Private SSH key for that account |
-| `VPS_SSH_KNOWN_HOSTS` | Verified SSH host-key line(s), not a private key |
+| Name | Purpose | Example / Notes |
+|---|---|---|
+| `VITE_PB_URL` | PocketBase API URL embedded in Vite frontend | `https://43.156.236.102/api/` |
+| `VPS_HOST` | VPS IP address or hostname | `43.156.236.102` |
+| `VPS_USERNAME` | SSH user | `ubuntu` |
+| `VPS_SSH_KEY` | Private SSH key | Contents of `~/.ssh/wedding_planner_deploy` |
+| `VPS_SSH_KNOWN_HOSTS` | Strict host key line | `43.156.236.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPLV8FZsqrUwsNv4dydkY/O6XSpH5a/dMxCg0yHZHRkl` |
 
-### Optional secrets
+### Optional Secrets
 
-| Name | Purpose |
-|---|---|
-| `VPS_PORT` | SSH port; defaults to `22` |
-| `VPS_TARGET_DIR` | Absolute destination directory for optional APK/IPA copies only |
+| Type | Name | Purpose |
+|---|---|---|
+| Secret | `VPS_SSH_PORT` or `VPS_PORT` | SSH port (defaults to `22` if not set) |
+| Secret | `VPS_TARGET_DIR` | Absolute destination path for optional mobile APK/IPA upload |
 
-### Verified SSH host key
+## Rollback Procedures
 
-Do not trust a newly scanned host key without checking it. From a trusted VPS console/session, obtain the server's public host-key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`). Compare it with the fingerprint of the candidate host key, then save the verified known-hosts line(s) in `VPS_SSH_KNOWN_HOSTS`. For port 22 the known-hosts entry normally names the IP/host; for a nonstandard port it normally uses `[host]:port`.
+### 1. Automatic Rollback
+If the live health check fails during the CI/CD pipeline, the runner immediately calls an SSH rollback script to restore `/srv/www/.wedding-planner-backup-<sha>-<run_id>` back to `/srv/www/wedding-planner`.
 
-### Enabling automatic production deployment
+### 2. Manual Rollback
+If an issue is noticed after a successful deployment, SSH into the VPS and swap the previous backup:
+```bash
+# List available backups
+ls -ld /srv/www/.wedding-planner-backup-*
 
-Keep `ENABLE_WEDDING_WEB_AUTO_DEPLOY` unset or set to `false` until the desired app/PWA changes are committed to `main` and a deliberate production deployment has been tested. After verification, create this repository **variable** with value `true` to enable automatic deployment on matching pushes to `main`.
-
-## Rollback
-
-Each successful web deployment keeps the previous frontend in a directory named like `/srv/www/.wedding-planner-backup-<commit>-<run-id>`. The deployment log and workflow summary identify the exact backup directory. If a release needs to be reverted, use a VPS shell to move the current `/srv/www/wedding-planner` directory aside and move the selected backup back into its place. Do not delete backups until the release is confirmed healthy.
-
-Neither workflow reads or uploads `.env.production`; keep local environment files and PocketBase runtime data out of Git.
+# Restore previous release
+mv /srv/www/wedding-planner /srv/www/wedding-planner-corrupt
+mv /srv/www/.wedding-planner-backup-<RELEASE_ID> /srv/www/wedding-planner
+```
+PocketBase data (`pb_data`), SQLite databases, uploaded user files, and Caddy configuration are completely untouched by the frontend deployment.

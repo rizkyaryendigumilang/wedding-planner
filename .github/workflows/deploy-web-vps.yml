@@ -11,6 +11,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.js'
+      - '.github/workflows/deploy-web-vps.yml'
   pull_request:
     branches:
       - main
@@ -28,7 +29,7 @@ on:
         description: 'Publish the build to the production VPS'
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -39,7 +40,7 @@ concurrency:
 
 jobs:
   build-web:
-    name: Lint and build web assets
+    name: Lint, build, and validate web assets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -59,7 +60,7 @@ jobs:
 
       - name: Build for the /wedding/ route
         env:
-          VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL || 'https://43.156.236.102/api/' }}
         run: npm run build -- --base=/wedding/
 
       - name: Validate built asset paths
@@ -91,10 +92,31 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Log build status and deployment intent
+        run: |
+          {
+            echo "### Web Build & Verification Summary"
+            echo "- **Commit SHA:** \`${GITHUB_SHA}\`"
+            echo "- **Ref:** \`${GITHUB_REF}\`"
+            echo "- **Trigger Event:** \`${GITHUB_EVENT_NAME}\`"
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "- **Production Deployment:** Skipped (Pull requests only execute lint, build, and asset validation)"
+            elif [[ "${{ github.event_name }}" == "push" ]]; then
+              echo "- **Production Deployment:** Triggered (Automatic deployment on push to \`main\`)"
+            elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              if [[ "${{ inputs.deploy_production }}" == "true" ]]; then
+                echo "- **Production Deployment:** Triggered (Manual deployment requested with \`deploy_production=true\`)"
+              else
+                echo "- **Production Deployment:** Skipped (\`deploy_production\` input was false)"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy-web:
     name: Deploy web assets to VPS
     needs: build-web
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy_production == true && github.ref == 'refs/heads/main') }}
     steps:
       - name: Download validated web artifact
         uses: actions/download-artifact@v4
@@ -102,54 +124,70 @@ jobs:
           name: wedding-planner-web-dist
           path: ./web-artifact
 
-      - name: Configure SSH and deploy with rollback protection
-        if: ${{ (github.event_name == 'push' && vars.ENABLE_WEDDING_WEB_AUTO_DEPLOY == 'true') || (github.event_name == 'workflow_dispatch' && inputs.deploy_production && github.ref == 'refs/heads/main') }}
+      - name: Validate secrets and deploy to VPS
+        id: deploy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '22' }}
           VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
 
-          if [[ -z "$VPS_HOST" || -z "$VPS_USER" || -z "$VPS_KEY" || -z "$VPS_SSH_KNOWN_HOSTS" ]]; then
-            {
-              echo "### Web deployment not performed"
-              echo "The build passed, but VPS deployment was skipped because one or more required GitHub Actions secrets are missing."
-              echo "Required: `VPS_HOST`, `VPS_USERNAME`, `VPS_SSH_KEY`, `VPS_SSH_KNOWN_HOSTS`. Optional: `VPS_PORT` (defaults to 22)."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::notice::Build artifact is ready; configure the VPS secrets to enable deployment."
-            exit 0
-          fi
+          # Strict secret validation: missing secrets fail with exit code 1
+          missing_secrets=()
+          [[ -z "$VPS_HOST" ]] && missing_secrets+=("VPS_HOST")
+          [[ -z "$VPS_USER" ]] && missing_secrets+=("VPS_USERNAME")
+          [[ -z "$VPS_KEY" ]] && missing_secrets+=("VPS_SSH_KEY")
+          [[ -z "$VPS_SSH_KNOWN_HOSTS" ]] && missing_secrets+=("VPS_SSH_KNOWN_HOSTS")
 
-          if [[ ! "$VPS_PORT" =~ ^[0-9]+$ ]] || (( VPS_PORT < 1 || VPS_PORT > 65535 )); then
-            echo "VPS_PORT must be a valid TCP port."
+          if (( ${#missing_secrets[@]} > 0 )); then
+            echo "::error::Deployment aborted! Required secret(s) missing: ${missing_secrets[*]}"
+            {
+              echo "### Deployment Failed: Missing Secrets"
+              echo "Deployment was requested, but one or more required secrets are not set in GitHub repository settings:"
+              for s in "${missing_secrets[@]}"; do
+                echo "- \`$s\`"
+              done
+              echo ""
+              echo "Required secrets: \`VPS_HOST\`, \`VPS_USERNAME\`, \`VPS_SSH_KEY\`, \`VPS_SSH_KNOWN_HOSTS\`."
+              echo "Optional secrets: \`VPS_SSH_PORT\` or \`VPS_PORT\` (defaults to 22)."
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
+          if [[ ! "$VPS_PORT" =~ ^[0-9]+$ ]] || (( VPS_PORT < 1 || VPS_PORT > 65535 )); then
+            echo "::error::VPS_PORT ($VPS_PORT) must be a valid TCP port between 1 and 65535."
+            exit 1
+          fi
+
+          # Prepare SSH credentials
           install -d -m 700 "$HOME/.ssh"
-          printf '%s\n' "$VPS_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
-          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$VPS_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
           printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
           RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}"
-          ARCHIVE_NAME="wedding-dist-${GITHUB_SHA}-${GITHUB_RUN_ID}.tar.gz"
+          ARCHIVE_NAME="wedding-dist-${RELEASE_ID}.tar.gz"
           cp ./web-artifact/wedding-dist.tar.gz "./$ARCHIVE_NAME"
-          scp -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/id_ed25519" -P "$VPS_PORT" "./$ARCHIVE_NAME" "$VPS_USER@$VPS_HOST:$ARCHIVE_NAME"
 
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/id_ed25519" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID' '$ARCHIVE_NAME'" <<'REMOTE'
+          echo "Uploading release archive $ARCHIVE_NAME to $VPS_USER@$VPS_HOST ..."
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -P "$VPS_PORT" "./$ARCHIVE_NAME" "$VPS_USER@$VPS_HOST:$ARCHIVE_NAME"
+
+          echo "Applying release on VPS with atomic swap and staging validation..."
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID' '$ARCHIVE_NAME'" <<'REMOTE'
           set -Eeuo pipefail
           release_id="$1"
           archive_name="$2"
 
           if [[ ! "$release_id" =~ ^[0-9a-f]{40}-[0-9]+$ ]]; then
-            echo "Invalid release identifier."
+            echo "Invalid release identifier format."
             exit 1
           fi
           if [[ ! "$archive_name" =~ ^wedding-dist-[0-9a-f]{40}-[0-9]+\.tar\.gz$ ]]; then
-            echo "Invalid archive name."
+            echo "Invalid archive name format."
             exit 1
           fi
 
@@ -159,23 +197,32 @@ jobs:
           backup="$parent/.wedding-planner-backup-$release_id"
           archive="$HOME/$archive_name"
 
-          test -d "$parent"
+          test -d "$parent" || {
+            echo "Parent directory $parent does not exist."
+            exit 1
+          }
           test -w "$parent" || {
-            echo "SSH user cannot write to /srv/www; deployment stopped without changing the live site."
+            echo "SSH user cannot write to $parent; deployment stopped without touching the live site."
             exit 1
           }
           test -d "$live" && test ! -L "$live" || {
-            echo "Expected live path to be an existing real directory; refusing to replace it."
+            echo "Expected live path $live to be an existing directory; refusing to proceed."
             exit 1
           }
-          test -s "$archive"
+          test -s "$archive" || {
+            echo "Uploaded archive $archive is missing or empty."
+            exit 1
+          }
           test ! -e "$stage"
           test ! -e "$backup"
 
-          mkdir "$stage"
-          trap 'status=$?; if [ ! -e "$live" ] && [ -d "$backup" ]; then mv "$backup" "$live"; fi; rm -rf "$stage"; exit "$status"' ERR
-          tar -xzf "$archive" -C "$stage"
+          mkdir -m 755 "$stage"
+          trap 'status=$?; if [ ! -e "$live" ] && [ -d "$backup" ]; then mv "$backup" "$live"; fi; rm -rf "$stage" "$archive"; exit "$status"' ERR
 
+          tar -xzf "$archive" -C "$stage"
+          chmod -R u+rwX,go+rX "$stage"
+
+          # Verify critical stage files before swapping
           test -s "$stage/index.html"
           test -s "$stage/manifest.webmanifest"
           test -s "$stage/sw.js"
@@ -194,25 +241,123 @@ jobs:
             }
           done
 
-          # Keep the previous live site as a rollback copy.
+          # Atomic swap: backup current live, activate stage
           mv "$live" "$backup"
           mv "$stage" "$live"
           trap - ERR
           rm -f "$archive"
 
-          echo "Deployment completed."
+          # Retain only the last 5 backup releases to manage disk space
+          ls -dt /srv/www/.wedding-planner-backup-* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+
+          echo "Atomic swap completed successfully."
           echo "Live directory: $live"
-          echo "Rollback copy: $backup"
+          echo "Rollback directory: $backup"
           REMOTE
 
-          {
-            echo "### Web deployment completed"
-            echo "Release: `$RELEASE_ID`"
-            echo "Target: `/srv/www/wedding-planner`"
-            echo "The previous frontend is retained in a backup directory on the VPS."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Report production deployment skipped
-        if: ${{ (github.event_name == 'push' && vars.ENABLE_WEDDING_WEB_AUTO_DEPLOY != 'true') || (github.event_name == 'workflow_dispatch' && (!inputs.deploy_production || github.ref != 'refs/heads/main')) }}
+      - name: Verify live deployment health check (Frontend & API)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '22' }}
         run: |
-          echo "Build and validation completed, but production deployment is disabled or was not explicitly requested for the main branch."
+          set -euo pipefail
+          RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}"
+          FRONTEND_URL="https://${VPS_HOST}/wedding/"
+          API_HEALTH_URL="https://${VPS_HOST}/api/health"
+
+          echo "Starting dual health check with strict TLS verification..."
+          echo "1. Checking Frontend URL: $FRONTEND_URL"
+
+          # Retry loop for frontend (allow up to 30 seconds for web server)
+          frontend_ok=false
+          for i in {1..6}; do
+            frontend_body=$(curl -fsS --max-time 10 "$FRONTEND_URL" 2>/dev/null || true)
+            if echo "$frontend_body" | grep -q 'id="root"' && echo "$frontend_body" | grep -q '<title>Wedding Planner'; then
+              echo "Frontend health check passed (attempt $i)."
+              frontend_ok=true
+              break
+            fi
+            echo "Waiting for frontend to respond with valid HTML (attempt $i/6)..."
+            sleep 5
+          done
+
+          if [ "$frontend_ok" != "true" ]; then
+            echo "::error::Frontend health check failed at $FRONTEND_URL!"
+            echo "Triggering automatic rollback on VPS..."
+            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'ROLLBACK'
+            set -euo pipefail
+            release_id="$1"
+            parent="/srv/www"
+            live="$parent/wedding-planner"
+            backup="$parent/.wedding-planner-backup-$release_id"
+            failed="$parent/.wedding-planner-failed-$release_id"
+            if [ -d "$backup" ]; then
+              echo "Restoring previous release from $backup..."
+              [ -d "$live" ] && mv "$live" "$failed"
+              mv "$backup" "$live"
+              echo "Rollback successfully completed."
+            else
+              echo "Rollback backup not found at $backup!"
+              exit 1
+            fi
+            ROLLBACK
+            {
+              echo "### Deployment Failed & Rolled Back"
+              echo "- **Frontend URL:** \`$FRONTEND_URL\` failed health check."
+              echo "- **Status:** Automatically rolled back to previous version on VPS."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "2. Checking PocketBase API URL: $API_HEALTH_URL"
+          api_ok=false
+          for i in {1..6}; do
+            api_body=$(curl -fsS --max-time 10 "$API_HEALTH_URL" 2>/dev/null || true)
+            if echo "$api_body" | grep -q '"code":200' && echo "$api_body" | grep -q 'API is healthy'; then
+              echo "PocketBase API health check passed (attempt $i)."
+              api_ok=true
+              break
+            fi
+            echo "Waiting for API to respond healthy (attempt $i/6)..."
+            sleep 5
+          done
+
+          if [ "$api_ok" != "true" ]; then
+            echo "::error::PocketBase API health check failed at $API_HEALTH_URL!"
+            echo "Triggering automatic rollback on VPS..."
+            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'ROLLBACK'
+            set -euo pipefail
+            release_id="$1"
+            parent="/srv/www"
+            live="$parent/wedding-planner"
+            backup="$parent/.wedding-planner-backup-$release_id"
+            failed="$parent/.wedding-planner-failed-$release_id"
+            if [ -d "$backup" ]; then
+              echo "Restoring previous release from $backup..."
+              [ -d "$live" ] && mv "$live" "$failed"
+              mv "$backup" "$live"
+              echo "Rollback successfully completed."
+            else
+              echo "Rollback backup not found at $backup!"
+              exit 1
+            fi
+            ROLLBACK
+            {
+              echo "### Deployment Failed & Rolled Back"
+              echo "- **API URL:** \`$API_HEALTH_URL\` failed health check."
+              echo "- **Status:** Automatically rolled back to previous version on VPS."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "All health checks passed successfully!"
+          {
+            echo "### Web Deployment Succeeded"
+            echo "- **Commit SHA:** \`${GITHUB_SHA}\`"
+            echo "- **Release ID:** \`${RELEASE_ID}\`"
+            echo "- **Live Destination:** \`/srv/www/wedding-planner\`"
+            echo "- **Frontend URL:** \`$FRONTEND_URL\` (Verified HTML & root element via strict TLS)"
+            echo "- **PocketBase API:** \`$API_HEALTH_URL\` (Verified HTTP 200 code & health message via strict TLS)"
+            echo "- **Rollback Snapshot:** Retained on VPS at \`/srv/www/.wedding-planner-backup-${RELEASE_ID}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

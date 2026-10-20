@@ -12,8 +12,9 @@ createRoot(document.getElementById("root")).render(
 // Daftarkan Service Worker untuk kapabilitas PWA (Android, iOS Safari, Desktop)
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`;
     navigator.serviceWorker
-      .register("/sw.js")
+      .register(swUrl)
       .then((reg) => {
         // Cek update di latar belakang
         reg.onupdatefound = () => {
