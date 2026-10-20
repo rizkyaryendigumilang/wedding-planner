@@ -282,32 +282,36 @@ jobs:
             sleep 5
           done
 
-          if [ "$frontend_ok" != "true" ]; then
-            echo "::error::Frontend health check failed at $FRONTEND_URL!"
+          rollback_release() {
+            local err_msg="$1"
+            echo "::error::$err_msg"
             echo "Triggering automatic rollback on VPS..."
-            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'ROLLBACK'
-            set -euo pipefail
-            release_id="$1"
-            parent="/srv/www"
-            live="$parent/wedding-planner"
-            backup="$parent/.wedding-planner-backup-$release_id"
-            failed="$parent/.wedding-planner-failed-$release_id"
-            if [ -d "$backup" ]; then
-              echo "Restoring previous release from $backup..."
-              [ -d "$live" ] && mv "$live" "$failed"
-              mv "$backup" "$live"
-              echo "Rollback successfully completed."
-            else
-              echo "Rollback backup not found at $backup!"
-              exit 1
-            fi
-            ROLLBACK
+            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "
+              set -eu
+              parent='/srv/www'
+              live=\"\$parent/wedding-planner\"
+              backup=\"\$parent/.wedding-planner-backup-$RELEASE_ID\"
+              failed=\"\$parent/.wedding-planner-failed-$RELEASE_ID\"
+              if [ -d \"\$backup\" ]; then
+                echo \"Restoring previous release from \$backup...\"
+                [ -d \"\$live\" ] && mv \"\$live\" \"\$failed\"
+                mv \"\$backup\" \"\$live\"
+                echo 'Rollback successfully completed.'
+              else
+                echo \"Rollback backup not found at \$backup!\"
+                exit 1
+              fi
+            "
             {
               echo "### Deployment Failed & Rolled Back"
-              echo "- **Frontend URL:** \`$FRONTEND_URL\` failed health check."
+              echo "- **Error:** $err_msg"
               echo "- **Status:** Automatically rolled back to previous version on VPS."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
+          }
+
+          if [ "$frontend_ok" != "true" ]; then
+            rollback_release "Frontend health check failed at $FRONTEND_URL!"
           fi
 
           echo "2. Checking PocketBase API URL: $API_HEALTH_URL"
@@ -324,31 +328,7 @@ jobs:
           done
 
           if [ "$api_ok" != "true" ]; then
-            echo "::error::PocketBase API health check failed at $API_HEALTH_URL!"
-            echo "Triggering automatic rollback on VPS..."
-            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'ROLLBACK'
-            set -euo pipefail
-            release_id="$1"
-            parent="/srv/www"
-            live="$parent/wedding-planner"
-            backup="$parent/.wedding-planner-backup-$release_id"
-            failed="$parent/.wedding-planner-failed-$release_id"
-            if [ -d "$backup" ]; then
-              echo "Restoring previous release from $backup..."
-              [ -d "$live" ] && mv "$live" "$failed"
-              mv "$backup" "$live"
-              echo "Rollback successfully completed."
-            else
-              echo "Rollback backup not found at $backup!"
-              exit 1
-            fi
-            ROLLBACK
-            {
-              echo "### Deployment Failed & Rolled Back"
-              echo "- **API URL:** \`$API_HEALTH_URL\` failed health check."
-              echo "- **Status:** Automatically rolled back to previous version on VPS."
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+            rollback_release "PocketBase API health check failed at $API_HEALTH_URL!"
           fi
 
           echo "All health checks passed successfully!"
