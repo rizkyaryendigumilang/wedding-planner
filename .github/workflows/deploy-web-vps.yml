@@ -60,7 +60,7 @@ jobs:
 
       - name: Build for the /wedding/ route
         env:
-          VITE_PB_URL: ${{ secrets.VITE_PB_URL || 'https://43.156.236.102/api/' }}
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL || 'https://43.156.236.102' }}
         run: npm run build -- --base=/wedding/
 
       - name: Validate built asset paths
@@ -169,24 +169,24 @@ jobs:
           printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-          RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}"
+          RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
           ARCHIVE_NAME="wedding-dist-${RELEASE_ID}.tar.gz"
           cp ./web-artifact/wedding-dist.tar.gz "./$ARCHIVE_NAME"
 
           echo "Uploading release archive $ARCHIVE_NAME to $VPS_USER@$VPS_HOST ..."
           scp -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -P "$VPS_PORT" "./$ARCHIVE_NAME" "$VPS_USER@$VPS_HOST:$ARCHIVE_NAME"
 
-          echo "Applying release on VPS with atomic swap and staging validation..."
+          echo "Applying release on VPS with staged swap and staging validation..."
           ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID' '$ARCHIVE_NAME'" <<'REMOTE'
           set -Eeuo pipefail
           release_id="$1"
           archive_name="$2"
 
-          if [[ ! "$release_id" =~ ^[0-9a-f]{40}-[0-9]+$ ]]; then
+          if [[ ! "$release_id" =~ ^[0-9a-f]{40}-[0-9]+(-[0-9]+)?$ ]]; then
             echo "Invalid release identifier format."
             exit 1
           fi
-          if [[ ! "$archive_name" =~ ^wedding-dist-[0-9a-f]{40}-[0-9]+\.tar\.gz$ ]]; then
+          if [[ ! "$archive_name" =~ ^wedding-dist-[0-9a-f]{40}-[0-9]+(-[0-9]+)?\.tar\.gz$ ]]; then
             echo "Invalid archive name format."
             exit 1
           fi
@@ -213,11 +213,36 @@ jobs:
             echo "Uploaded archive $archive is missing or empty."
             exit 1
           }
-          test ! -e "$stage"
-          test ! -e "$backup"
+
+          # Pre-flight check: Prevent re-run collision and directory corruption
+          if [ -e "$backup" ]; then
+            echo "::error::Release ID collision: Backup directory $backup already exists on VPS!"
+            echo "::error::Refusing to proceed to prevent overwriting rollback backup or nesting directories."
+            exit 1
+          fi
+          if [ -e "$stage" ]; then
+            echo "::error::Staging directory $stage already exists on VPS from a previous attempt!"
+            echo "::error::Refusing to proceed to prevent using corrupted staging data."
+            exit 1
+          fi
 
           mkdir -m 755 "$stage"
-          trap 'status=$?; if [ ! -e "$live" ] && [ -d "$backup" ]; then mv "$backup" "$live"; fi; rm -rf "$stage" "$archive"; exit "$status"' ERR
+
+          cleanup_on_failure() {
+            local exit_code=$?
+            trap - EXIT HUP INT TERM ERR
+            if [ "$exit_code" -ne 0 ]; then
+              echo "Remote deployment encountered an error (exit code $exit_code). Checking state..."
+              if [ ! -e "$live" ] && [ -d "$backup" ]; then
+                echo "Restoring previous live release from $backup to $live..."
+                mv "$backup" "$live" || echo "::error::CRITICAL: Failed to restore $backup to $live!"
+              fi
+              [ -d "$stage" ] && rm -rf "$stage"
+              [ -f "$archive" ] && rm -f "$archive"
+            fi
+            exit "$exit_code"
+          }
+          trap cleanup_on_failure EXIT HUP INT TERM ERR
 
           tar -xzf "$archive" -C "$stage"
           chmod -R u+rwX,go+rX "$stage"
@@ -241,16 +266,47 @@ jobs:
             }
           done
 
-          # Atomic swap: backup current live, activate stage
-          mv "$live" "$backup"
-          mv "$stage" "$live"
-          trap - ERR
-          rm -f "$archive"
+          # Staged release swap: move live to backup, then activate stage
+          echo "Backing up existing live deployment to $backup..."
+          if ! mv "$live" "$backup"; then
+            echo "::error::CRITICAL: Failed to move live directory to $backup! Aborting swap."
+            exit 1
+          fi
 
-          # Retain only the last 5 backup releases to manage disk space
-          ls -dt /srv/www/.wedding-planner-backup-* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+          if [ -e "$live" ]; then
+            echo "::error::CRITICAL: Live directory $live still exists after moving to backup! Aborting swap."
+            exit 1
+          fi
 
-          echo "Atomic swap completed successfully."
+          echo "Activating staged release to $live..."
+          if ! mv "$stage" "$live"; then
+            echo "::error::CRITICAL: Failed to activate stage to $live! Restoring backup..."
+            if [ -d "$backup" ] && [ ! -e "$live" ]; then
+              mv "$backup" "$live" || echo "::error::CRITICAL: Failed to restore $backup to $live!"
+            fi
+            exit 1
+          fi
+
+          # Sanity check: $live MUST exist and contain index.html
+          if [ ! -d "$live" ] || [ ! -s "$live/index.html" ]; then
+            echo "::error::CRITICAL: Activated live directory $live is invalid or missing index.html! Recovering backup..."
+            [ -d "$live" ] && mv "$live" "$parent/.wedding-planner-failed-$release_id"
+            if [ -d "$backup" ] && [ ! -e "$live" ]; then
+              mv "$backup" "$live" || echo "::error::CRITICAL: Failed to restore $backup to $live!"
+            fi
+            exit 1
+          fi
+
+          # Release swap completed successfully; disarm failure trap
+          trap - EXIT HUP INT TERM ERR
+
+          # Non-fatal archive cleanup: failure to remove temporary archive does not skip health check
+          if ! rm -f "$archive"; then
+            echo "::warning::Failed to remove uploaded archive $archive. Manual cleanup may be required."
+          fi
+
+          # NOTE: Old backups are NOT pruned here. Backup is strictly preserved until health checks pass.
+          echo "Staged release swap completed successfully."
           echo "Live directory: $live"
           echo "Rollback directory: $backup"
           REMOTE
@@ -262,76 +318,152 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '22' }}
         run: |
           set -euo pipefail
-          RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}"
+          RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
           FRONTEND_URL="https://${VPS_HOST}/wedding/"
-          API_HEALTH_URL="https://${VPS_HOST}/api/health"
+          API_HEALTH_URL="https://${VPS_HOST}/wedding-api/health"
 
           echo "Starting dual health check with strict TLS verification..."
-          echo "1. Checking Frontend URL: $FRONTEND_URL"
-
-          # Retry loop for frontend (allow up to 30 seconds for web server)
-          frontend_ok=false
-          for i in {1..6}; do
-            frontend_body=$(curl -fsS --max-time 10 "$FRONTEND_URL" 2>/dev/null || true)
-            if echo "$frontend_body" | grep -q 'id="root"' && echo "$frontend_body" | grep -q '<title>Wedding Planner'; then
-              echo "Frontend health check passed (attempt $i)."
-              frontend_ok=true
-              break
-            fi
-            echo "Waiting for frontend to respond with valid HTML (attempt $i/6)..."
-            sleep 5
-          done
 
           rollback_release() {
             local err_msg="$1"
             echo "::error::$err_msg"
             echo "Triggering automatic rollback on VPS..."
-            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "
-              set -eu
+            local rollback_status=0
+            if ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'REMOTE_ROLLBACK'
+              set -euo pipefail
+              release_id="$1"
               parent='/srv/www'
-              live=\"\$parent/wedding-planner\"
-              backup=\"\$parent/.wedding-planner-backup-$RELEASE_ID\"
-              failed=\"\$parent/.wedding-planner-failed-$RELEASE_ID\"
-              if [ -d \"\$backup\" ]; then
-                echo \"Restoring previous release from \$backup...\"
-                [ -d \"\$live\" ] && mv \"\$live\" \"\$failed\"
-                mv \"\$backup\" \"\$live\"
-                echo 'Rollback successfully completed.'
-              else
-                echo \"Rollback backup not found at \$backup!\"
+              live="$parent/wedding-planner"
+              backup="$parent/.wedding-planner-backup-$release_id"
+              failed="$parent/.wedding-planner-failed-$release_id"
+
+              if [ ! -d "$backup" ]; then
+                echo "::error::CRITICAL: Rollback backup directory not found at $backup!"
+                echo "::error::Preserving live site as-is. Check VPS /srv/www for available backups."
                 exit 1
               fi
-            "
-            {
-              echo "### Deployment Failed & Rolled Back"
-              echo "- **Error:** $err_msg"
-              echo "- **Status:** Automatically rolled back to previous version on VPS."
-            } >> "$GITHUB_STEP_SUMMARY"
+
+              echo "Restoring previous release from $backup to $live..."
+              if [ -d "$live" ]; then
+                if ! mv "$live" "$failed"; then
+                  echo "::error::CRITICAL: Failed to move current live directory to $failed! Preserving $backup and stopping."
+                  exit 1
+                fi
+              fi
+
+              if ! mv "$backup" "$live"; then
+                echo "::error::CRITICAL: Failed to restore $backup to $live! Attempting recovery..."
+                [ -d "$failed" ] && mv "$failed" "$live"
+                echo "::error::CRITICAL: Manual recovery required. Check backup at $backup and failed snapshot at $failed."
+                exit 1
+              fi
+
+              # Verify restored live directory has valid index.html
+              if [ -d "$live" ] && [ -s "$live/index.html" ]; then
+                echo 'Rollback successfully completed and verified.'
+              else
+                echo "::error::CRITICAL: Restored directory $live failed post-rollback verification (index.html missing or empty)!"
+                echo "::error::Snapshot of faulty live was saved at $failed. Backup source was $backup."
+                exit 1
+              fi
+          REMOTE_ROLLBACK
+            then
+              {
+                echo "### Deployment Failed & Rolled Back"
+                echo "- **Error:** $err_msg"
+                echo "- **Rollback Status:** Successfully restored and verified previous release on VPS."
+                echo "- **Faulty Release Snapshot:** Preserved at \`/srv/www/.wedding-planner-failed-${RELEASE_ID}\`."
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              rollback_status=$?
+              echo "::error::Automatic rollback on VPS failed with exit code $rollback_status!"
+              {
+                echo "### Deployment Failed & Rollback FAILED"
+                echo "- **Error:** $err_msg"
+                echo "- **Rollback Status:** CRITICAL: Automatic rollback failed on VPS (exit code $rollback_status). Immediate manual investigation required!"
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
             exit 1
           }
 
+          echo "1. Checking Frontend URL: $FRONTEND_URL"
+          frontend_ok=false
+          frontend_last_err=""
+          for i in {1..6}; do
+            curl_output=""
+            if curl_output=$(curl -fsS --max-time 10 -w "\nHTTP_STATUS:%{http_code}" "$FRONTEND_URL" 2>&1); then
+              status_code=$(echo "$curl_output" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2 || true)
+              frontend_body=$(echo "$curl_output" | sed -E 's/HTTP_STATUS:[0-9]+$//')
+              if [ "$status_code" = "200" ] && echo "$frontend_body" | grep -q 'id="root"' && echo "$frontend_body" | grep -qi 'Wedding Planner'; then
+                echo "Frontend health check passed (attempt $i, HTTP $status_code)."
+                frontend_ok=true
+                break
+              else
+                frontend_last_err="HTTP $status_code response invalid (expected HTTP 200 with id='root' and title 'Wedding Planner')."
+              fi
+            else
+              curl_exit=$?
+              frontend_last_err="Network/HTTP request failed (curl exit $curl_exit)."
+            fi
+            echo "Waiting for frontend to respond with valid HTML (attempt $i/6)..."
+            sleep 5
+          done
+
           if [ "$frontend_ok" != "true" ]; then
-            rollback_release "Frontend health check failed at $FRONTEND_URL!"
+            rollback_release "Frontend health check failed at $FRONTEND_URL after 6 attempts. Last error: $frontend_last_err"
           fi
 
           echo "2. Checking PocketBase API URL: $API_HEALTH_URL"
           api_ok=false
+          api_last_err=""
           for i in {1..6}; do
-            api_body=$(curl -fsS --max-time 10 "$API_HEALTH_URL" 2>/dev/null || true)
-            if echo "$api_body" | grep -q '"code":200' && echo "$api_body" | grep -q 'API is healthy'; then
-              echo "PocketBase API health check passed (attempt $i)."
-              api_ok=true
-              break
+            curl_output=""
+            if curl_output=$(curl -fsS --max-time 10 -w "\nHTTP_STATUS:%{http_code}" "$API_HEALTH_URL" 2>&1); then
+              status_code=$(echo "$curl_output" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2 || true)
+              api_body=$(echo "$curl_output" | sed -E 's/HTTP_STATUS:[0-9]+$//')
+              # Check HTTP 200, JSON code 200, and message "API is healthy"
+              if [ "$status_code" = "200" ] && echo "$api_body" | grep -qE '"code"[[:space:]]*:[[:space:]]*200' && echo "$api_body" | grep -qi 'API is healthy'; then
+                echo "PocketBase API health check passed (attempt $i, HTTP $status_code)."
+                api_ok=true
+                break
+              else
+                api_last_err="HTTP $status_code response invalid (expected HTTP 200, JSON code:200, and healthy message)."
+              fi
+            else
+              curl_exit=$?
+              api_last_err="API request failed (curl exit $curl_exit)."
             fi
             echo "Waiting for API to respond healthy (attempt $i/6)..."
             sleep 5
           done
 
           if [ "$api_ok" != "true" ]; then
-            rollback_release "PocketBase API health check failed at $API_HEALTH_URL!"
+            rollback_release "PocketBase API health check failed at $API_HEALTH_URL after 6 attempts. Last error: $api_last_err"
           fi
 
           echo "All health checks passed successfully!"
+
+          # Housekeeping: Prune older backups only after health checks have fully succeeded.
+          # Retains the 5 most recent backups and explicitly preserves the active release backup.
+          # Housekeeping failure emits a warning and does NOT fail an already healthy deployment.
+          echo "Pruning older backups while preserving the active release backup..."
+          if ! ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s -- '$RELEASE_ID'" <<'REMOTE_PRUNE'
+            set -euo pipefail
+            release_id="$1"
+            parent='/srv/www'
+            active_backup="$parent/.wedding-planner-backup-$release_id"
+            mapfile -t old_backups < <(ls -dt "$parent"/.wedding-planner-backup-* 2>/dev/null | tail -n +6 || true)
+            for b in "${old_backups[@]:-}"; do
+              if [ -n "$b" ] && [ "$b" != "$active_backup" ] && [ -d "$b" ]; then
+                echo "Pruning old backup: $b"
+                rm -rf "$b"
+              fi
+            done
+          REMOTE_PRUNE
+          then
+            echo "::warning::Backup housekeeping encountered an issue. Live release is active and verified healthy."
+          fi
+
           {
             echo "### Web Deployment Succeeded"
             echo "- **Commit SHA:** \`${GITHUB_SHA}\`"

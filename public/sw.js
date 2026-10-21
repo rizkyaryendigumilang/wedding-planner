@@ -1,4 +1,4 @@
-const CACHE_NAME = "wedding-planner-v1";
+const CACHE_NAME = "wedding-planner-v2";
 
 // Resolve scope directory as base path (e.g. "/wedding/" or "/")
 const basePath = new URL(self.registration.scope).pathname.replace(/\/?$/, "/");
@@ -59,13 +59,17 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Media & berkas PocketBase: Cache-first agar foto prewedding terbuka instan & hemat kuota
-  if (url.pathname.startsWith("/api/files/")) {
+  if (url.pathname.startsWith("/api/files/") || url.pathname.startsWith("/wedding-api/files/")) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) return cachedResponse;
         return fetch(request)
           .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
+            if (
+              networkResponse &&
+              networkResponse.status === 200 &&
+              (networkResponse.type === "basic" || networkResponse.type === "cors")
+            ) {
               const clone = networkResponse.clone();
               caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             }
@@ -78,7 +82,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // PocketBase dynamic JSON API: network first, no offline cache for sensitive dynamic data
-  if (url.pathname.startsWith("/api/")) {
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/wedding-api/")) {
     event.respondWith(
       fetch(request).catch(() => {
         return new Response(JSON.stringify({ error: "offline", message: "Anda sedang offline." }), {
