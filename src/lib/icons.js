@@ -51,3 +51,11 @@ export const UI_ICONS = {
   save: Save,
   remove: Trash2,
 };
+
+/**
+ * Path aset statis yang otomatis mengikuti base URL deployment Vite (misal: /wedding/).
+ * Menghindari URL absolut domain root (/logo-transparent.png) yang memicu 404 pada subpath.
+ */
+const BASE = import.meta.env?.BASE_URL || "/";
+export const LOGO_URL = `${BASE}logo-transparent.png`;
+export const APP_ICON_URL = `${BASE}apple-touch-icon.png`;

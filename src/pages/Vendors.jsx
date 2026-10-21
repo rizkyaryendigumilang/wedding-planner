@@ -38,6 +38,7 @@ import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { daysUntil, formatDateShort, pct, formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
+import { APP_ICON_URL } from "../lib/icons";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -482,7 +483,7 @@ export default function Vendors() {
     if (Notification.permission === "granted") {
       new Notification("Pengingat Vendor Pernikahan", {
         body: `Ada ${overdueList.length + thisWeekList.length} tugas vendor yang memerlukan perhatian!`,
-        icon: "/apple-touch-icon.png",
+        icon: APP_ICON_URL,
       });
       return;
     }
@@ -492,7 +493,7 @@ export default function Vendors() {
       setNotifGranted(true);
       new Notification("Pengingat Aktif!", {
         body: "Anda akan mendapatkan pemberitahuan saat ada tenggat vendor yang mendekati.",
-        icon: "/apple-touch-icon.png",
+        icon: APP_ICON_URL,
       });
     }
   };

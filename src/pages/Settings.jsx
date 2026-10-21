@@ -55,6 +55,7 @@ import { useTheme } from "../lib/theme";
 import { formatDateId, formatRupiah } from "../lib/format";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
+import { LOGO_URL } from "../lib/icons";
 import pb from "../lib/pocketbase";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -2231,7 +2232,7 @@ export default function Settings() {
               <div className="flex items-center gap-4 mt-4 p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-soft grid place-items-center shrink-0 border border-white/20">
                   <img
-                    src="/logo-transparent.png"
+                    src={LOGO_URL}
                     alt="Logo Wedding Rings"
                     className="w-full h-full object-contain filter drop-shadow"
                   />

@@ -32,7 +32,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
-import { MODULE_ICONS } from "../lib/icons";
+import { MODULE_ICONS, LOGO_URL } from "../lib/icons";
 import {
   formatRupiah,
   formatDateId,
@@ -169,7 +169,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-3.5 mb-2">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-600/90 to-rose-700/90 p-1.5 shadow-glow grid place-items-center shrink-0 border border-white/20 backdrop-blur-sm">
                 <img
-                  src="/logo-transparent.png"
+                  src={LOGO_URL}
                   alt="Wedding Logo"
                   className="w-full h-full object-contain filter drop-shadow"
                 />

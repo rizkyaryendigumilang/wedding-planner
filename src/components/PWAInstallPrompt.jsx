@@ -12,6 +12,7 @@ import {
   Laptop,
 } from "lucide-react";
 import { usePWA } from "../lib/usePWA";
+import { LOGO_URL } from "../lib/icons";
 
 /**
  * Modal petunjuk untuk pengguna di dalam In-App Browser (misal: Instagram, WhatsApp, TikTok).
@@ -137,7 +138,7 @@ export function IOSInstallModal({ isOpen, onClose }) {
           <div className="flex items-center gap-3.5 mb-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-soft grid place-items-center shrink-0 border border-white/20">
               <img
-                src="/logo-transparent.png"
+                src={LOGO_URL}
                 alt="Wedding Logo"
                 className="w-full h-full object-contain filter drop-shadow"
               />
@@ -323,7 +324,7 @@ export function PWAInstallFloatingBanner() {
               <div className="relative shrink-0">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-soft grid place-items-center shrink-0 border border-white/20">
                   <img
-                    src="/logo-transparent.png"
+                    src={LOGO_URL}
                     alt="Wedding Rings"
                     className="w-full h-full object-contain filter drop-shadow"
                   />
@@ -437,7 +438,7 @@ export function PWAInstallBanner({ className = "" }) {
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-soft grid place-items-center shrink-0 border border-white/20">
               <img
-                src="/logo-transparent.png"
+                src={LOGO_URL}
                 alt="Wedding Logo"
                 className="w-full h-full object-contain filter drop-shadow"
               />

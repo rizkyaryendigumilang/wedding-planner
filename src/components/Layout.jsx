@@ -5,7 +5,7 @@ import { RefreshCw, LogOut, MoreHorizontal, X, Pencil } from "lucide-react";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
-import { MODULE_ICONS, UI_ICONS } from "../lib/icons";
+import { MODULE_ICONS, UI_ICONS, LOGO_URL } from "../lib/icons";
 import { Avatar } from "./Avatar";
 import { PWAInstallButton, PWAInstallFloatingBanner } from "./PWAInstallPrompt";
 
@@ -66,7 +66,7 @@ export default function Layout() {
         <div className="flex items-center gap-3 px-5 py-5">
           <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-1.5 grid place-items-center shadow-glow shrink-0 border border-white/20">
             <img
-              src="/logo-transparent.png"
+              src={LOGO_URL}
               alt="Logo Wedding Rings"
               className="w-full h-full object-contain filter drop-shadow"
             />
@@ -135,7 +135,7 @@ export default function Layout() {
           >
             <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-1.5 grid place-items-center shadow-glow shrink-0 border border-white/20">
               <img
-                src="/logo-transparent.png"
+                src={LOGO_URL}
                 alt="Logo"
                 className="w-full h-full object-contain filter drop-shadow"
               />
@@ -173,7 +173,7 @@ export default function Layout() {
         </main>
 
         <footer className="hidden lg:flex items-center justify-center gap-2 px-8 pb-6 text-center text-[11px] text-ink-faint">
-          <img src="/logo-transparent.png" alt="Logo" className="w-4 h-4 object-contain inline-block opacity-75" />
+          <img src={LOGO_URL} alt="Logo" className="w-4 h-4 object-contain inline-block opacity-75" />
           <span>
             Wedding Planner • Rizky &amp; Reina •{" "}
             {loading ? "menyinkronkan…" : isLiveConnected ? "⚡ sinkron live real-time" : "tersinkron dengan PocketBase"}
@@ -243,7 +243,7 @@ export default function Layout() {
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 p-1 shadow-glow grid place-items-center shrink-0 border border-white/20">
                     <img
-                      src="/logo-transparent.png"
+                      src={LOGO_URL}
                       alt="Logo"
                       className="w-full h-full object-contain filter drop-shadow"
                     />

@@ -13,6 +13,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { LOGO_URL } from "../lib/icons";
 import { PWAInstallButton } from "../components/PWAInstallPrompt";
 
 function GoogleIcon({ className = "w-4 h-4" }) {
@@ -214,7 +215,7 @@ export default function Login() {
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-glow grid place-items-center shrink-0 border border-white/20">
               <img
-                src="/logo-transparent.png"
+                src={LOGO_URL}
                 alt="Logo Wedding Rings"
                 className="w-full h-full object-contain filter drop-shadow"
               />
@@ -303,7 +304,7 @@ export default function Login() {
           <div className="lg:hidden flex flex-col items-center text-center mb-6">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-rose-600 to-rose-700 p-2.5 shadow-glow grid place-items-center shrink-0 border border-white/20">
               <img
-                src="/logo-transparent.png"
+                src={LOGO_URL}
                 alt="Logo Wedding Planner"
                 className="w-full h-full object-contain filter drop-shadow"
               />
