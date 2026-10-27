@@ -28,6 +28,7 @@ import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -148,12 +149,14 @@ export default function Gifts() {
       };
       if (editingItem) {
         await updateGift(editingItem.id, payload);
+        toast.success(`Data kado dari "${form.guest_name}" berhasil diperbarui!`);
       } else {
         await addGift(payload);
+        toast.success(`Data kado dari "${form.guest_name}" berhasil dicatat!`);
       }
       setModalOpen(false);
     } catch (err) {
-      alert("Gagal menyimpan data kado: " + (err?.message || ""));
+      toast.error("Gagal menyimpan data kado: " + (err?.message || ""));
     } finally {
       setLoadingAction(false);
     }
@@ -162,8 +165,13 @@ export default function Gifts() {
   const handleToggleThankYou = async (item) => {
     try {
       await updateGift(item.id, { thank_you_sent: !item.thank_you_sent });
+      toast.success(
+        `Ucapan terima kasih untuk "${item.guest_name}" ditandai ${
+          !item.thank_you_sent ? "Sudah Terkirim" : "Belum Dikirim"
+        }`
+      );
     } catch (err) {
-      alert("Gagal mengubah status: " + (err?.message || ""));
+      toast.error("Gagal mengubah status: " + (err?.message || ""));
     }
   };
 

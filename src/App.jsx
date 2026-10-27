@@ -1,7 +1,9 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
+import "sonner/dist/styles.css";
 import { AuthProvider, useAuth } from "./lib/auth";
-import { ThemeProvider } from "./lib/theme";
+import { ThemeProvider, useTheme } from "./lib/theme";
 import { WeddingProvider } from "./lib/weddingData";
 import Layout from "./components/Layout";
 import { Loading } from "./components/ui";
@@ -94,9 +96,26 @@ function AppRoutes() {
   );
 }
 
+function ThemedToaster() {
+  const { theme } = useTheme();
+  return (
+    <Toaster
+      position="top-center"
+      theme={theme}
+      richColors
+      closeButton
+      mobileOffset={{ top: "16px", left: "16px", right: "16px" }}
+      toastOptions={{
+        className: "!font-sans !rounded-2xl !shadow-lift !border !border-line dark:!border-night-line !text-xs sm:!text-sm",
+      }}
+    />
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
+      <ThemedToaster />
       <AuthProvider>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />

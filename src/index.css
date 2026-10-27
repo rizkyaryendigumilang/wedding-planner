@@ -50,12 +50,16 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Teks tombol/label tidak ikut terpilih saat ditekan lama. */
+  /* Hilangkan jeda 300ms pada sentuhan & seleksi teks yang tidak diinginkan pada kontrol interaktif. */
   button,
   [role='button'],
-  nav a {
+  nav a,
+  a,
+  .tappable {
+    touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* Hormati preferensi aksesibilitas: matikan seluruh animasi. */

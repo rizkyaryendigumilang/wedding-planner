@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -15,6 +15,7 @@ import {
 import { useAuth } from "../lib/auth";
 import { LOGO_URL } from "../lib/icons";
 import { PWAInstallButton } from "../components/PWAInstallPrompt";
+import pb from "../lib/pocketbase";
 
 function GoogleIcon({ className = "w-4 h-4" }) {
   return (
@@ -79,6 +80,57 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [regRole, setRegRole] = useState("CPP");
+
+  // Profil Mempelai (CPP & CPW) yang mendaftar / tersimpan
+  const [partnerProfiles, setPartnerProfiles] = useState(() => {
+    let cpp = null;
+    let cpw = null;
+    try {
+      const rawCpp = localStorage.getItem("wedding_cpp_profile");
+      if (rawCpp) cpp = JSON.parse(rawCpp);
+      const rawCpw = localStorage.getItem("wedding_cpw_profile");
+      if (rawCpw) cpw = JSON.parse(rawCpw);
+
+      const cached = localStorage.getItem("wedding_planner_cache_v2");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.couple) {
+          if (!cpp && (parsed.couple.cpp_nickname || parsed.couple.cpp_full_name)) {
+            cpp = {
+              name: parsed.couple.cpp_nickname || parsed.couple.cpp_full_name,
+              username: "admin",
+            };
+          }
+          if (!cpw && (parsed.couple.cpw_nickname || parsed.couple.cpw_full_name)) {
+            cpw = {
+              name: parsed.couple.cpw_nickname || parsed.couple.cpw_full_name,
+              username: "reina",
+            };
+          }
+        }
+      }
+    } catch (_) {}
+    return { cpp, cpw };
+  });
+
+  useEffect(() => {
+    let active = true;
+    pb.collection("couples")
+      .getFullList({ sort: "-created" })
+      .then((couples) => {
+        if (!active || !couples.length) return;
+        const c = couples[0];
+        setPartnerProfiles((prev) => ({
+          cpp: prev.cpp || (c.cpp_nickname || c.cpp_full_name ? { name: c.cpp_nickname || c.cpp_full_name, username: "admin" } : null),
+          cpw: prev.cpw || (c.cpw_nickname || c.cpw_full_name ? { name: c.cpw_nickname || c.cpw_full_name, username: "reina" } : null),
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,6 +188,7 @@ export default function Login() {
         email,
         password,
         passwordConfirm,
+        partner_role: regRole,
       });
       navigate(location.state?.from?.pathname || "/", { replace: true });
     } catch (err) {
@@ -432,53 +485,59 @@ export default function Login() {
           {/* ---------------- FORMULIR MASUK / DAFTAR ---------------- */}
           {mode === "login" ? (
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              {/* Quick Profile Switcher (Rizky & Reina) */}
-              <div className="p-3 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line">
-                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-2 text-center">
-                  Pilih Profil Masuk Cepat
+              {/* Role Switcher: Calon Pengantin Pria & Calon Pengantin Wanita */}
+              <div className="p-1.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line">
+                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-1.5 text-center">
+                  Masuk Sebagai Mempelai
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
-                      setIdentity("admin");
                       setError("");
+                      const target = partnerProfiles.cpp?.username || "admin";
+                      setIdentity(target);
                       document.getElementById("password")?.focus();
                     }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-left transition ${
-                      identity === "admin" || identity === "rizky"
-                        ? "border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300 font-semibold shadow-xs"
-                        : "border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:border-sky-400 text-ink"
+                    className={`flex items-center gap-2 p-2 rounded-xl text-left border transition ${
+                      identity === (partnerProfiles.cpp?.username || "admin")
+                        ? "border-sky-500 bg-sky-500/10 text-sky-800 dark:text-sky-200 font-semibold shadow-xs"
+                        : "border-transparent bg-canvas-card/80 dark:bg-night-card/80 hover:border-sky-400 text-ink"
                     }`}
                   >
                     <span className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 text-white grid place-items-center text-xs font-bold shrink-0">
-                      R
+                      {partnerProfiles.cpp?.name ? partnerProfiles.cpp.name.charAt(0).toUpperCase() : "P"}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs truncate leading-tight">Rizky (CPP)</p>
-                      <p className="text-[10px] text-ink-faint leading-none mt-0.5">@admin</p>
+                      <p className="text-xs truncate leading-tight font-semibold">Calon Pengantin Pria</p>
+                      <p className="text-[10px] text-ink-faint leading-none mt-0.5 truncate">
+                        {partnerProfiles.cpp?.name || "Belum Terdaftar"}
+                      </p>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setIdentity("reina");
                       setError("");
+                      const target = partnerProfiles.cpw?.username || "reina";
+                      setIdentity(target);
                       document.getElementById("password")?.focus();
                     }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-left transition ${
-                      identity === "reina"
-                        ? "border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300 font-semibold shadow-xs"
-                        : "border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:border-rose-400 text-ink"
+                    className={`flex items-center gap-2 p-2 rounded-xl text-left border transition ${
+                      identity === (partnerProfiles.cpw?.username || "reina")
+                        ? "border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 font-semibold shadow-xs"
+                        : "border-transparent bg-canvas-card/80 dark:bg-night-card/80 hover:border-rose-400 text-ink"
                     }`}
                   >
                     <span className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white grid place-items-center text-xs font-bold shrink-0">
-                      R
+                      {partnerProfiles.cpw?.name ? partnerProfiles.cpw.name.charAt(0).toUpperCase() : "W"}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs truncate leading-tight">Reina (CPW)</p>
-                      <p className="text-[10px] text-ink-faint leading-none mt-0.5">@reina</p>
+                      <p className="text-xs truncate leading-tight font-semibold">Calon Pengantin Wanita</p>
+                      <p className="text-[10px] text-ink-faint leading-none mt-0.5 truncate">
+                        {partnerProfiles.cpw?.name || "Belum Terdaftar"}
+                      </p>
                     </div>
                   </button>
                 </div>
@@ -559,6 +618,38 @@ export default function Login() {
           ) : (
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1">
+                  Mendaftar Sebagai
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRegRole("CPP")}
+                    className={`p-2.5 rounded-xl border text-left transition ${
+                      regRole === "CPP"
+                        ? "border-sky-500 bg-sky-500/10 text-sky-800 dark:text-sky-200 font-semibold ring-2 ring-sky-500/20"
+                        : "border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:border-sky-400 text-ink"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold">Calon Pengantin Pria</p>
+                    <p className="text-[10px] text-ink-faint mt-0.5">Mempelai Pria (CPP)</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRegRole("CPW")}
+                    className={`p-2.5 rounded-xl border text-left transition ${
+                      regRole === "CPW"
+                        ? "border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 font-semibold ring-2 ring-rose-500/20"
+                        : "border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:border-rose-400 text-ink"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold">Calon Pengantin Wanita</p>
+                    <p className="text-[10px] text-ink-faint mt-0.5">Mempelai Wanita (CPW)</p>
+                  </button>
+                </div>
+              </div>
+
+              <div>
                 <label
                   htmlFor="reg-name"
                   className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
@@ -572,7 +663,7 @@ export default function Login() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  placeholder="Rizky Aryendi"
+                  placeholder="Nama lengkap"
                   className="field"
                 />
               </div>
@@ -591,7 +682,7 @@ export default function Login() {
                     autoComplete="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="rizky"
+                    placeholder="username"
                     className="field"
                   />
                 </div>

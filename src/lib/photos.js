@@ -102,3 +102,69 @@ export function guessAltFromUrl(url, fallback = "Foto prewedding") {
     return fallback;
   }
 }
+
+/**
+ * Kompresi berkas foto di sisi peramban sebelum diunggah ke server:
+ * - Menyesuaikan dimensi maksimal ke 1920x1920 (Full HD retina)
+ * - Mengonversi ke format WebP teroptimasi (kualitas 0.82)
+ * - Mereduksi ukuran dari 10-25MB kamera HP menjadi ~200-500KB tanpa penurunan ketajaman kasat mata
+ * - Memangkas waktu unggah dan menghemat kuota server
+ */
+export async function compressImageFile(file, { maxWidth = 1920, maxHeight = 1920, quality = 0.82 } = {}) {
+  if (!file || !file.type || !file.type.startsWith("image/")) return file;
+  if (file.type === "image/svg+xml" || file.type === "image/gif") return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width / height > maxWidth / maxHeight) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || blob.size >= file.size) {
+            resolve(file);
+            return;
+          }
+          const newName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+          const compressedFile = new File([blob], newName, {
+            type: "image/webp",
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        "image/webp",
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+
+    img.src = objectUrl;
+  });
+}

@@ -349,10 +349,22 @@ export function WeddingProvider({ children }) {
 
   const saveCouple = useCallback(
     async (patch) => {
-      if (!coupleId) return null;
-      const updated = await pb.collection("couples").update(coupleId, patch);
+      let result;
+      if (!coupleId) {
+        const payload = {
+          wedding_date: "2028-02-17",
+          cpp_nickname: "CPP",
+          cpw_nickname: "CPW",
+          venue: "Gedung Pernikahan",
+          target_budget: 0,
+          ...patch,
+        };
+        result = await pb.collection("couples").create(payload);
+      } else {
+        result = await pb.collection("couples").update(coupleId, patch);
+      }
       await load();
-      return updated;
+      return result;
     },
     [coupleId, load]
   );

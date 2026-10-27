@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Countdown from "../components/Countdown";
-import { PWAInstallBanner } from "../components/PWAInstallPrompt";
 import {
   Page,
   Card,
@@ -74,11 +73,28 @@ export default function Dashboard() {
   if (error) return <ErrorState message={error} onRetry={reload} />;
   if (!couple) {
     return (
-      <Card className="text-center py-16">
-        <p className="text-ink-muted">
-          Belum ada data pasangan. Jalankan <code className="font-mono">npm run seed</code>.
-        </p>
-      </Card>
+      <Page>
+        <Card className="text-center py-12 px-6 max-w-lg mx-auto border-dashed">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-rose-500/20 to-rose-600/10 border border-rose-500/30 grid place-items-center text-rose-600 dark:text-rose-400">
+            <Sparkles size={28} />
+          </div>
+          <h2 className="font-display text-2xl font-semibold text-ink dark:text-stone-50">
+            Selamat Datang di Wedding Planner!
+          </h2>
+          <p className="text-sm text-ink-muted mt-2 max-w-md mx-auto leading-relaxed">
+            Mulai perencanaan hari bahagia Anda berdua. Atur nama kedua mempelai, tanggal pernikahan, target anggaran, dan venue acara.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/settings"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white font-medium text-sm shadow-soft transition"
+            >
+              <span>Mulai Atur Data Acara</span>
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </Card>
+      </Page>
     );
   }
 
@@ -246,9 +262,6 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.section>
-
-      {/* Ajakan Pasang ke Layar Utama (PWA) */}
-      <PWAInstallBanner />
 
       {/* ===================== SMART WEDDING ALERTS WIDGET ===================== */}
       {hasAlerts && !alertsDismissed && (

@@ -28,7 +28,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
-import { splitLinks, toDirectImageUrl, guessAltFromUrl, isDriveFolder } from "../lib/photos";
+import { splitLinks, toDirectImageUrl, guessAltFromUrl, isDriveFolder, compressImageFile } from "../lib/photos";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -72,8 +72,10 @@ export default function Gallery() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        // Kompresi di sisi klien untuk menghemat kuota dan memangkas ukuran 15MB -> ~300KB
+        const optimizedFile = await compressImageFile(file);
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("image", optimizedFile);
         formData.append("alt", file.name.replace(/\.[^/.]+$/, ""));
         formData.append("sort_order", photos.length + successCount);
         if (photos.length === 0 && successCount === 0) {

@@ -7,7 +7,6 @@ import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { MODULE_ICONS, UI_ICONS, LOGO_URL } from "../lib/icons";
 import { Avatar } from "./Avatar";
-import { PWAInstallButton, PWAInstallFloatingBanner } from "./PWAInstallPrompt";
 
 const WEDDING_DATE = "2028-02-17";
 
@@ -113,9 +112,6 @@ export default function Layout() {
             onClick={reload}
             disabled={loading}
           />
-          <div className="pt-1 pb-1">
-            <PWAInstallButton className="w-full justify-center" />
-          </div>
           <SidebarAction
             icon={<LogOut size={17} />}
             label="Keluar"
@@ -232,11 +228,11 @@ export default function Layout() {
                 // Seret ke bawah lebih dari 100px atau flick cepat (velocity > 200) = tutup
                 if (info.offset.y > 100 || info.velocity.y > 200) setSheetOpen(false);
               }}
-              className="relative w-full bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift"
+              className="relative w-full bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift overscroll-contain"
               style={{ paddingBottom: "calc(var(--safe-bottom) + 1rem)" }}
             >
-              <div className="flex justify-center pt-3 pb-1">
-                <span className="w-9 h-1 rounded-full bg-line-strong dark:bg-night-line" />
+              <div className="flex justify-center pt-3 pb-2.5 cursor-grab active:cursor-grabbing touch-none select-none">
+                <span className="w-10 h-1.5 rounded-full bg-line-strong/70 dark:bg-night-line" />
               </div>
 
               <div className="flex items-center justify-between px-5 py-3">
@@ -301,9 +297,6 @@ export default function Layout() {
                     setSheetOpen(false);
                   }}
                 />
-                <div className="pt-2 pb-1">
-                  <PWAInstallButton className="w-full justify-center" />
-                </div>
                 <SheetAction
                   icon={<LogOut size={18} />}
                   label="Keluar"
@@ -318,9 +311,6 @@ export default function Layout() {
           </div>
         )}
       </AnimatePresence>
-
-      {/* Floating 1-Klik Install Banner (muncul otomatis jika belum terpasang) */}
-      <PWAInstallFloatingBanner />
     </div>
   );
 }

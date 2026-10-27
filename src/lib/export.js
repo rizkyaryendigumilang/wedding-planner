@@ -16,19 +16,36 @@ function downloadBlob(blob, filename) {
 
 /**
  * Ekspor array of objects atau rows ke CSV dengan UTF-8 BOM agar rapi di Microsoft Excel.
+ * Mendukung panggilan 2 argumen `exportToCsv(filename, rows)` maupun 3 argumen `exportToCsv(filename, headers, rows)`.
  */
-export function exportToCsv(filename, headers, rows) {
+export function exportToCsv(filename, headersOrRows, maybeRows) {
+  let headers = headersOrRows;
+  let rows = maybeRows;
+
+  // Jika dipanggil dengan 2 argumen: exportToCsv(filename, rows)
+  if (!rows && Array.isArray(headersOrRows)) {
+    rows = headersOrRows;
+    if (rows.length > 0 && typeof rows[0] === "object") {
+      headers = Object.keys(rows[0]).map((k) => ({ key: k, label: k }));
+    } else {
+      headers = [];
+    }
+  }
+
+  if (!Array.isArray(rows) || rows.length === 0) return;
+
   const escapeCell = (val) => {
     if (val === null || val === undefined) return '""';
     const str = String(val).replace(/"/g, '""');
     return `"${str}"`;
   };
 
-  const headerRow = headers.map((h) => escapeCell(h.label || h.key)).join(",");
+  const headerRow = headers.map((h) => escapeCell(h.label || h.key || h)).join(",");
   const dataRows = rows.map((row) =>
     headers
       .map((h) => {
-        const val = typeof h.format === "function" ? h.format(row[h.key], row) : row[h.key];
+        const key = h.key || h;
+        const val = typeof h.format === "function" ? h.format(row[key], row) : row[key];
         return escapeCell(val);
       })
       .join(",")

@@ -57,6 +57,7 @@ import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
 import { LOGO_URL } from "../lib/icons";
 import pb from "../lib/pocketbase";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -321,10 +322,11 @@ export default function Settings() {
         target_budget: Number(targetBudget) || 0,
       });
       setSavedCouple(true);
+      toast.success("Data calon pengantin & acara berhasil disimpan!");
       setTimeout(() => setSavedCouple(false), 2400);
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan data acara: " + (err?.message || err));
+      toast.error("Gagal menyimpan data acara: " + (err?.message || err));
     } finally {
       setSavingCouple(false);
     }
@@ -420,11 +422,12 @@ export default function Settings() {
     try {
       await pb.collection("users").delete(userId);
       await refreshUsers();
+      toast.info(`Akun "${userName}" telah dihapus.`);
       if (addLog) {
         addLog(`Akun panitia (${userName}) telah dihapus`, "warning");
       }
     } catch (err) {
-      alert("Gagal menghapus akun: " + (err?.message || err));
+      toast.error("Gagal menghapus akun: " + (err?.message || err));
     } finally {
       setDeletingUserId(null);
     }
@@ -440,9 +443,11 @@ export default function Settings() {
         wa_invitation_template: waTemplate.trim(),
       });
       setSavedSettings(true);
+      toast.success("Tautan & template undangan WhatsApp berhasil disimpan!");
       setTimeout(() => setSavedSettings(false), 2400);
     } catch (err) {
       console.error(err);
+      toast.error("Gagal menyimpan template: " + (err?.message || err));
     } finally {
       setSavingSettings(false);
     }
@@ -460,10 +465,11 @@ export default function Settings() {
         alert_rsvp_reminder: alertRsvpReminder,
       });
       setSavedAlerts(true);
+      toast.success("Preferensi pengingat & notifikasi berhasil disimpan!");
       setTimeout(() => setSavedAlerts(false), 2400);
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan preferensi alert: " + (err?.message || err));
+      toast.error("Gagal menyimpan preferensi alert: " + (err?.message || err));
     } finally {
       setSavingAlerts(false);
     }
@@ -690,9 +696,10 @@ export default function Settings() {
     setTrashActionId(item.id);
     try {
       await restoreFromTrash(item);
+      toast.success(`"${item.item_title}" berhasil dipulihkan!`);
     } catch (err) {
       console.error("Gagal memulihkan:", err);
-      alert("Gagal memulihkan item: " + (err.message || "Terjadi kesalahan"));
+      toast.error("Gagal memulihkan item: " + (err.message || "Terjadi kesalahan"));
     } finally {
       setTrashActionId(null);
     }
@@ -705,9 +712,10 @@ export default function Settings() {
     setTrashActionId(item.id);
     try {
       await permanentDeleteFromTrash(item.id, item.item_title);
+      toast.info(`"${item.item_title}" dihapus permanen.`);
     } catch (err) {
       console.error("Gagal menghapus permanen:", err);
-      alert("Gagal menghapus item: " + (err.message || "Terjadi kesalahan"));
+      toast.error("Gagal menghapus item: " + (err.message || "Terjadi kesalahan"));
     } finally {
       setTrashActionId(null);
     }
@@ -724,9 +732,10 @@ export default function Settings() {
     setTrashActionId("all");
     try {
       await emptyTrash();
+      toast.success("Tempat sampah berhasil dikosongkan.");
     } catch (err) {
       console.error("Gagal mengosongkan tempat sampah:", err);
-      alert("Gagal mengosongkan tempat sampah: " + (err.message || "Terjadi kesalahan"));
+      toast.error("Gagal mengosongkan tempat sampah: " + (err.message || "Terjadi kesalahan"));
     } finally {
       setTrashActionId(null);
     }

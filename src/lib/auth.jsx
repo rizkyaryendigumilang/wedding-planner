@@ -80,6 +80,18 @@ export function AuthProvider({ children }) {
 
     const current = record || pb.authStore.record || null;
     setUser(current);
+
+    if (current) {
+      try {
+        const profile = { name: current.name || current.username, username: current.username || current.email };
+        if (current.partner_role === "CPP" || current.username === "admin") {
+          localStorage.setItem("wedding_cpp_profile", JSON.stringify(profile));
+        } else if (current.partner_role === "CPW" || current.username === "reina") {
+          localStorage.setItem("wedding_cpw_profile", JSON.stringify(profile));
+        }
+      } catch (_) {}
+    }
+
     return current;
   }, []);
 
@@ -87,7 +99,7 @@ export function AuthProvider({ children }) {
    * Mendaftar akun baru di koleksi `users`.
    */
   const register = useCallback(
-    async ({ name, username, email, password, passwordConfirm }) => {
+    async ({ name, username, email, password, passwordConfirm, partner_role }) => {
       const payload = {
         email: email.trim(),
         password,
@@ -96,6 +108,10 @@ export function AuthProvider({ children }) {
         emailVisibility: false,
       };
 
+      if (partner_role) {
+        payload.partner_role = partner_role;
+      }
+
       const cleanUsername = username?.trim().toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, "");
       if (cleanUsername) {
         payload.username = cleanUsername;
@@ -103,6 +119,16 @@ export function AuthProvider({ children }) {
 
       // Buat akun baru di koleksi `users`
       const newRecord = await pb.collection("users").create(payload);
+
+      // Simpan profil lokal untuk role switcher mempelai
+      try {
+        const profile = { name: payload.name || cleanUsername || payload.email, username: cleanUsername || payload.email };
+        if (partner_role === "CPP") {
+          localStorage.setItem("wedding_cpp_profile", JSON.stringify(profile));
+        } else if (partner_role === "CPW") {
+          localStorage.setItem("wedding_cpw_profile", JSON.stringify(profile));
+        }
+      } catch (_) {}
 
       // Masuk secara otomatis setelah berhasil mendaftar
       await login(cleanUsername || payload.email, password);

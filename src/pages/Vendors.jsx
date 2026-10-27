@@ -39,6 +39,7 @@ import pb from "../lib/pocketbase";
 import { daysUntil, formatDateShort, pct, formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
 import { APP_ICON_URL } from "../lib/icons";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -476,7 +477,7 @@ export default function Vendors() {
 
   const handleToggleNotification = async () => {
     if (!("Notification" in window)) {
-      alert("Browser ini tidak mendukung notifikasi push.");
+      toast.error("Browser ini tidak mendukung notifikasi push.");
       return;
     }
 

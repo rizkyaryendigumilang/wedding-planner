@@ -36,6 +36,8 @@ import {
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { exportToCsv } from "../lib/export";
+import { formatDateId } from "../lib/format";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -65,9 +67,9 @@ const DEFAULT_WA_TEMPLATE = `Kepada Yth. {nama},
 
 Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan kami:
 
-💍 Rizky & Reina
-📅 17 Februari 2028
-📍 Gedung PINDAD, Bandung
+💍 {pengantin}
+📅 {tanggal}
+📍 {venue}
 
 Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
 {link}
@@ -75,7 +77,7 @@ Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
 Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
 
 Salam hangat,
-Rizky & Reina`;
+{pengantin}`;
 
 const GuestRow = memo(function GuestRow({
   guest: g,
@@ -216,6 +218,136 @@ const GuestRow = memo(function GuestRow({
   );
 });
 
+const GuestCard = memo(function GuestCard({
+  guest: g,
+  index: i,
+  reduce,
+  isMsgCopied,
+  isLinkCopied,
+  onSendWhatsApp,
+  onCopyMessage,
+  onCopyLink,
+  onToggleSentStatus,
+  onToggleInvitation,
+  onCycleStatus,
+  onRemoveGuest,
+}) {
+  return (
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(i * 0.015, 0.25), duration: 0.2, ease: EASE }}
+      className="p-3.5 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card shadow-xs space-y-2.5"
+    >
+      {/* Baris 1: Nama, Pihak, Pax */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h4 className="font-semibold text-sm text-ink dark:text-stone-100 leading-snug">
+            {g.name}
+          </h4>
+          <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-ink-muted">
+            {g.relationship && <span>{g.relationship}</span>}
+            {g.origin && <span>• {g.origin}</span>}
+            {g.table_number && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                Meja {g.table_number}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge tone={g.side === "CPP" ? "sky" : "plum"}>{g.side}</Badge>
+          <span className="text-xs font-semibold text-ink-muted tabular-nums">
+            {g.pax} pax
+          </span>
+        </div>
+      </div>
+
+      {/* Baris 2: Nomor WA & Lingkaran */}
+      <div className="flex flex-wrap items-center justify-between text-xs text-ink-faint gap-1">
+        {g.phone ? (
+          <span className="font-mono text-sage-600 dark:text-sage-400">
+            WA: {g.phone}
+          </span>
+        ) : (
+          <span className="text-ink-faint">Tanpa No. WA</span>
+        )}
+        {g.group_name && <span>Grup: {g.group_name}</span>}
+      </div>
+
+      {/* Baris 3: Tombol Aksi WhatsApp & Salin */}
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => onSendWhatsApp(g)}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98]"
+        >
+          <WhatsAppIcon className="w-4 h-4" />
+          <span>Kirim WhatsApp</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onCopyMessage(g)}
+          title="Salin pesan undangan"
+          className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+        >
+          {isMsgCopied ? <Check size={15} className="text-sage-600" /> : <Copy size={15} />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onCopyLink(g)}
+          title="Salin tautan personal"
+          className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+        >
+          {isLinkCopied ? <Check size={15} className="text-sage-600" /> : <Link2 size={15} />}
+        </button>
+      </div>
+
+      {/* Baris 4: Status Kirim, Undangan, RSVP, Hapus */}
+      <div className="pt-2 border-t border-line/60 dark:border-night-line/60 flex items-center justify-between text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => onToggleSentStatus(g)}
+            title="Klik untuk ubah status terkirim"
+            className="focus-ring rounded-lg"
+          >
+            <Badge tone={g.invitation_sent ? "sage" : "gray"}>
+              {g.invitation_sent ? "Terkirim" : "Belum kirim"}
+            </Badge>
+          </button>
+          <button
+            onClick={() => onToggleInvitation(g)}
+            title="Ubah jenis fisik / digital"
+            className="focus-ring rounded-lg text-xs"
+          >
+            <Badge tone={g.type === "Digital" ? "sky" : "amber"}>{g.type}</Badge>
+          </button>
+          <button
+            onClick={() => onCycleStatus(g)}
+            title="Klik untuk ubah status RSVP"
+            className="focus-ring rounded-lg"
+          >
+            <Badge tone={STATUS_TONE[g.status] || "gray"}>
+              {g.status || "Belum"}
+            </Badge>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onRemoveGuest(g)}
+          aria-label={`Hapus ${g.name}`}
+          className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+    </motion.div>
+  );
+});
+
 export default function Guests() {
   const {
     guests,
@@ -309,6 +441,7 @@ export default function Guests() {
         if (rsvpFilter === "Tidak Hadir" && g.status !== "Tidak Hadir") return false;
         if (rsvpFilter === "Belum" && g.status === "Hadir") return false;
         if (rsvpFilter === "Sent" && !g.invitation_sent) return false;
+        if (rsvpFilter === "Unsent" && g.invitation_sent) return false;
       }
       if (
         q &&
@@ -326,6 +459,8 @@ export default function Guests() {
   }, [filtered, visibleCount]);
 
   const filteredPax = filtered.reduce((s, g) => s + Number(g.pax || 0), 0);
+  const unsentWaCount = useMemo(() => guests.filter((g) => !g.invitation_sent).length, [guests]);
+  const sentWaCount = useMemo(() => guests.filter((g) => g.invitation_sent).length, [guests]);
 
   const activeFilters =
     (side !== "ALL" ? 1 : 0) +
@@ -355,19 +490,27 @@ export default function Guests() {
   }, [baseInvitationUrl]);
 
   /**
-   * Format pesan WhatsApp dengan penggantian placeholder {nama}, {link}, {pax}.
+   * Format pesan WhatsApp dengan penggantian placeholder {nama}, {link}, {pax}, {pengantin}, {tanggal}, {venue}.
    */
   const getGuestWaMessage = useCallback((g) => {
     const link = getGuestInvitationLink(g);
-    return waTemplate
+    const coupleNames = couple?.cpp_nickname && couple?.cpw_nickname
+      ? `${couple.cpp_nickname} & ${couple.cpw_nickname}`
+      : couple?.cpp_full_name && couple?.cpw_full_name
+      ? `${couple.cpp_full_name} & ${couple.cpw_full_name}`
+      : "Calon Pengantin Pria & Wanita";
+    const dateStr = couple?.wedding_date ? formatDateId(couple.wedding_date) : "Tanggal Acara";
+    const venueStr = couple?.venue || "Tempat Resepsi";
+
+    return (waTemplate || DEFAULT_WA_TEMPLATE)
       .replace(/{nama}/g, g.name)
       .replace(/{pax}/g, String(g.pax || 1))
       .replace(/{link}/g, link || baseInvitationUrl || "")
-      .replace(/{pengantin}/g, "Rizky & Reina")
-      .replace(/{tanggal}/g, "17 Februari 2028")
-      .replace(/{venue}/g, couple?.venue || "Gedung PINDAD")
+      .replace(/{pengantin}/g, coupleNames)
+      .replace(/{tanggal}/g, dateStr)
+      .replace(/{venue}/g, venueStr)
       .replace(/{meja}/g, g.table_number || "Meja Resepsi");
-  }, [baseInvitationUrl, couple?.venue, getGuestInvitationLink, waTemplate]);
+  }, [baseInvitationUrl, couple, getGuestInvitationLink, waTemplate]);
 
   /**
    * Buka WhatsApp langsung ke nomor tamu (atau buka Web WA) dan tandai undangan terkirim.
@@ -387,6 +530,7 @@ export default function Guests() {
       : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
 
     window.open(waUrl, "_blank");
+    toast.info(`Membuka WhatsApp untuk ${g.name}`);
 
     // Tandai otomatis bahwa undangan sudah terkirim
     if (!g.invitation_sent) {
@@ -403,6 +547,7 @@ export default function Guests() {
     const msg = getGuestWaMessage(g);
     navigator.clipboard.writeText(msg);
     setCopiedId(`msg-${g.id}`);
+    toast.success(`Pesan undangan untuk ${g.name} disalin!`);
     setTimeout(() => setCopiedId(null), 2000);
   }, [getGuestWaMessage]);
 
@@ -410,6 +555,7 @@ export default function Guests() {
     const link = getGuestInvitationLink(g);
     navigator.clipboard.writeText(link);
     setCopiedId(`link-${g.id}`);
+    toast.success(`Tautan undangan untuk ${g.name} disalin!`);
     setTimeout(() => setCopiedId(null), 2000);
   }, [getGuestInvitationLink]);
 
@@ -420,9 +566,11 @@ export default function Guests() {
         invitation_base_url: baseInvitationUrl.trim(),
         wa_invitation_template: waTemplate.trim(),
       });
+      toast.success("Pengaturan tautan & template WA berhasil disimpan!");
       setShowSettingsModal(false);
     } catch (err) {
       console.error(err);
+      toast.error("Gagal menyimpan pengaturan: " + (err?.message || ""));
     } finally {
       setSavingSettings(false);
     }
@@ -594,6 +742,7 @@ export default function Guests() {
       pax: Number(form.pax) || 1,
     });
     await addLog(`Tamu baru ditambahkan: ${form.name.trim()}`, "guest");
+    toast.success(`Tamu "${form.name.trim()}" berhasil ditambahkan!`);
     setForm({
       side: "CPP",
       name: "",
@@ -621,12 +770,14 @@ export default function Guests() {
       await addLog(`Tamu "${g.name}" dihapus`, "guest");
       reload();
     }
+    toast.info(`"${g.name}" dipindahkan ke Tempat Sampah`);
   }, [moveToTrash, addLog, reload]);
 
   const cycleStatus = useCallback(async (g) => {
     const order = ["Belum", "Hadir", "Tidak Hadir", "Tanpa Keterangan"];
     const next = order[(order.indexOf(g.status || "Belum") + 1) % order.length];
     await pb.collection("wedding_guests").update(g.id, { status: next });
+    toast.success(`Status ${g.name}: ${next}`);
     reload();
   }, [reload]);
 
@@ -634,13 +785,16 @@ export default function Guests() {
     await pb.collection("wedding_guests").update(g.id, {
       invitation_sent: !g.invitation_sent,
     });
+    toast.success(`Undangan untuk ${g.name} ditandai ${!g.invitation_sent ? "Terkirim" : "Belum Kirim"}`);
     reload();
   }, [reload]);
 
   const toggleInvitation = useCallback(async (g) => {
+    const nextType = g.type === "Digital" ? "Fisik" : "Digital";
     await pb.collection("wedding_guests").update(g.id, {
-      type: g.type === "Digital" ? "Fisik" : "Digital",
+      type: nextType,
     });
+    toast.info(`Jenis undangan ${g.name} diubah ke ${nextType}`);
     reload();
   }, [reload]);
 
@@ -903,7 +1057,7 @@ export default function Guests() {
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {/* Quick RSVP Filters */}
+            {/* Quick RSVP & WhatsApp Filters */}
             <button
               onClick={() => setRsvpFilter("ALL")}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
@@ -913,6 +1067,27 @@ export default function Guests() {
               }`}
             >
               Semua ({guests.length})
+            </button>
+            <button
+              onClick={() => setRsvpFilter("Unsent")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1 ${
+                rsvpFilter === "Unsent"
+                  ? "bg-amber-600 text-white"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse" />
+              <span>Belum Kirim WA ({unsentWaCount})</span>
+            </button>
+            <button
+              onClick={() => setRsvpFilter("Sent")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                rsvpFilter === "Sent"
+                  ? "bg-sage-600 text-white"
+                  : "bg-sage-500/10 text-sage-700 dark:text-sage-300 hover:bg-sage-500/20"
+              }`}
+            >
+              Sudah Kirim ({sentWaCount})
             </button>
             <button
               onClick={() => setRsvpFilter("Hadir")}
@@ -1029,21 +1204,45 @@ export default function Guests() {
             }
           />
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <Table
-              head={[
-                "Nama tamu",
-                "Pihak",
-                "Pax",
-                "Lingkaran",
-                "Kirim WhatsApp",
-                "Undangan",
-                "RSVP",
-                "",
-              ]}
-            >
+          <div className="mt-4">
+            {/* Tampilan Desktop: Tabel Lengkap */}
+            <div className="hidden sm:block overflow-x-auto">
+              <Table
+                head={[
+                  "Nama tamu",
+                  "Pihak",
+                  "Pax",
+                  "Lingkaran",
+                  "Kirim WhatsApp",
+                  "Undangan",
+                  "RSVP",
+                  "",
+                ]}
+              >
+                {displayedGuests.map((g, i) => (
+                  <GuestRow
+                    key={g.id}
+                    guest={g}
+                    index={i}
+                    reduce={reduce}
+                    isMsgCopied={copiedId === `msg-${g.id}`}
+                    isLinkCopied={copiedId === `link-${g.id}`}
+                    onSendWhatsApp={sendWhatsApp}
+                    onCopyMessage={copyGuestMessage}
+                    onCopyLink={copyGuestLink}
+                    onToggleSentStatus={toggleSentStatus}
+                    onToggleInvitation={toggleInvitation}
+                    onCycleStatus={cycleStatus}
+                    onRemoveGuest={removeGuest}
+                  />
+                ))}
+              </Table>
+            </div>
+
+            {/* Tampilan Mobile: Stacked Cards Ramah Layar Sentuh */}
+            <div className="sm:hidden space-y-3">
               {displayedGuests.map((g, i) => (
-                <GuestRow
+                <GuestCard
                   key={g.id}
                   guest={g}
                   index={i}
@@ -1059,7 +1258,7 @@ export default function Guests() {
                   onRemoveGuest={removeGuest}
                 />
               ))}
-            </Table>
+            </div>
 
             {visibleCount < filtered.length && (
               <div className="mt-4 pt-3 border-t border-line dark:border-night-line flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">

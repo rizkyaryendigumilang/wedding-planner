@@ -11,6 +11,7 @@ import {
   Circle,
   Wallet,
   Check,
+  Sparkles,
 } from "lucide-react";
 import {
   Page,
@@ -32,6 +33,7 @@ import {
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { formatRupiah, pct } from "../lib/format";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -45,11 +47,71 @@ const CATEGORIES = [
   "MAKEUP",
 ];
 
+const DEFAULT_SESERAHAN_TEMPLATE = [
+  {
+    category: "ALAT SHOLAT",
+    detail: "Set Perlengkapan Ibadah (Mukena Sutra, Sajadah, Al-Qur'an & Tasbih)",
+    brand: "Custom / Bordir",
+    qty: 1,
+    budget: 750000,
+  },
+  {
+    category: "PAKAIAN",
+    detail: "Set Busana Pesta / Kain Batik & Bahan Kebaya Mewah",
+    brand: "Batik Tulis / Sutra",
+    qty: 1,
+    budget: 1500000,
+  },
+  {
+    category: "SKINCARE",
+    detail: "Paket Skincare Lengkap (Facial Wash, Toner, Serum, Moisturizer)",
+    brand: "Skincare Set",
+    qty: 1,
+    budget: 1200000,
+  },
+  {
+    category: "MAKEUP",
+    detail: "Set Kosmetik & Rias Wajah (Lipstik, Cushion, Eyeshadow, Mascara)",
+    brand: "Makeup Palette",
+    qty: 1,
+    budget: 950000,
+  },
+  {
+    category: "ACCESSORIES",
+    detail: "Sepatu Heels & Tas Pesta / Clutch Formal",
+    brand: "Formal Set",
+    qty: 1,
+    budget: 1500000,
+  },
+  {
+    category: "BODY CARE & TOILETRIES",
+    detail: "Set Perawatan Tubuh & Wewangian / Parfum Eau de Parfum",
+    brand: "Body Care",
+    qty: 1,
+    budget: 850000,
+  },
+  {
+    category: "PAKAIAN",
+    detail: "Set Baju Tidur, Lingerie & Pakaian Santai",
+    brand: "Homewear",
+    qty: 1,
+    budget: 500000,
+  },
+  {
+    category: "ACCESSORIES",
+    detail: "Set Kotak Cincin Nikah & Perhiasan Emas / Mahar",
+    brand: "Logam Mulia / Emas",
+    qty: 1,
+    budget: 5000000,
+  },
+];
+
 export default function Seserahan() {
   const { seserahan, seserahanSummary, couple, loading, error, reload, addLog, moveToTrash } =
     useWedding();
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [form, setForm] = useState({
     category: CATEGORIES[0],
     detail: "",
@@ -83,6 +145,7 @@ export default function Seserahan() {
       `Seserahan "${item.detail}" ditandai ${!item.checklist ? "sudah dibeli" : "belum"}`,
       "task"
     );
+    toast.success(`"${item.detail}" ditandai ${!item.checklist ? "sudah dibeli" : "belum dibeli"}`);
     reload();
   };
 
@@ -95,6 +158,7 @@ export default function Seserahan() {
       await addLog(`Item seserahan "${item.detail}" dihapus`, "task");
       reload();
     }
+    toast.info(`"${item.detail}" dipindahkan ke Tempat Sampah`);
   };
 
   const addItem = async (e) => {
@@ -111,9 +175,39 @@ export default function Seserahan() {
       checklist: false,
     });
     await addLog(`Item seserahan baru: "${form.detail.trim()}"`, "task");
+    toast.success(`Item "${form.detail.trim()}" berhasil ditambahkan`);
     setForm({ ...form, detail: "", brand: "", link: "", budget: 0 });
     setShowForm(false);
     reload();
+  };
+
+  const handleApplyTemplate = async () => {
+    if (seserahan.length > 0) {
+      if (!confirm("Muat template 8 kotak seserahan standar? Item akan ditambahkan ke daftar seserahan Anda.")) return;
+    }
+    setLoadingTemplate(true);
+    try {
+      for (const item of DEFAULT_SESERAHAN_TEMPLATE) {
+        await pb.collection("seserahan_items").create({
+          couple: couple?.id,
+          category: item.category,
+          detail: item.detail,
+          brand: item.brand,
+          qty: item.qty,
+          link: "",
+          budget: item.budget,
+          checklist: false,
+        });
+      }
+      await addLog("Memuat template 8 kotak seserahan pernikahan standar", "task");
+      toast.success("Template 8 kotak seserahan berhasil dimuat!");
+      reload();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memuat template: " + (err?.message || ""));
+    } finally {
+      setLoadingTemplate(false);
+    }
   };
 
   if (loading) return <Loading label="Memuat seserahan…" />;
@@ -131,9 +225,21 @@ export default function Seserahan() {
         subtitle="Daftar barang seserahan dengan tautan Shopee, estimasi anggaran, dan harga aktual."
         icon={Gift}
         action={
-          <Button size="sm" icon={Plus} onClick={() => setShowForm((s) => !s)}>
-            Item
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Sparkles}
+              onClick={handleApplyTemplate}
+              loading={loadingTemplate}
+              title="Gunakan 8 kotak seserahan standar adat Indonesia"
+            >
+              Gunakan Template
+            </Button>
+            <Button size="sm" icon={Plus} onClick={() => setShowForm((s) => !s)}>
+              Item
+            </Button>
+          </div>
         }
       />
 
@@ -281,12 +387,35 @@ export default function Seserahan() {
         />
       </div>
 
-      {sections.length === 0 ? (
+      {seserahan.length === 0 ? (
+        <Card className="text-center py-12">
+          <EmptyState
+            icon={Gift}
+            message="Belum ada daftar barang seserahan."
+            hint="Mulai checklist barang hantaran dan seserahan pernikahan untuk calon pengantin."
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                <Button
+                  variant="primary"
+                  icon={Sparkles}
+                  onClick={handleApplyTemplate}
+                  loading={loadingTemplate}
+                >
+                  Gunakan Template Seserahan (8 Kotak Standar)
+                </Button>
+                <Button variant="secondary" icon={Plus} onClick={() => setShowForm(true)}>
+                  Tambah Manual
+                </Button>
+              </div>
+            }
+          />
+        </Card>
+      ) : sections.length === 0 ? (
         <Card>
           <EmptyState
             icon={Gift}
-            message="Tidak ada item seserahan."
-            hint="Tambahkan item atau ubah kata kunci pencarian."
+            message="Tidak ada item yang cocok dengan pencarian."
+            hint="Ubah kata kunci pencarian atau bersihkan kolom cari."
           />
         </Card>
       ) : (

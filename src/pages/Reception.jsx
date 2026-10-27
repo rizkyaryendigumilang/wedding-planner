@@ -10,6 +10,7 @@ import {
   Plus,
   X,
   TableProperties,
+  Download,
 } from "lucide-react";
 import {
   Page,
@@ -22,6 +23,8 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
+import { exportToCsv } from "../lib/export";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -74,6 +77,18 @@ export default function Reception() {
     });
   }, [guests, statusFilter, sideFilter, debouncedQuery]);
 
+  const handleUndo = useCallback(
+    async (guest) => {
+      try {
+        await undoCheckInGuest(guest.id);
+        toast.info(`Check-in ${guest.name} dibatalkan`);
+      } catch (err) {
+        toast.error("Gagal membatalkan check-in: " + (err?.message || ""));
+      }
+    },
+    [undoCheckInGuest]
+  );
+
   const handleCheckIn = useCallback(
     async (guest, actualPax = null, souvenirGiven = true) => {
       const pax = actualPax !== null ? actualPax : Number(guest.pax || 1);
@@ -85,22 +100,18 @@ export default function Reception() {
         });
         setRecentlyCheckedInId(guest.id);
         setTimeout(() => setRecentlyCheckedInId(null), 3000);
+        toast.success(`Check-in berhasil: ${guest.name} (${pax} pax)`, {
+          action: {
+            label: "Batalkan",
+            onClick: () => handleUndo(guest),
+          },
+          duration: 5000,
+        });
       } catch (err) {
-        alert("Gagal melakukan check-in: " + (err?.message || ""));
+        toast.error("Gagal melakukan check-in: " + (err?.message || ""));
       }
     },
-    [checkInGuest]
-  );
-
-  const handleUndo = useCallback(
-    async (guest) => {
-      try {
-        await undoCheckInGuest(guest.id);
-      } catch (err) {
-        alert("Gagal membatalkan check-in: " + (err?.message || ""));
-      }
-    },
-    [undoCheckInGuest]
+    [checkInGuest, handleUndo]
   );
 
   const handleWalkInSubmit = async (e) => {
@@ -127,6 +138,7 @@ export default function Reception() {
         priority: "C - If Capacity Allows",
       });
       await reload();
+      toast.success(`Tamu walk-in "${walkInForm.name.trim()}" berhasil ditambahkan & check-in!`);
       setWalkInModal(false);
       setWalkInForm({
         name: "",
@@ -138,7 +150,7 @@ export default function Reception() {
         souvenir_given: true,
       });
     } catch (err) {
-      alert("Gagal menambahkan tamu: " + (err?.message || ""));
+      toast.error("Gagal menambahkan tamu: " + (err?.message || ""));
     } finally {
       setWalkInBusy(false);
     }
@@ -150,15 +162,46 @@ export default function Reception() {
   const pendingCount = Math.max(totalGuests - checkedInCount, 0);
   const souvenirCount = guestSummary.souvenirGivenCount || 0;
 
+  const handleExportCsv = () => {
+    if (guests.length === 0) return;
+    const data = guests.map((g, idx) => ({
+      No: idx + 1,
+      "Nama Tamu": g.name,
+      Pihak: g.side || "-",
+      "Nomor Meja": g.table_number || "-",
+      "Grup / Kategori": g.group_name || "-",
+      "Kota Asal": g.origin || "-",
+      "Status Kehadiran": g.checked_in ? "Hadir" : "Belum Hadir",
+      "Jumlah Pax Riil": g.checked_in ? (g.actual_pax || g.pax || 1) : 0,
+      "Estimasi Pax Undangan": g.pax || 1,
+      "Souvenir Diberikan": g.souvenir_given ? "Sudah" : "Belum",
+      "Nomor Telepon": g.phone || "-",
+      Catatan: g.notes || "-",
+    }));
+    exportToCsv("rekap-kehadiran-buku-tamu.csv", data);
+  };
+
   return (
     <Page>
       <PageHeader
         title="Meja Penerima Tamu"
         subtitle="Pencatatan kehadiran langsung di lokasi resepsi secara cepat dan real-time."
         action={
-          <Button icon={Plus} onClick={() => setWalkInModal(true)}>
-            Tamu Walk-in (Tanpa Undangan)
-          </Button>
+          <div className="flex items-center gap-2">
+            {guests.length > 0 && (
+              <Button
+                variant="outline"
+                icon={Download}
+                onClick={handleExportCsv}
+                className="hidden sm:inline-flex"
+              >
+                Unduh Rekap CSV
+              </Button>
+            )}
+            <Button icon={Plus} onClick={() => setWalkInModal(true)}>
+              Tamu Walk-in
+            </Button>
+          </div>
         }
       />
 
@@ -387,7 +430,7 @@ export default function Reception() {
                       <button
                         type="button"
                         onClick={() => handleCheckIn(guest)}
-                        className="flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-xs shadow-glow active:scale-[0.96] transition shrink-0"
+                        className="flex flex-col items-center justify-center gap-1 px-4 py-3 min-w-[76px] min-h-[52px] rounded-2xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-xs shadow-glow active:scale-[0.96] transition shrink-0 touch-manipulation select-none"
                       >
                         <UserCheck size={18} />
                         <span>Check-in</span>

@@ -37,3 +37,6 @@ pocketbase_*.zip
 *.apk
 *.aab
 *.ipa
+
+# Temporary scratch scripts
+scratch/

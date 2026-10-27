@@ -12,6 +12,8 @@ import {
   Trash2,
   Landmark,
   PiggyBank,
+  Download,
+  Printer,
 } from "lucide-react";
 import {
   Page,
@@ -36,6 +38,8 @@ import { DatePicker } from "../components/DatePicker";
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { formatRupiah, formatDateShort, pct, formatCompact } from "../lib/format";
+import { exportToCsv, printReport } from "../lib/export";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -57,6 +61,43 @@ export default function Budget() {
   const wedding = budgets.filter((b) => b.budget_type === "wedding");
   const savedPct = pct(finance.balance, finance.targetBudget);
 
+  const handleExportCsv = () => {
+    if (tab === "cashflow") {
+      if (cashflow.length === 0) return;
+      const data = cashflow.map((e, idx) => ({
+        No: idx + 1,
+        Tanggal: e.entry_date || "-",
+        Keterangan: e.description,
+        Pihak: e.owner || "Bersama",
+        Jenis: e.kind === "income" ? "Pemasukan" : "Pengeluaran",
+        "Nominal (Rp)": Number(e.amount) || 0,
+      }));
+      exportToCsv("rekap-arus-kas-pernikahan.csv", data);
+    } else {
+      const targetItems = tab === "sangjit" ? sangjit : wedding;
+      if (targetItems.length === 0) return;
+      const data = targetItems.map((b, idx) => {
+        const paid = Number(b.termin1 || 0) + Number(b.termin2 || 0) + Number(b.termin3 || 0) + Number(b.termin4 || 0);
+        return {
+          No: idx + 1,
+          Tipe: b.budget_type,
+          Kategori: b.category,
+          "Pos Pengeluaran": b.detail,
+          Vendor: b.vendor || "-",
+          "Total Biaya (Rp)": Number(b.total_biaya) || 0,
+          "Termin 1 (Rp)": Number(b.termin1) || 0,
+          "Termin 2 (Rp)": Number(b.termin2) || 0,
+          "Termin 3 (Rp)": Number(b.termin3) || 0,
+          "Termin 4 (Rp)": Number(b.termin4) || 0,
+          "Total Terbayar (Rp)": paid,
+          "Sisa Tagihan (Rp)": Math.max(0, (Number(b.total_biaya) || 0) - paid),
+          Status: b.status || (paid >= (Number(b.total_biaya) || 0) ? "Lunas" : "Belum"),
+        };
+      });
+      exportToCsv(`rekap-anggaran-${tab}.csv`, data);
+    }
+  };
+
   return (
     <Page>
       <PageHeader
@@ -64,6 +105,26 @@ export default function Budget() {
         title="Anggaran & arus kas"
         subtitle="Rincian biaya pertunangan, pernikahan, dan arus kas persiapan."
         icon={Wallet}
+        action={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              icon={Download}
+              onClick={handleExportCsv}
+              className="hidden sm:inline-flex"
+            >
+              Unduh CSV
+            </Button>
+            <Button
+              variant="outline"
+              icon={Printer}
+              onClick={printReport}
+              className="hidden sm:inline-flex"
+            >
+              Cetak PDF
+            </Button>
+          </div>
+        }
       />
 
       {/* Ringkasan arus kas */}
@@ -234,6 +295,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
         form.kind === "income" ? "info" : "payment",
         Number(form.amount)
       );
+      toast.success(`Catatan arus kas "${form.description.trim()}" berhasil disimpan`);
       reset();
       setShowForm(false);
       onChanged();
@@ -251,6 +313,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
       await addLog(`Catatan arus kas "${entry.description}" dihapus`, "info");
       onChanged();
     }
+    toast.info(`"${entry.description}" dipindahkan ke Tempat Sampah`);
   };
 
   return (
@@ -309,7 +372,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
                 />
               </Field>
 
-              <Field label="Nominal">
+              <Field label="Nominal (Rp)">
                 <MoneyInput
                   value={form.amount}
                   onValueChange={(v) => setForm({ ...form, amount: v })}
@@ -344,55 +407,125 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
         />
       ) : (
         <div className="mt-5">
-          <Table head={["Tanggal", "Keterangan", "Pihak", "Pemasukan", "Pengeluaran", ""]}>
+          {/* Tampilan Desktop: Tabel Lengkap */}
+          <div className="hidden sm:block">
+            <Table head={["Tanggal", "Keterangan", "Pihak", "Pemasukan", "Pengeluaran", ""]}>
+              {entries.map((e, i) => (
+                <motion.tr
+                  key={e.id}
+                  initial={reduce ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.025, 0.3), duration: 0.25, ease: EASE }}
+                  className="group hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
+                >
+                  <td className="py-3 px-3 first:pl-0 text-ink-muted whitespace-nowrap tabular-nums">
+                    {formatDateShort(e.entry_date)}
+                  </td>
+                  <td className="py-3 px-3 font-medium">{e.description}</td>
+                  <td className="py-3 px-3">
+                    <Badge tone={e.owner === "CPP" ? "sky" : e.owner === "CPW" ? "plum" : "gray"}>
+                      {e.owner}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-3 font-medium text-sage-600 dark:text-sage-300 tabular-nums">
+                    {e.kind === "income" ? formatRupiah(e.amount) : <span className="text-ink-faint">—</span>}
+                  </td>
+                  <td className="py-3 px-3 font-medium text-rose-600 dark:text-rose-300 tabular-nums">
+                    {e.kind === "expense" ? formatRupiah(e.amount) : <span className="text-ink-faint">—</span>}
+                  </td>
+                  <td className="py-3 px-3 text-right">
+                    <button
+                      onClick={() => remove(e)}
+                      aria-label={`Hapus ${e.description}`}
+                      className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </td>
+                </motion.tr>
+              ))}
+
+              <tr className="font-semibold">
+                <td className="py-3.5 px-3 first:pl-0" colSpan={3}>
+                  Total
+                </td>
+                <td className="py-3.5 px-3 text-sage-600 dark:text-sage-300 tabular-nums">
+                  {formatRupiah(totals.income)}
+                </td>
+                <td className="py-3.5 px-3 text-rose-600 dark:text-rose-300 tabular-nums">
+                  {formatRupiah(totals.expense)}
+                </td>
+                <td />
+              </tr>
+            </Table>
+          </div>
+
+          {/* Tampilan Mobile: Stacked Cards Ramah Layar Sentuh */}
+          <div className="sm:hidden space-y-3">
             {entries.map((e, i) => (
-              <motion.tr
+              <motion.div
                 key={e.id}
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i * 0.025, 0.3), duration: 0.25, ease: EASE }}
-                className="group hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
+                transition={{ delay: Math.min(i * 0.02, 0.25), duration: 0.2, ease: EASE }}
+                className="p-3.5 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card shadow-xs"
               >
-                <td className="py-3 px-3 first:pl-0 text-ink-muted whitespace-nowrap tabular-nums">
-                  {formatDateShort(e.entry_date)}
-                </td>
-                <td className="py-3 px-3 font-medium">{e.description}</td>
-                <td className="py-3 px-3">
-                  <Badge tone={e.owner === "CPP" ? "sky" : e.owner === "CPW" ? "plum" : "gray"}>
-                    {e.owner}
-                  </Badge>
-                </td>
-                <td className="py-3 px-3 font-medium text-sage-600 dark:text-sage-300 tabular-nums">
-                  {e.kind === "income" ? formatRupiah(e.amount) : <span className="text-ink-faint">—</span>}
-                </td>
-                <td className="py-3 px-3 font-medium text-rose-600 dark:text-rose-300 tabular-nums">
-                  {e.kind === "expense" ? formatRupiah(e.amount) : <span className="text-ink-faint">—</span>}
-                </td>
-                <td className="py-3 px-3 text-right">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-ink-faint font-mono tabular-nums">
+                      {formatDateShort(e.entry_date)}
+                    </span>
+                    <Badge tone={e.owner === "CPP" ? "sky" : e.owner === "CPW" ? "plum" : "gray"}>
+                      {e.owner}
+                    </Badge>
+                  </div>
                   <button
                     onClick={() => remove(e)}
                     aria-label={`Hapus ${e.description}`}
-                    className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+                    className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
                   >
                     <Trash2 size={15} />
                   </button>
-                </td>
-              </motion.tr>
+                </div>
+                <div className="flex items-end justify-between gap-2 mt-2">
+                  <p className="font-medium text-sm text-ink dark:text-stone-100 leading-snug">
+                    {e.description}
+                  </p>
+                  <p
+                    className={`font-semibold text-sm tabular-nums whitespace-nowrap ${
+                      e.kind === "income"
+                        ? "text-sage-600 dark:text-sage-400"
+                        : "text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {e.kind === "income" ? `+${formatRupiah(e.amount)}` : `-${formatRupiah(e.amount)}`}
+                  </p>
+                </div>
+              </motion.div>
             ))}
 
-            <tr className="font-semibold">
-              <td className="py-3.5 px-3 first:pl-0" colSpan={3}>
-                Total
-              </td>
-              <td className="py-3.5 px-3 text-sage-600 dark:text-sage-300 tabular-nums">
-                {formatRupiah(totals.income)}
-              </td>
-              <td className="py-3.5 px-3 text-rose-600 dark:text-rose-300 tabular-nums">
-                {formatRupiah(totals.expense)}
-              </td>
-              <td />
-            </tr>
-          </Table>
+            {/* Mobile Summary Card */}
+            <div className="p-3.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line/60 dark:border-night-line/60 text-xs space-y-1.5">
+              <div className="flex justify-between items-center text-ink-muted">
+                <span>Total Pemasukan</span>
+                <span className="font-semibold text-sage-600 dark:text-sage-400 tabular-nums">
+                  {formatRupiah(totals.income)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-ink-muted">
+                <span>Total Pengeluaran</span>
+                <span className="font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+                  {formatRupiah(totals.expense)}
+                </span>
+              </div>
+              <div className="pt-1.5 border-t border-line/80 dark:border-night-line/80 flex justify-between items-center font-bold text-ink dark:text-stone-100">
+                <span>Saldo Bersih</span>
+                <span className={`tabular-nums ${totals.income >= totals.expense ? "text-sage-600 dark:text-sage-400" : "text-rose-600 dark:text-rose-400"}`}>
+                  {formatRupiah(totals.income - totals.expense)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </Card>
@@ -443,6 +576,7 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
     const newPaid = payload.termin1 + payload.termin2 + payload.termin3 + payload.termin4;
     await pb.collection("budgets").update(item.id, payload);
     await addLog(`Pembayaran "${item.detail}" diperbarui (${formatRupiah(newPaid)})`, "payment", newPaid);
+    toast.success(`Pembayaran "${item.detail}" berhasil diperbarui (${formatRupiah(newPaid)})`);
     setEditing(null);
     onChanged();
   };
@@ -455,6 +589,7 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
       await pb.collection("budgets").delete(item.id);
       onChanged();
     }
+    toast.info(`"${item.detail}" dipindahkan ke Tempat Sampah`);
   };
 
   const startEdit = (item) => {
@@ -482,6 +617,7 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
       total_biaya: Number(newItem.total_biaya) || 0,
     });
     await addLog(`Item anggaran baru: "${newItem.detail.trim()}"`, "info", Number(newItem.total_biaya) || 0);
+    toast.success(`Item "${newItem.detail.trim()}" berhasil ditambahkan ke anggaran`);
     setNewItem({ category: newItem.category, detail: "", vendor: "", total_biaya: 0 });
     setAdding(false);
     onChanged();
@@ -576,9 +712,126 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-600 dark:text-rose-300 mb-2">
               {category}
             </p>
-            <Table
-              head={["Detail", "Vendor", "Total", "Termin 1", "Termin 2", "Termin 3", "Termin 4", "Status", ""]}
-            >
+
+            {/* Tampilan Desktop: Tabel Lengkap */}
+            <div className="hidden md:block">
+              <Table
+                head={["Detail", "Vendor", "Total", "Termin 1", "Termin 2", "Termin 3", "Termin 4", "Status", ""]}
+              >
+                {rows.map((item, i) => {
+                  const isEdit = editing === item.id;
+                  const paid =
+                    Number(item.termin1 || 0) +
+                    Number(item.termin2 || 0) +
+                    Number(item.termin3 || 0) +
+                    Number(item.termin4 || 0);
+                  const lunas = item.total_biaya > 0 && paid >= item.total_biaya;
+
+                  return (
+                    <motion.tr
+                      key={item.id}
+                      initial={reduce ? false : { opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.025, 0.25), duration: 0.25, ease: EASE }}
+                      className="group hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
+                    >
+                      <td className="py-3 px-3 first:pl-0 font-medium">{item.detail}</td>
+                      <td className="py-3 px-3 text-ink-muted">
+                        {isEdit ? (
+                          <Input
+                            value={draft.vendor || ""}
+                            onChange={(e) => setDraft({ ...draft, vendor: e.target.value })}
+                            className="!w-32 !py-1.5 !rounded-xl !text-[13px]"
+                          />
+                        ) : (
+                          item.vendor || <span className="text-ink-faint">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap tabular-nums">
+                        {item.total_biaya ? (
+                          formatRupiah(item.total_biaya)
+                        ) : (
+                          <span className="text-ink-faint">—</span>
+                        )}
+                      </td>
+
+                      {[1, 2, 3, 4].map((t) => {
+                        const key = `termin${t}`;
+                        return (
+                          <td key={key} className="py-3 px-3 whitespace-nowrap tabular-nums">
+                            {isEdit ? (
+                              <input
+                                type="number"
+                                value={draft[key] ?? 0}
+                                onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                                className="w-24 px-2 py-1.5 rounded-xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card text-[13px] tabular-nums outline-none focus:border-rose-400"
+                              />
+                            ) : Number(item[key]) ? (
+                              <span className="text-sage-600 dark:text-sage-300 font-medium">
+                                {formatRupiah(item[key])}
+                              </span>
+                            ) : (
+                              <span className="text-ink-faint">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      <td className="py-3 px-3">
+                        {lunas ? (
+                          <Badge tone="sage">Lunas</Badge>
+                        ) : paid > 0 ? (
+                          <Badge tone="amber">Dicicil {pct(paid, item.total_biaya).toFixed(0)}%</Badge>
+                        ) : (
+                          <Badge tone="gray">{item.status || "Belum"}</Badge>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        {isEdit ? (
+                          <div className="flex gap-1 justify-end">
+                            <button
+                              onClick={() => saveTermin(item)}
+                              aria-label="Simpan"
+                              className="p-2 rounded-xl text-sage-600 hover:bg-sage-500/10 transition-colors"
+                            >
+                              <Check size={15} />
+                            </button>
+                            <button
+                              onClick={() => setEditing(null)}
+                              aria-label="Batal"
+                              className="p-2 rounded-xl text-ink-faint hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEdit(item)}
+                              aria-label={`Ubah ${item.detail}`}
+                              className="p-2 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => removeItem(item)}
+                              aria-label={`Hapus ${item.detail}`}
+                              className="p-2 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </Table>
+            </div>
+
+            {/* Tampilan Mobile: Stacked Cards Ramah Layar Sentuh */}
+            <div className="md:hidden space-y-3 mb-4">
               {rows.map((item, i) => {
                 const isEdit = editing === item.id;
                 const paid =
@@ -588,57 +841,71 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
                   Number(item.termin4 || 0);
                 const lunas = item.total_biaya > 0 && paid >= item.total_biaya;
 
+                if (isEdit) {
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-2xl border-2 border-rose-400 bg-canvas-card dark:bg-night-card shadow-sm space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm text-ink dark:text-stone-100">
+                          Edit: {item.detail}
+                        </p>
+                        <Badge tone="gray">Edit Mode</Badge>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <label className="text-[11px] text-ink-muted mb-1 block">Vendor</label>
+                          <Input
+                            value={draft.vendor || ""}
+                            onChange={(e) => setDraft({ ...draft, vendor: e.target.value })}
+                            placeholder="Nama vendor"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[1, 2, 3, 4].map((t) => (
+                            <div key={t}>
+                              <label className="text-[11px] text-ink-muted mb-1 block">Termin {t} (Rp)</label>
+                              <input
+                                type="number"
+                                value={draft[`termin${t}`] ?? 0}
+                                onChange={(e) => setDraft({ ...draft, [`termin${t}`]: e.target.value })}
+                                className="w-full px-2.5 py-1.5 rounded-xl border border-line dark:border-night-line bg-canvas-sunken dark:bg-night-sunken text-xs tabular-nums outline-none focus:border-rose-400"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pt-2 border-t border-line dark:border-night-line">
+                        <Button size="sm" icon={Check} onClick={() => saveTermin(item)}>
+                          Simpan
+                        </Button>
+                        <Button size="sm" variant="ghost" icon={X} onClick={() => setEditing(null)}>
+                          Batal
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <motion.tr
+                  <motion.div
                     key={item.id}
                     initial={reduce ? false : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.025, 0.25), duration: 0.25, ease: EASE }}
-                    className="group hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
+                    transition={{ delay: Math.min(i * 0.02, 0.25), duration: 0.2, ease: EASE }}
+                    className="p-4 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card shadow-xs space-y-2.5"
                   >
-                    <td className="py-3 px-3 first:pl-0 font-medium">{item.detail}</td>
-                    <td className="py-3 px-3 text-ink-muted">
-                      {isEdit ? (
-                        <Input
-                          value={draft.vendor || ""}
-                          onChange={(e) => setDraft({ ...draft, vendor: e.target.value })}
-                          className="!w-32 !py-1.5 !rounded-xl !text-[13px]"
-                        />
-                      ) : (
-                        item.vendor || <span className="text-ink-faint">—</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap tabular-nums">
-                      {item.total_biaya ? (
-                        formatRupiah(item.total_biaya)
-                      ) : (
-                        <span className="text-ink-faint">—</span>
-                      )}
-                    </td>
-
-                    {[1, 2, 3, 4].map((t) => {
-                      const key = `termin${t}`;
-                      return (
-                        <td key={key} className="py-3 px-3 whitespace-nowrap tabular-nums">
-                          {isEdit ? (
-                            <input
-                              type="number"
-                              value={draft[key] ?? 0}
-                              onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-                              className="w-24 px-2 py-1.5 rounded-xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card text-[13px] tabular-nums outline-none focus:border-rose-400"
-                            />
-                          ) : Number(item[key]) ? (
-                            <span className="text-sage-600 dark:text-sage-300 font-medium">
-                              {formatRupiah(item[key])}
-                            </span>
-                          ) : (
-                            <span className="text-ink-faint">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-
-                    <td className="py-3 px-3">
+                    {/* Baris 1: Detail & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-ink dark:text-stone-100 leading-snug">
+                          {item.detail}
+                        </h4>
+                        <p className="text-xs text-ink-muted mt-0.5">
+                          {item.vendor ? `Vendor: ${item.vendor}` : "Belum ada vendor"}
+                        </p>
+                      </div>
                       {lunas ? (
                         <Badge tone="sage">Lunas</Badge>
                       ) : paid > 0 ? (
@@ -646,49 +913,85 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
                       ) : (
                         <Badge tone="gray">{item.status || "Belum"}</Badge>
                       )}
-                    </td>
+                    </div>
 
-                    <td className="py-3 px-3 text-right whitespace-nowrap">
-                      {isEdit ? (
-                        <div className="flex gap-1 justify-end">
-                          <button
-                            onClick={() => saveTermin(item)}
-                            aria-label="Simpan"
-                            className="p-2 rounded-xl text-sage-600 hover:bg-sage-500/10 transition-colors"
+                    {/* Baris 2: Progres & Total Biaya */}
+                    <div className="pt-1">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-ink-muted">
+                          Terbayar: <strong className="text-sage-600 dark:text-sage-400 tabular-nums">{formatRupiah(paid)}</strong>
+                        </span>
+                        <span className="font-bold text-ink dark:text-stone-100 tabular-nums">
+                          {formatRupiah(item.total_biaya)}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-canvas-sunken dark:bg-night-sunken rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-sage-500 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, pct(paid, item.total_biaya))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Baris 3: Termin Chips (4 kolom ringkas) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] pt-1">
+                      {[1, 2, 3, 4].map((t) => {
+                        const val = Number(item[`termin${t}`] || 0);
+                        return (
+                          <div
+                            key={t}
+                            className={`px-2 py-1 rounded-lg border flex items-center justify-between tabular-nums ${
+                              val > 0
+                                ? "bg-sage-500/10 border-sage-500/30 text-sage-700 dark:text-sage-300 font-medium"
+                                : "bg-canvas-sunken/40 dark:bg-night-sunken/40 border-line/40 dark:border-night-line/40 text-ink-faint"
+                            }`}
                           >
-                            <Check size={15} />
-                          </button>
-                          <button
-                            onClick={() => setEditing(null)}
-                            aria-label="Batal"
-                            className="p-2 rounded-xl text-ink-faint hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors"
-                          >
-                            <X size={15} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => startEdit(item)}
-                            aria-label={`Ubah ${item.detail}`}
-                            className="p-2 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={() => removeItem(item)}
-                            aria-label={`Hapus ${item.detail}`}
-                            className="p-2 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </motion.tr>
+                            <span>T{t}:</span>
+                            <span>{val > 0 ? formatCompact(val) : "—"}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Baris 4: Sisa & Aksi */}
+                    <div className="pt-2 border-t border-line/60 dark:border-night-line/60 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-ink-faint text-[10px] block">Sisa Tagihan</span>
+                        <span
+                          className={`font-semibold tabular-nums text-xs ${
+                            item.total_biaya - paid > 0
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-sage-600 dark:text-sage-400"
+                          }`}
+                        >
+                          {formatRupiah(Math.max(0, item.total_biaya - paid))}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(item)}
+                          aria-label={`Ubah ${item.detail}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken text-ink text-xs font-medium transition active:scale-[0.97]"
+                        >
+                          <Pencil size={13} className="text-ink-muted" />
+                          <span>Ubah Termin</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item)}
+                          aria-label={`Hapus ${item.detail}`}
+                          className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
                 );
               })}
-            </Table>
+            </div>
           </div>
         ))}
       </div>

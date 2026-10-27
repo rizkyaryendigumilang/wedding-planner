@@ -27,6 +27,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { exportToCsv } from "../lib/export";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -212,12 +213,14 @@ export default function Rundown() {
     try {
       if (editingItem) {
         await updateRundownEvent(editingItem.id, form);
+        toast.success(`Agenda "${form.title}" berhasil diperbarui!`);
       } else {
         await addRundownEvent(form);
+        toast.success(`Agenda "${form.title}" berhasil ditambahkan!`);
       }
       setModalOpen(false);
     } catch (err) {
-      alert("Gagal menyimpan agenda: " + (err?.message || "Terjadi kesalahan"));
+      toast.error("Gagal menyimpan agenda: " + (err?.message || "Terjadi kesalahan"));
     } finally {
       setLoadingAction(false);
     }
@@ -233,10 +236,21 @@ export default function Rundown() {
       for (const t of DEFAULT_RUNDOWN_TEMPLATE) {
         await addRundownEvent(t);
       }
+      toast.success("Template susunan acara lengkap (Akad & Resepsi) berhasil dimuat!");
     } catch (err) {
-      alert("Gagal memuat template: " + (err?.message || ""));
+      toast.error("Gagal memuat template: " + (err?.message || ""));
     } finally {
       setLoadingAction(false);
+    }
+  };
+
+  const handleDeleteEvent = async (item) => {
+    if (!confirm(`Pindahkan agenda "${item.title}" ke Tempat Sampah?`)) return;
+    try {
+      await deleteRundownEvent(item);
+      toast.info(`"${item.title}" dipindahkan ke Tempat Sampah`);
+    } catch (err) {
+      toast.error("Gagal menghapus agenda: " + (err?.message || ""));
     }
   };
 
@@ -497,7 +511,7 @@ export default function Rundown() {
                         <Pencil size={15} />
                       </button>
                       <button
-                        onClick={() => deleteRundownEvent(item)}
+                        onClick={() => handleDeleteEvent(item)}
                         className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition"
                         aria-label="Hapus agenda"
                       >
