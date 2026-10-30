@@ -419,7 +419,7 @@ export default function Rundown() {
                 transition={{ duration: 0.2, delay: index * 0.02, ease: EASE }}
               >
                 <Card
-                  className={`p-4 transition-all duration-200 ${
+                  className={`p-4 transition-[border-color,background-color,opacity] duration-150 ${
                     isCompleted
                       ? "opacity-60 bg-canvas-sunken/40 dark:bg-night-sunken/40 border-line/50 dark:border-night-line/50"
                       : "hover:border-rose-500/40"

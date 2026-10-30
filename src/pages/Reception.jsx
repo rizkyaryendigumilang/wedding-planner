@@ -77,6 +77,16 @@ export default function Reception() {
     });
   }, [guests, statusFilter, sideFilter, debouncedQuery]);
 
+  // Progressive rendering (40 tamu per batch) agar DOM tetap ringan dan cepat di HP saat hari-H
+  const PAGE_SIZE = 40;
+  const filterKey = `${statusFilter}|${sideFilter}|${debouncedQuery}`;
+  const [pageState, setPageState] = useState({ key: filterKey, count: PAGE_SIZE });
+  const visibleCount = pageState.key === filterKey ? pageState.count : PAGE_SIZE;
+
+  const displayedGuests = useMemo(() => {
+    return filteredGuests.slice(0, visibleCount);
+  }, [filteredGuests, visibleCount]);
+
   const handleUndo = useCallback(
     async (guest) => {
       try {
@@ -353,7 +363,7 @@ export default function Reception() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filteredGuests.map((guest, index) => {
+          {displayedGuests.map((guest, index) => {
             const isCheckedIn = Boolean(guest.checked_in);
             const isJustChecked = recentlyCheckedInId === guest.id;
 
@@ -365,7 +375,7 @@ export default function Reception() {
                 transition={{ duration: 0.18, delay: Math.min(index * 0.015, 0.2), ease: EASE }}
               >
                 <Card
-                  className={`p-4 transition-all duration-200 border ${
+                  className={`p-4 transition-[border-color,background-color,box-shadow] duration-150 border ${
                     isJustChecked
                       ? "ring-2 ring-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15"
                       : isCheckedIn
@@ -445,6 +455,21 @@ export default function Reception() {
               </motion.div>
             );
           })}
+
+          {filteredGuests.length > visibleCount && (
+            <div className="col-span-full pt-4 pb-2 flex flex-col items-center gap-2">
+              <p className="text-xs text-ink-muted">
+                Menampilkan {displayedGuests.length} dari {filteredGuests.length} tamu
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageState({ key: filterKey, count: visibleCount + PAGE_SIZE })}
+              >
+                Muat 40 Tamu Berikutnya
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

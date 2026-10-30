@@ -437,7 +437,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
                     <button
                       onClick={() => remove(e)}
                       aria-label={`Hapus ${e.description}`}
-                      className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+                      className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -927,7 +927,7 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
                       </div>
                       <div className="h-2 w-full bg-canvas-sunken dark:bg-night-sunken rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-sage-500 rounded-full transition-all duration-300"
+                          className="h-full bg-sage-500 rounded-full transition-[width] duration-300"
                           style={{ width: `${Math.min(100, pct(paid, item.total_biaya))}%` }}
                         />
                       </div>

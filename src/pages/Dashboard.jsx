@@ -16,7 +16,7 @@ import {
   ArrowRight,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Countdown from "../components/Countdown";
 import {
   Page,
@@ -43,6 +43,15 @@ import {
 
 const EASE = [0.22, 1, 0.36, 1];
 
+function daysUntilVendor(d) {
+  if (!d) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target - now) / 86400000);
+}
+
 export default function Dashboard() {
   const { isPanitia } = useAuth();
   const {
@@ -68,6 +77,44 @@ export default function Dashboard() {
 
   const [alertsDismissed, setAlertsDismissed] = useState(false);
   const reduce = useReducedMotion();
+  const vendorAlertDays = settings?.alert_vendor_days || 7;
+
+  // Memoization filter alerts (dijalankan di awal agar taat aturan hooks React)
+  const overdueVendors = useMemo(
+    () =>
+      (vendors || []).filter(
+        (v) => !v.is_completed && v.deadline_date && daysUntilVendor(v.deadline_date) < 0
+      ),
+    [vendors]
+  );
+
+  const urgentVendors = useMemo(
+    () =>
+      (vendors || []).filter(
+        (v) =>
+          !v.is_completed &&
+          v.deadline_date &&
+          daysUntilVendor(v.deadline_date) >= 0 &&
+          daysUntilVendor(v.deadline_date) <= vendorAlertDays
+      ),
+    [vendors, vendorAlertDays]
+  );
+
+  const budgetOverruns = useMemo(
+    () =>
+      (budgets || []).filter(
+        (b) => (b.actual || 0) > (b.allocated || 0) && (b.allocated || 0) > 0
+      ),
+    [budgets]
+  );
+
+  const pendingPriorityGuests = useMemo(
+    () =>
+      (guests || []).filter(
+        (g) => g.priority === "A - Must Invite" && (!g.status || g.status === "Belum")
+      ),
+    [guests]
+  );
 
   if (loading) return <Loading label="Menyiapkan dasbor…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -108,36 +155,6 @@ export default function Dashboard() {
   // dan pemilik tidak mematikannya lewat pengaturan.
   const showGallery =
     gallerySummary.preweddingDone && photos.length > 0 && gallerySummary.showOnDashboard;
-
-  // Hitung Peringatan & Alerts Cerdas Berdasarkan Settings
-  const daysUntilVendor = (d) => {
-    if (!d) return null;
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const target = new Date(d);
-    target.setHours(0, 0, 0, 0);
-    return Math.round((target - now) / 86400000);
-  };
-
-  const vendorAlertDays = settings?.alert_vendor_days || 7;
-  const overdueVendors = (vendors || []).filter(
-    (v) => !v.is_completed && v.deadline_date && daysUntilVendor(v.deadline_date) < 0
-  );
-  const urgentVendors = (vendors || []).filter(
-    (v) =>
-      !v.is_completed &&
-      v.deadline_date &&
-      daysUntilVendor(v.deadline_date) >= 0 &&
-      daysUntilVendor(v.deadline_date) <= vendorAlertDays
-  );
-
-  const budgetOverruns = (budgets || []).filter(
-    (b) => (b.actual || 0) > (b.allocated || 0) && (b.allocated || 0) > 0
-  );
-
-  const pendingPriorityGuests = (guests || []).filter(
-    (g) => g.priority === "A - Must Invite" && (!g.status || g.status === "Belum")
-  );
 
   const hasAlerts =
     (settings?.alert_vendor_deadline !== false && (overdueVendors.length > 0 || urgentVendors.length > 0)) ||
@@ -443,7 +460,7 @@ export default function Dashboard() {
               action={
                 <Link
                   to="/gallery"
-                  className="text-xs font-semibold text-rose-600 dark:text-rose-300 flex items-center gap-1 hover:gap-1.5 transition-all"
+                  className="text-xs font-semibold text-rose-600 dark:text-rose-300 flex items-center gap-1 hover:gap-1.5 transition-[gap,color] duration-150"
                 >
                   Lihat semua <ArrowUpRight size={13} />
                 </Link>
@@ -682,9 +699,18 @@ export default function Dashboard() {
                   <p className="text-[13.5px] leading-snug text-ink dark:text-stone-200">
                     {log.action_description}
                   </p>
-                  <p className="text-[11px] text-ink-faint mt-0.5">
-                    {timeAgo(log.created)}
-                    {Number(log.amount) > 0 && ` • ${formatRupiah(log.amount)}`}
+                  <p className="text-[11px] text-ink-faint mt-1 flex flex-wrap items-center gap-1.5">
+                    <span>{timeAgo(log.created)}</span>
+                    {Number(log.amount) > 0 && <span>• {formatRupiah(log.amount)}</span>}
+                    {log.actor_name && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-canvas-sunken/80 dark:bg-night-sunken/80 border border-line/60 dark:border-night-line/60 text-[10px] text-ink-muted">
+                        <span className="w-1 h-1 rounded-full bg-stone-400" />
+                        <span>{log.actor_name}</span>
+                        {log.actor_role && (
+                          <span className="text-[9px] uppercase font-semibold opacity-75">({log.actor_role})</span>
+                        )}
+                      </span>
+                    )}
                   </p>
                 </div>
               </motion.li>
@@ -768,7 +794,7 @@ function ModuleRow({ to, module, label, value, progress, tone }) {
         </span>
         <ArrowUpRight
           size={13}
-          className="text-ink-faint opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-glide shrink-0"
+          className="text-ink-faint opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-[opacity,transform] duration-200 ease-glide shrink-0"
         />
       </div>
       <ProgressBar value={progress} tone={tone} height="h-1.5" />

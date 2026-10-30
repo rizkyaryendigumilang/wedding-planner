@@ -174,13 +174,18 @@ export function WeddingProvider({ children }) {
         rundowns,
         gifts,
       ] = await Promise.all([
-        pb.collection("budgets").getFullList({ filter: `couple="${coupleId}"`, sort: "budget_type,category" }),
+        pb.collection("budgets").getFullList({ filter: `couple="${coupleId}"`, sort: "budget_type,category" }).catch(() => []),
         pb.collection("administrations").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }),
         pb.collection("seserahan_items").getFullList({ filter: `couple="${coupleId}"`, sort: "category" }),
         pb.collection("vendor_checklists").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }),
         pb.collection("wedding_guests").getFullList({ filter: `couple="${coupleId}"`, sort: "name" }),
-        pb.collection("cashflow_entries").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }),
-        pb.collection("activity_logs").getFullList({ filter: `couple="${coupleId}"`, sort: "-created" }),
+        pb.collection("cashflow_entries").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }).catch(() => []),
+        // Capped query: ambil 40 aktivitas terbaru untuk mencegah unduhan ribuan log historis
+        pb
+          .collection("activity_logs")
+          .getList(1, 40, { filter: `couple="${coupleId}"`, sort: "-created" })
+          .then((res) => res.items)
+          .catch(() => []),
         // Koleksi tambahan: boleh kosong, jangan sampai menggagalkan seluruh muatan.
         pb
           .collection("gallery_photos")
@@ -192,7 +197,8 @@ export function WeddingProvider({ children }) {
           .catch(() => null),
         pb
           .collection("recycle_bin")
-          .getFullList({ sort: "-created" })
+          .getList(1, 50, { sort: "-created" })
+          .then((res) => res.items)
           .catch(() => []),
         pb
           .collection("rundown_events")
@@ -257,7 +263,7 @@ export function WeddingProvider({ children }) {
     const triggerReload = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        load();
+        load(true);
         setLastLiveUpdate(Date.now());
       }, 300);
     };
@@ -333,18 +339,31 @@ export function WeddingProvider({ children }) {
     async (description, actionType = "info", amount = 0) => {
       if (!coupleId) return;
       try {
+        const actorName = user?.name || user?.username || "Pengguna";
+        const actorRole =
+          user?.app_role === "panitia"
+            ? "Panitia"
+            : user?.app_role === "wo"
+            ? "WO"
+            : user?.partner_role || "Owner";
+
         await pb.collection("activity_logs").create({
           couple: coupleId,
+          actor_user: user?.id || null,
+          actor_name: actorName,
+          actor_role: actorRole,
           action_description: description,
-          action_type: actionType,
-          amount,
+          action_type: ["info", "payment", "task", "guest", "document", "create", "delete", "warning"].includes(actionType)
+            ? actionType
+            : "info",
+          amount: Number(amount) || 0,
         });
-        await load();
+        await load(true);
       } catch (err) {
         console.error("Gagal menambah log:", err);
       }
     },
-    [coupleId, load]
+    [coupleId, user, load]
   );
 
   const saveCouple = useCallback(
@@ -457,8 +476,12 @@ export function WeddingProvider({ children }) {
 
   /**
    * Kosongkan seluruh Tempat Sampah (Hapus Permanen Semua).
+   * Dibatasi hanya untuk pemilik akun (Owner / CPP / CPW), bukan panitia.
    */
   const emptyTrash = useCallback(async () => {
+    if (user?.app_role === "panitia" || user?.app_role === "wo") {
+      throw new Error("Hanya pemilik akun (CPP/CPW) yang berhak mengosongkan Tempat Sampah.");
+    }
     const items = data.trashItems || [];
     if (items.length === 0) return;
     for (const it of items) {
@@ -466,14 +489,34 @@ export function WeddingProvider({ children }) {
     }
     await addLog(`Mengosongkan Tempat Sampah (${items.length} item dihapus permanen)`, "delete");
     await load(true);
-  }, [data.trashItems, addLog, load]);
+  }, [data.trashItems, addLog, load, user]);
 
   const toggleRundown = useCallback(
     async (eventId, isCompleted) => {
-      await pb.collection("rundown_events").update(eventId, { is_completed: isCompleted });
-      await load(true);
+      // 1. Optimistic update: 0ms respon sentuhan di layar
+      setData((prev) => ({
+        ...prev,
+        rundowns: (prev.rundowns || []).map((r) =>
+          r.id === eventId ? { ...r, is_completed: isCompleted } : r
+        ),
+      }));
+
+      // 2. Sinkronisasi PocketBase di background
+      try {
+        await pb.collection("rundown_events").update(eventId, { is_completed: isCompleted });
+      } catch (err) {
+        // Rollback jika jaringan gagal
+        setData((prev) => ({
+          ...prev,
+          rundowns: (prev.rundowns || []).map((r) =>
+            r.id === eventId ? { ...r, is_completed: !isCompleted } : r
+          ),
+        }));
+        console.error("Gagal memperbarui status rundown:", err);
+        throw err;
+      }
     },
-    [load]
+    []
   );
 
   const addRundownEvent = useCallback(
@@ -508,29 +551,73 @@ export function WeddingProvider({ children }) {
 
   const checkInGuest = useCallback(
     async (guestId, options = {}) => {
-      const payload = {
-        checked_in: true,
-        checked_in_at: new Date().toISOString(),
-        status: "Hadir",
-      };
-      if (options.actual_pax !== undefined) payload.actual_pax = options.actual_pax;
-      if (options.souvenir_given !== undefined) payload.souvenir_given = options.souvenir_given;
-      const updated = await pb.collection("wedding_guests").update(guestId, payload);
-      await addLog(`Check-in tamu resepsi: "${options.guestName || "Tamu"}"`, "guest");
-      await load(true);
-      return updated;
+      const now = new Date().toISOString();
+      const actualPax = options.actual_pax;
+      const souvenirGiven = options.souvenir_given;
+
+      // 1. Optimistic update: antrean tamu bergerak instan 0ms
+      setData((prev) => ({
+        ...prev,
+        guests: (prev.guests || []).map((g) =>
+          g.id === guestId
+            ? {
+                ...g,
+                checked_in: true,
+                checked_in_at: now,
+                status: "Hadir",
+                ...(actualPax !== undefined ? { actual_pax: actualPax } : {}),
+                ...(souvenirGiven !== undefined ? { souvenir_given: souvenirGiven } : {}),
+              }
+            : g
+        ),
+      }));
+
+      // 2. Eksekusi ke database PocketBase di background
+      try {
+        const payload = {
+          checked_in: true,
+          checked_in_at: now,
+          status: "Hadir",
+        };
+        if (actualPax !== undefined) payload.actual_pax = actualPax;
+        if (souvenirGiven !== undefined) payload.souvenir_given = souvenirGiven;
+
+        const updated = await pb.collection("wedding_guests").update(guestId, payload);
+        await addLog(`Check-in tamu resepsi: "${options.guestName || "Tamu"}"`, "guest");
+        return updated;
+      } catch (err) {
+        // Rollback jika terjadi kesalahan jaringan
+        await load(true);
+        console.error("Gagal check-in tamu:", err);
+        throw err;
+      }
     },
     [addLog, load]
   );
 
   const undoCheckInGuest = useCallback(
     async (guestId) => {
-      await pb.collection("wedding_guests").update(guestId, {
-        checked_in: false,
-        checked_in_at: "",
-        souvenir_given: false,
-      });
-      await load(true);
+      // 1. Optimistic update: batalkan centang tamu 0ms
+      setData((prev) => ({
+        ...prev,
+        guests: (prev.guests || []).map((g) =>
+          g.id === guestId
+            ? { ...g, checked_in: false, checked_in_at: "", souvenir_given: false }
+            : g
+        ),
+      }));
+
+      try {
+        await pb.collection("wedding_guests").update(guestId, {
+          checked_in: false,
+          checked_in_at: "",
+          souvenir_given: false,
+        });
+      } catch (err) {
+        await load(true);
+        console.error("Gagal membatalkan check-in:", err);
+        throw err;
+      }
     },
     [load]
   );

@@ -112,7 +112,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex items-center justify-center font-medium transition-all duration-150 ease-glide active:scale-[0.97] disabled:opacity-60 disabled:pointer-events-none focus-ring whitespace-nowrap ${BUTTON_VARIANTS[variant]} ${BUTTON_SIZES[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-[color,background-color,border-color,transform,opacity,box-shadow] duration-150 ease-glide active:scale-[0.97] disabled:opacity-60 disabled:pointer-events-none focus-ring whitespace-nowrap ${BUTTON_VARIANTS[variant]} ${BUTTON_SIZES[size]} ${className}`}
       {...rest}
     >
       {loading ? (
@@ -197,7 +197,7 @@ export const StatCard = memo(function StatCard({
       {to && (
         <ArrowRight
           size={15}
-          className="absolute bottom-5 right-5 text-ink-faint opacity-0 -translate-x-1 transition-all duration-200 ease-glide group-hover:opacity-100 group-hover:translate-x-0"
+          className="absolute bottom-5 right-5 text-ink-faint opacity-0 -translate-x-1 transition-[opacity,transform] duration-200 ease-glide group-hover:opacity-100 group-hover:translate-x-0"
         />
       )}
     </Card>

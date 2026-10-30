@@ -90,6 +90,17 @@ const TABS = [
   { id: "sistem", label: "Sistem & PWA", icon: Laptop },
 ];
 
+function generatePanitiaPassword(username) {
+  const cleanBase = (username || "panitia").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const arr = new Uint32Array(1);
+    window.crypto.getRandomValues(arr);
+    const pin = 100 + (arr[0] % 900);
+    return `${cleanBase}${pin}`;
+  }
+  return `${cleanBase}2028`;
+}
+
 export default function Settings() {
   const {
     settings,
@@ -102,6 +113,8 @@ export default function Settings() {
     vendors,
     guests,
     seserahan,
+    rundowns,
+    gifts,
     logs,
     saveSettings,
     saveCouple,
@@ -136,17 +149,26 @@ export default function Settings() {
   const [savingCouple, setSavingCouple] = useState(false);
   const [savedCouple, setSavedCouple] = useState(false);
 
-  // --- Form 2: Akun Pasangan (Skema 2 Akun) ---
+  // --- Form 2: Akun Pasangan Dinamis (Skema 2 Akun) ---
   const [partnerUsers, setPartnerUsers] = useState([]);
-  const [showCreateReina, setShowCreateReina] = useState(false);
-  const [reinaForm, setReinaForm] = useState({
-    username: "reina",
-    name: "Reina Nurulita",
-    email: "reina@wedding.local",
-    password: "reina123",
+  const [partnerModal, setPartnerModal] = useState({
+    open: false,
+    role: "CPW",
+    name: "",
+    username: "",
+    email: "",
+    password: "",
   });
-  const [creatingReina, setCreatingReina] = useState(false);
-  const [reinaMsg, setReinaMsg] = useState(null);
+  const [creatingPartner, setCreatingPartner] = useState(false);
+  const [partnerMsg, setPartnerMsg] = useState(null);
+
+  // --- Reset Sandi Darurat Panitia ---
+  const [resetPasswordModal, setResetPasswordModal] = useState({
+    open: false,
+    user: null,
+    newPassword: "",
+    isSubmitting: false,
+  });
 
   // --- Form 2b: Akun Panitia & WO (Hak Akses Terbatas) ---
   const [showCreatePanitia, setShowCreatePanitia] = useState(false);
@@ -332,36 +354,104 @@ export default function Settings() {
     }
   };
 
-  // 2. Buat Akun Pasangan (Reina - CPW)
-  const handleCreateReina = async (e) => {
+  // 2. Buat Akun Pasangan Dinamis (CPP / CPW)
+  const openCreatePartner = (role) => {
+    const isCpp = role === "CPP";
+    const partnerName = isCpp
+      ? couple?.cpp_full_name || couple?.cpp_nickname || "Calon Pengantin Pria"
+      : couple?.cpw_full_name || couple?.cpw_nickname || "Calon Pengantin Wanita";
+    const nick = (isCpp ? couple?.cpp_nickname : couple?.cpw_nickname) || (isCpp ? "cpp" : "cpw");
+    const cleanNick = nick.toLowerCase().replace(/[^a-z0-9]/gi, "") || (isCpp ? "cpp" : "cpw");
+
+    setPartnerModal({
+      open: true,
+      role,
+      name: partnerName,
+      username: cleanNick,
+      email: `${cleanNick}@wedding.local`,
+      password: `${cleanNick}123`,
+    });
+    setPartnerMsg(null);
+  };
+
+  const handleCreatePartner = async (e) => {
     e.preventDefault();
-    setCreatingReina(true);
-    setReinaMsg(null);
+    setCreatingPartner(true);
+    setPartnerMsg(null);
     try {
+      const cleanUsername = partnerModal.username.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, "");
+      if (!cleanUsername) throw new Error("Username wajib diisi.");
+      if (!partnerModal.password || partnerModal.password.length < 6) {
+        throw new Error("Kata sandi minimal 6 karakter.");
+      }
+
       await pb.collection("users").create({
-        username: reinaForm.username.trim().toLowerCase(),
-        name: reinaForm.name.trim(),
-        email: reinaForm.email.trim(),
-        password: reinaForm.password,
-        passwordConfirm: reinaForm.password,
-        partner_role: "CPW",
+        username: cleanUsername,
+        name: partnerModal.name.trim() || cleanUsername,
+        email: partnerModal.email.trim(),
+        password: partnerModal.password,
+        passwordConfirm: partnerModal.password,
+        partner_role: partnerModal.role,
+        app_role: "owner",
+        couple: couple?.id || null,
       });
-      setReinaMsg({
+
+      const roleLabel = partnerModal.role === "CPP" ? "Calon Pengantin Pria (CPP)" : "Calon Pengantin Wanita (CPW)";
+      setPartnerMsg({
         type: "success",
-        message: `Akun ${reinaForm.name} berhasil dibuat! Username: "${reinaForm.username}", Password: "${reinaForm.password}". Berikan kredensial ini ke Reina untuk masuk di HP-nya.`,
+        message: `Akun ${roleLabel} "${partnerModal.name}" berhasil dibuat! Username: "${cleanUsername}", Password: "${partnerModal.password}". Berikan kredensial ini kepada pasangan Anda untuk masuk.`,
       });
       await refreshUsers();
-      setShowCreateReina(false);
+      setPartnerModal((prev) => ({ ...prev, open: false }));
       if (addLog) {
-        addLog(`Akun pasangan (${reinaForm.name}) berhasil didaftarkan`, "info");
+        addLog(`Akun pasangan (${partnerModal.name} - ${partnerModal.role}) berhasil didaftarkan`, "info");
       }
     } catch (err) {
-      setReinaMsg({
+      setPartnerMsg({
         type: "error",
         message: err?.message || "Gagal membuat akun pasangan.",
       });
     } finally {
-      setCreatingReina(false);
+      setCreatingPartner(false);
+    }
+  };
+
+  // 2b. Reset Kata Sandi Darurat Panitia (Akses Hari-H)
+  const handleOpenResetPassword = (targetUser) => {
+    const generatedPassword = generatePanitiaPassword(targetUser.username);
+    setResetPasswordModal({
+      open: true,
+      user: targetUser,
+      newPassword: generatedPassword,
+      isSubmitting: false,
+    });
+  };
+
+  const handleSaveResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetPasswordModal.user) return;
+    const { user: targetUser, newPassword } = resetPasswordModal;
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Kata sandi minimal 6 karakter.");
+      return;
+    }
+    setResetPasswordModal((prev) => ({ ...prev, isSubmitting: true }));
+    try {
+      await pb.collection("users").update(targetUser.id, {
+        password: newPassword,
+        passwordConfirm: newPassword,
+      });
+      if (addLog) {
+        addLog(`Reset kata sandi darurat untuk akun panitia: ${targetUser.name || targetUser.username}`, "warning");
+      }
+      toast.success(`Kata sandi "${targetUser.name || targetUser.username}" berhasil direset ke: ${newPassword}`);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(newPassword).catch(() => {});
+      }
+      setResetPasswordModal({ open: false, user: null, newPassword: "", isSubmitting: false });
+    } catch (err) {
+      toast.error("Gagal mereset kata sandi: " + (err.message || err));
+      setResetPasswordModal((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
 
@@ -545,10 +635,12 @@ export default function Settings() {
       { key: "invitation_url", label: "Link Undangan Personal" },
       { key: "notes", label: "Catatan" },
     ];
-    exportToCsv("Daftar_Tamu_Rizky_Reina.csv", headers, guests);
+    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
+    exportToCsv(`Daftar_Tamu_${couplePrefix}.csv`, headers, guests);
   };
 
   const exportBudgetsCsv = () => {
+    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const headers = [
       { key: "category", label: "Kategori" },
       { key: "item", label: "Nama Pos / Item" },
@@ -558,10 +650,11 @@ export default function Settings() {
       { key: "paid_by", label: "Ditanggung Oleh" },
       { key: "notes", label: "Catatan" },
     ];
-    exportToCsv("Rencana_Anggaran_Rizky_Reina.csv", headers, budgets);
+    exportToCsv(`Rencana_Anggaran_${couplePrefix}.csv`, headers, budgets);
   };
 
   const exportVendorsCsv = () => {
+    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const headers = [
       { key: "category", label: "Kategori" },
       { key: "name", label: "Nama Vendor" },
@@ -572,10 +665,11 @@ export default function Settings() {
       { key: "done", label: "Status Selesai", format: (v) => (v ? "Selesai" : "Belum") },
       { key: "notes", label: "Catatan" },
     ];
-    exportToCsv("Daftar_Vendor_Rizky_Reina.csv", headers, vendors);
+    exportToCsv(`Daftar_Vendor_${couplePrefix}.csv`, headers, vendors);
   };
 
   const exportSeserahanCsv = () => {
+    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const headers = [
       { key: "side", label: "Pihak (CPP/CPW)" },
       { key: "box_number", label: "Nomor Kotak" },
@@ -585,7 +679,7 @@ export default function Settings() {
       { key: "cost", label: "Biaya (Rp)", format: (v) => v || 0 },
       { key: "notes", label: "Catatan" },
     ];
-    exportToCsv("Daftar_Seserahan_Rizky_Reina.csv", headers, seserahan);
+    exportToCsv(`Daftar_Seserahan_${couplePrefix}.csv`, headers, seserahan);
   };
 
   const exportFullBackupJson = () => {
@@ -599,10 +693,13 @@ export default function Settings() {
       vendors,
       guests,
       seserahan,
+      rundowns,
+      gifts,
       logs,
     };
+    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const dateStr = new Date().toISOString().slice(0, 10);
-    exportToJson(`Backup_Pernikahan_Rizky_Reina_${dateStr}.json`, snapshotData);
+    exportToJson(`Backup_${couplePrefix}_${dateStr}.json`, snapshotData);
   };
 
   // 8. Pulihkan dari berkas JSON
@@ -620,7 +717,7 @@ export default function Settings() {
         setRestoreStatus({
           type: "confirm",
           date: parsed.exported_at ? new Date(parsed.exported_at).toLocaleString("id-ID") : "Tidak tercatat",
-          summary: `Tamu: ${parsed.guests?.length || 0}, Anggaran: ${parsed.budgets?.length || 0}, Vendor: ${parsed.vendors?.length || 0}`,
+          summary: `Tamu: ${parsed.guests?.length || 0}, Anggaran: ${parsed.budgets?.length || 0}, Vendor: ${parsed.vendors?.length || 0}, Rundown: ${parsed.rundowns?.length || 0}, Kado: ${parsed.gifts?.length || 0}`,
           data: parsed,
         });
       } catch (err) {
@@ -672,11 +769,23 @@ export default function Settings() {
     .replace(/\{meja\}/g, "Meja 05 (VIP)");
 
   // Cari akun pasangan untuk Skema 2 Akun
+  const cppNickLower = (couple?.cpp_nickname || "").toLowerCase();
+  const cpwNickLower = (couple?.cpw_nickname || "").toLowerCase();
+
   const cppUser = partnerUsers.find(
-    (u) => u.partner_role === "CPP" || u.username === "admin" || (u.name || "").toLowerCase().includes("rizky")
+    (u) =>
+      u.partner_role === "CPP" ||
+      (cppNickLower && (u.name || "").toLowerCase().includes(cppNickLower)) ||
+      (cppNickLower && (u.username || "").toLowerCase() === cppNickLower) ||
+      u.username === "cpp" ||
+      (u.username === "admin" && !u.partner_role)
   );
   const cpwUser = partnerUsers.find(
-    (u) => u.partner_role === "CPW" || u.username === "reina" || (u.name || "").toLowerCase().includes("reina")
+    (u) =>
+      u.partner_role === "CPW" ||
+      (cpwNickLower && (u.name || "").toLowerCase().includes(cpwNickLower)) ||
+      (cpwNickLower && (u.username || "").toLowerCase() === cpwNickLower) ||
+      u.username === "cpw"
   );
 
   // Akun Panitia & Wedding Organizer (Hak Akses Terbatas)
@@ -943,49 +1052,80 @@ export default function Settings() {
                 </span>
               </div>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Rizky dan Reina memiliki akun masing-masing untuk masuk ke aplikasi. Seluruh catatan tamu, ceklis vendor, dan anggaran tersinkronisasi otomatis saat terhubung.
+                {(couple?.cpp_nickname || "Calon Pengantin Pria")} dan {(couple?.cpw_nickname || "Calon Pengantin Wanita")} memiliki akun masing-masing untuk masuk ke aplikasi. Seluruh catatan tamu, ceklis vendor, dan anggaran tersinkronisasi otomatis saat terhubung.
               </p>
 
-              {reinaMsg && (
+              {partnerMsg && (
                 <div
                   className={`mt-4 p-3.5 rounded-2xl text-xs flex items-start gap-2.5 ${
-                    reinaMsg.type === "success"
+                    partnerMsg.type === "success"
                       ? "bg-sage-500/10 text-sage-800 dark:text-sage-200 border border-sage-500/20"
                       : "bg-rose-500/10 text-rose-800 dark:text-rose-200 border border-rose-500/20"
                   }`}
                 >
-                  {reinaMsg.type === "success" ? <Check size={16} className="shrink-0 text-sage-600" /> : <AlertTriangle size={16} className="shrink-0 text-rose-600" />}
-                  <span className="leading-relaxed">{reinaMsg.message}</span>
+                  {partnerMsg.type === "success" ? <Check size={16} className="shrink-0 text-sage-600" /> : <AlertTriangle size={16} className="shrink-0 text-rose-600" />}
+                  <span className="leading-relaxed">{partnerMsg.message}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                {/* Kartu CPP (Rizky) */}
+                {/* Kartu CPP (Calon Pengantin Pria) */}
                 <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300">
                         CPP (Pengantin Pria)
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] text-sage-600 dark:text-sage-400 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sage-500" /> Aktif
-                      </span>
+                      {cppUser ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-sage-600 dark:text-sage-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-sage-500" /> Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Belum Didaftarkan
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Avatar name={cppUser?.name || "Rizky"} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-sm truncate">{cppUser?.name || "Rizky Ramadhan"}</p>
-                        <p className="text-xs text-ink-muted truncate">@{cppUser?.username || "admin"}</p>
-                        <p className="text-[11px] text-ink-faint truncate">{cppUser?.email || "admin@wedding.local"}</p>
+
+                    {cppUser ? (
+                      <div className="flex items-center gap-3">
+                        <Avatar name={cppUser?.name || couple?.cpp_nickname || "CPP"} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm truncate">{cppUser?.name || couple?.cpp_full_name || couple?.cpp_nickname || "Calon Pengantin Pria"}</p>
+                          <p className="text-xs text-ink-muted truncate">@{cppUser?.username}</p>
+                          <p className="text-[11px] text-ink-faint truncate">{cppUser?.email}</p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-sm">Akun {couple?.cpp_nickname || "CPP"} Belum Dibuat</p>
+                        <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                          Daftarkan akun {couple?.cpp_nickname || "Calon Pengantin Pria"} agar dapat mengelola Wedding Planner dari perangkatnya sendiri.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-4 pt-3 border-t border-line/60 dark:border-night-line/60 text-[11px] text-ink-faint">
-                    {user?.id === cppUser?.id ? "Sedang login di perangkat ini" : "Terdaftar di database"}
+
+                  <div className="mt-4 pt-3 border-t border-line/60 dark:border-night-line/60">
+                    {cppUser ? (
+                      <p className="text-[11px] text-ink-faint">
+                        {user?.id === cppUser?.id ? "Sedang login di perangkat ini" : "Terdaftar di database"}
+                      </p>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        icon={UserPlus}
+                        className="w-full"
+                        onClick={() => openCreatePartner("CPP")}
+                      >
+                        Daftarkan Akun {couple?.cpp_nickname || "CPP"}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {/* Kartu CPW (Reina) */}
+                {/* Kartu CPW (Calon Pengantin Wanita) */}
                 <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-3">
@@ -1005,18 +1145,18 @@ export default function Settings() {
 
                     {cpwUser ? (
                       <div className="flex items-center gap-3">
-                        <Avatar name={cpwUser?.name || "Reina"} size="md" />
+                        <Avatar name={cpwUser?.name || couple?.cpw_nickname || "CPW"} size="md" />
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm truncate">{cpwUser.name}</p>
+                          <p className="font-semibold text-sm truncate">{cpwUser.name || couple?.cpw_full_name || couple?.cpw_nickname || "Calon Pengantin Wanita"}</p>
                           <p className="text-xs text-ink-muted truncate">@{cpwUser.username}</p>
                           <p className="text-[11px] text-ink-faint truncate">{cpwUser.email}</p>
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <p className="font-semibold text-sm">Akun Reina Belum Dibuat</p>
+                        <p className="font-semibold text-sm">Akun {couple?.cpw_nickname || "CPW"} Belum Dibuat</p>
                         <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                          Daftarkan akun Reina agar dia dapat membuka dan mengelola Wedding Planner dari HP-nya sendiri.
+                          Daftarkan akun {couple?.cpw_nickname || "Calon Pengantin Wanita"} agar dia dapat membuka dan mengelola Wedding Planner dari HP-nya sendiri.
                         </p>
                       </div>
                     )}
@@ -1025,7 +1165,7 @@ export default function Settings() {
                   <div className="mt-4 pt-3 border-t border-line/60 dark:border-night-line/60">
                     {cpwUser ? (
                       <p className="text-[11px] text-ink-faint">
-                        {user?.id === cpwUser.id ? "Sedang login di perangkat ini" : "Reina bisa login dengan akun ini"}
+                        {user?.id === cpwUser.id ? "Sedang login di perangkat ini" : "Dapat login di perangkat pasangan"}
                       </p>
                     ) : (
                       <Button
@@ -1033,70 +1173,70 @@ export default function Settings() {
                         variant="secondary"
                         icon={UserPlus}
                         className="w-full"
-                        onClick={() => setShowCreateReina(true)}
+                        onClick={() => openCreatePartner("CPW")}
                       >
-                        Daftarkan Akun Reina
+                        Daftarkan Akun {couple?.cpw_nickname || "CPW"}
                       </Button>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Form Modal / Inline Buat Akun Reina jika belum ada */}
-              {showCreateReina && !cpwUser && (
+              {/* Form Modal / Inline Buat Akun Pasangan Dinamis */}
+              {partnerModal.open && (
                 <div className="mt-5 p-4 rounded-3xl bg-rose-500/5 border border-rose-500/20">
                   <div className="flex items-center justify-between mb-3">
                     <p className="font-semibold text-xs text-rose-700 dark:text-rose-300">
-                      Pendaftaran Cepat Akun Reina (CPW)
+                      Pendaftaran Cepat Akun {partnerModal.role === "CPP" ? (couple?.cpp_nickname || "CPP") : (couple?.cpw_nickname || "CPW")} ({partnerModal.role})
                     </p>
                     <button
-                      onClick={() => setShowCreateReina(false)}
+                      onClick={() => setPartnerModal((prev) => ({ ...prev, open: false }))}
                       className="text-xs text-ink-faint hover:text-ink"
                     >
                       Batal
                     </button>
                   </div>
-                  <form onSubmit={handleCreateReina} className="space-y-3">
+                  <form onSubmit={handleCreatePartner} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Field label="Username Reina" hint="Dipakai saat login di HP Reina.">
+                      <Field label={`Username ${partnerModal.role}`} hint="Dipakai saat masuk ke aplikasi.">
                         <Input
-                          value={reinaForm.username}
-                          onChange={(e) => setReinaForm({ ...reinaForm, username: e.target.value })}
+                          value={partnerModal.username}
+                          onChange={(e) => setPartnerModal({ ...partnerModal, username: e.target.value })}
                           required
                         />
                       </Field>
-                      <Field label="Nama Lengkap" hint="Nama tampilan.">
+                      <Field label="Nama Lengkap" hint="Nama tampilan profil.">
                         <Input
-                          value={reinaForm.name}
-                          onChange={(e) => setReinaForm({ ...reinaForm, name: e.target.value })}
+                          value={partnerModal.name}
+                          onChange={(e) => setPartnerModal({ ...partnerModal, name: e.target.value })}
                           required
                         />
                       </Field>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Field label="Email" hint="Email akun Reina.">
+                      <Field label="Email" hint="Email login akun.">
                         <Input
                           type="email"
-                          value={reinaForm.email}
-                          onChange={(e) => setReinaForm({ ...reinaForm, email: e.target.value })}
+                          value={partnerModal.email}
+                          onChange={(e) => setPartnerModal({ ...partnerModal, email: e.target.value })}
                           required
                         />
                       </Field>
-                      <Field label="Kata Sandi Awal" hint="Dapat diubah oleh Reina di menu Pengaturan.">
+                      <Field label="Kata Sandi Awal" hint="Dapat diubah mandiri di menu Pengaturan.">
                         <Input
-                          value={reinaForm.password}
-                          onChange={(e) => setReinaForm({ ...reinaForm, password: e.target.value })}
+                          value={partnerModal.password}
+                          onChange={(e) => setPartnerModal({ ...partnerModal, password: e.target.value })}
                           required
                         />
                       </Field>
                     </div>
 
                     <div className="flex items-center gap-3 pt-2">
-                      <Button type="submit" loading={creatingReina} icon={UserPlus}>
-                        Buat &amp; Aktifkan Akun Reina
+                      <Button type="submit" loading={creatingPartner} icon={UserPlus}>
+                        Buat &amp; Aktifkan Akun {partnerModal.role}
                       </Button>
-                      <Button variant="ghost" onClick={() => setShowCreateReina(false)}>
+                      <Button variant="ghost" onClick={() => setPartnerModal((prev) => ({ ...prev, open: false }))}>
                         Tutup
                       </Button>
                     </div>
@@ -1307,15 +1447,26 @@ export default function Settings() {
                               >
                                 {isWoRole ? "Wedding Organizer (WO)" : "Panitia Meja / Acara"}
                               </span>
-                              <button
-                                type="button"
-                                disabled={isDeleting}
-                                onClick={() => handleDeleteUser(u.id, u.name || u.username)}
-                                className="p-1 text-ink-faint hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-500/10"
-                                title="Cabut akses akun ini"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenResetPassword(u)}
+                                  className="px-2 py-1 text-ink-muted hover:text-amber-600 transition-colors rounded-lg hover:bg-amber-500/10 flex items-center gap-1 text-[11px] font-medium"
+                                  title="Reset Kata Sandi Akun Panitia (Akses Darurat Hari-H)"
+                                >
+                                  <KeyRound size={13} />
+                                  <span className="hidden sm:inline">Reset Sandi</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isDeleting}
+                                  onClick={() => handleDeleteUser(u.id, u.name || u.username)}
+                                  className="p-1.5 text-ink-faint hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-500/10"
+                                  title="Cabut akses akun ini"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -1343,6 +1494,72 @@ export default function Settings() {
                 )}
               </div>
             </Card>
+
+            {/* Modal Reset Sandi Darurat Panitia */}
+            {resetPasswordModal.open && resetPasswordModal.user && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-canvas dark:bg-night border border-line dark:border-night-line rounded-3xl max-w-md w-full p-6 shadow-2xl">
+                  <div className="flex items-center justify-between pb-3 border-b border-line dark:border-night-line mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-600">
+                        <KeyRound size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm">Reset Kata Sandi Panitia</h3>
+                        <p className="text-[11px] text-ink-muted">Akses darurat hari-H</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setResetPasswordModal({ open: false, user: null, newPassword: "", isSubmitting: false })}
+                      className="text-ink-muted hover:text-ink text-xs p-1"
+                    >
+                      Batal
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveResetPassword} className="space-y-4">
+                    <div className="p-3 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line text-xs">
+                      <p className="text-ink-muted">
+                        Akun: <strong>{resetPasswordModal.user.name || resetPasswordModal.user.username}</strong> (@{resetPasswordModal.user.username})
+                      </p>
+                      <p className="text-[11px] text-ink-faint mt-1 leading-relaxed">
+                        Masukkan kata sandi baru untuk akun ini. Kata sandi lama akan langsung diganti dan otomatis disalin ke papan klip.
+                      </p>
+                    </div>
+
+                    <Field label="Kata Sandi Baru" hint="Minimal 6 karakter.">
+                      <Input
+                        value={resetPasswordModal.newPassword}
+                        onChange={(e) =>
+                          setResetPasswordModal((prev) => ({ ...prev, newPassword: e.target.value }))
+                        }
+                        required
+                      />
+                    </Field>
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setResetPasswordModal({ open: false, user: null, newPassword: "", isSubmitting: false })}
+                      >
+                        Batal
+                      </Button>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        loading={resetPasswordModal.isSubmitting}
+                        icon={Check}
+                      >
+                        Simpan &amp; Salin Sandi
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 

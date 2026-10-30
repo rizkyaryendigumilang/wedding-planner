@@ -209,7 +209,7 @@ const GuestRow = memo(function GuestRow({
         <button
           onClick={() => onRemoveGuest(g)}
           aria-label={`Hapus ${g.name}`}
-          className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+          className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
         >
           <Trash2 size={15} />
         </button>
@@ -1511,7 +1511,7 @@ export default function Guests() {
                       </div>
                       <div className="w-full h-2 rounded-full bg-canvas-sunken dark:bg-night-sunken overflow-hidden">
                         <div
-                          className="h-full bg-sky-500 transition-all duration-200"
+                          className="h-full bg-sky-500 transition-[width] duration-200"
                           style={{ width: `${importModal.progress}%` }}
                         />
                       </div>

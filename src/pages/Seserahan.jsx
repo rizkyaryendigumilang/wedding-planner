@@ -522,7 +522,7 @@ export default function Seserahan() {
                       <button
                         onClick={() => remove(item)}
                         aria-label={`Hapus ${item.detail}`}
-                        className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-all shrink-0"
+                        className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-colors shrink-0"
                       >
                         <Trash2 size={15} />
                       </button>
