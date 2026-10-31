@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, LogOut, MoreHorizontal, X, Pencil } from "lucide-react";
+import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle } from "lucide-react";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
@@ -163,7 +163,7 @@ export default function Layout() {
 
         {isDemo && (
           <div className="mx-4 sm:mx-6 lg:mx-8 mt-4 sm:mt-6 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 flex items-center gap-3 text-sm">
-            <span className="shrink-0 text-amber-600 dark:text-amber-300">⚠️</span>
+            <AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-300" />
             <p className="flex-1 text-amber-800 dark:text-amber-200">
               <span className="font-semibold">Akun Demo</span> — data contoh, kadaluarsa dalam{" "}
               <span className="font-semibold">{demoDaysLeft ?? 0} hari</span>. Daftar akun sendiri
@@ -183,7 +183,7 @@ export default function Layout() {
           <img src={LOGO_URL} alt="Logo" className="w-4 h-4 object-contain inline-block opacity-75" />
           <span>
             Wedding Planner • Rizky &amp; Reina •{" "}
-            {loading ? "menyinkronkan…" : isLiveConnected ? "⚡ sinkron live real-time" : "tersinkron dengan PocketBase"}
+            {loading ? "menyinkronkan…" : isLiveConnected ? "tersinkron langsung" : "tersimpan di server"}
           </span>
         </footer>
       </div>

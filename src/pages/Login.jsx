@@ -935,7 +935,7 @@ export default function Login() {
                 </p>
                 <ol className="list-decimal list-inside space-y-1 pl-1 bg-canvas-sunken dark:bg-night-sunken p-3 rounded-2xl">
                   <li>
-                    Buka Dashboard Admin:{" "}
+                    Buka Dasbor Admin:{" "}
                     <a
                       href="http://127.0.0.1:8090/_/"
                       target="_blank"

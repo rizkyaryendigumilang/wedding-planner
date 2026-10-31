@@ -82,7 +82,7 @@ const TABS = [
   { id: "pasangan", label: "Akun & Hak Akses", icon: Users },
   { id: "demo", label: "Kontrol Demo", icon: Shield },
   { id: "undangan", label: "Undangan & WA", icon: Send },
-  { id: "alerts", label: "Peringatan & Alerts", icon: Bell },
+  { id: "alerts", label: "Peringatan", icon: Bell },
   { id: "tampilan", label: "Tampilan & Tema", icon: Palette },
   { id: "prewedding", label: "Prewedding & Galeri", icon: ImageIcon },
   { id: "cadangan", label: "Ekspor & Cadangan", icon: FileSpreadsheet },
@@ -1009,7 +1009,7 @@ export default function Settings() {
                 </div>
               </div>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Perubahan nama pengantin, tanggal, dan venue di sini akan otomatis memperbarui hitungan mundur di Dasbor dan seluruh dokumen perencanaan secara <em>real-time</em>.
+                Perubahan nama pengantin, tanggal, dan venue di sini akan otomatis memperbarui hitungan mundur di Dasbor dan seluruh dokumen perencanaan secara langsung.
               </p>
 
               <form onSubmit={handleSaveCouple} className="space-y-4 mt-5">
@@ -1802,7 +1802,7 @@ export default function Settings() {
           >
             <Card>
               <div className="flex items-center justify-between">
-                <SectionTitle count="Notifikasi & Peringatan">Pusat Peringatan (Alerts)</SectionTitle>
+                <SectionTitle count="Notifikasi & Peringatan">Pusat Peringatan</SectionTitle>
                 <div className="flex items-center gap-2">
                   {isAlertsDirty && (
                     <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
@@ -1882,7 +1882,7 @@ export default function Settings() {
                 {/* 4. Notifikasi Browser Web Push */}
                 <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">Notifikasi Perangkat (Browser Notification)</p>
+                    <p className="font-semibold text-sm">Notifikasi Perangkat</p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       Status izin:{" "}
                       <span className="font-semibold">
@@ -1905,7 +1905,7 @@ export default function Settings() {
 
                 <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-line/60 dark:border-night-line/60">
                   <Button onClick={handleSaveAlerts} loading={savingAlerts} icon={savedAlerts ? Check : Save}>
-                    {savedAlerts ? "Tersimpan!" : "Simpan Pengaturan Alerts"}
+                    {savedAlerts ? "Tersimpan!" : "Simpan Pengaturan"}
                   </Button>
                   {savedAlerts && (
                     <span className="text-xs text-sage-600 dark:text-sage-300 flex items-center gap-1.5">
@@ -2417,7 +2417,7 @@ export default function Settings() {
             <Card>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <SectionTitle count={`${trashItems?.length || 0} item`}>
-                  Tempat Sampah (Recycle Bin)
+                  Tempat Sampah
                 </SectionTitle>
                 {trashItems?.length > 0 && (
                   <Button
