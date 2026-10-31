@@ -52,6 +52,7 @@ import { PWAInstallButton, PWAInstallBanner } from "../components/PWAInstallProm
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
+import { useLang } from "../lib/i18n";
 import { formatDateId, formatDateTime, formatRupiah } from "../lib/format";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
@@ -141,6 +142,7 @@ export default function Settings() {
   } = useWedding();
   const { user, logout, isSuperuser, isAdmin, displayName, isPanitia } = useAuth();
   const { isDark, toggle, followsSystem } = useTheme();
+  const { lang, setLang } = useLang();
   const reduce = useReducedMotion();
 
   const [rawActiveTab, setActiveTab] = useState("acara");
@@ -1926,6 +1928,37 @@ export default function Settings() {
             transition={{ duration: 0.3, ease: EASE }}
             className="space-y-6"
           >
+            <Card>
+              <SectionTitle>Bahasa Aplikasi</SectionTitle>
+              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                Pilih bahasa yang dipakai di seluruh halaman aplikasi.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  onClick={() => setLang("id")}
+                  className={`p-4 rounded-3xl border text-left transition-colors focus-ring ${
+                    lang === "id"
+                      ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10"
+                      : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold">Bahasa Indonesia</span>
+                  <span className="block text-xs text-ink-muted mt-0.5">Bawaan aplikasi</span>
+                </button>
+                <button
+                  onClick={() => setLang("en")}
+                  className={`p-4 rounded-3xl border text-left transition-colors focus-ring ${
+                    lang === "en"
+                      ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10"
+                      : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold">English</span>
+                  <span className="block text-xs text-ink-muted mt-0.5">English version</span>
+                </button>
+              </div>
+            </Card>
+
             <Card>
               <SectionTitle>Mode Tampilan</SectionTitle>
               <button
