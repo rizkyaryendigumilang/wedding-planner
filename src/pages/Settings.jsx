@@ -1821,8 +1821,8 @@ export default function Settings() {
               <div className="space-y-4 mt-5">
                 {/* 1. Tenggat Vendor */}
                 <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">Peringatan Tenggat Waktu Vendor</p>
                       <p className="text-xs text-ink-muted mt-0.5">
                         Tampilkan spanduk peringatan merah di halaman vendor dan dasbor.
@@ -1835,7 +1835,7 @@ export default function Settings() {
                   </div>
 
                   {alertVendorDeadline && (
-                    <div className="pt-2 border-t border-line/60 dark:border-night-line/60 flex items-center justify-between text-xs">
+                    <div className="pt-2 border-t border-line/60 dark:border-night-line/60 flex flex-wrap items-center justify-between gap-2 text-xs">
                       <span className="text-ink-muted">Batas hari peringatan mendesak:</span>
                       <select
                         value={alertVendorDays}
@@ -1852,8 +1852,8 @@ export default function Settings() {
                 </div>
 
                 {/* 2. Peringatan Pembengkakan Anggaran */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between">
-                  <div>
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Peringatan Pembengkakan Anggaran</p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       Beri tanda peringatan merah jika realisasi biaya suatu pos melebihi alokasi awal.
@@ -1866,8 +1866,8 @@ export default function Settings() {
                 </div>
 
                 {/* 3. Pengingat RSVP Tamu */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between">
-                  <div>
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Pengingat Follow-up Tamu Prioritas</p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       Beri highlight pada tamu prioritas A (Must Invite) yang belum konfirmasi kehadiran.
@@ -1880,8 +1880,8 @@ export default function Settings() {
                 </div>
 
                 {/* 4. Notifikasi Browser Web Push */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between">
-                  <div>
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Notifikasi Perangkat (Browser Notification)</p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       Status izin:{" "}
@@ -1903,7 +1903,7 @@ export default function Settings() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-line/60 dark:border-night-line/60">
                   <Button onClick={handleSaveAlerts} loading={savingAlerts} icon={savedAlerts ? Check : Save}>
                     {savedAlerts ? "Tersimpan!" : "Simpan Pengaturan Alerts"}
                   </Button>
@@ -1955,43 +1955,6 @@ export default function Settings() {
                   />
                 </span>
               </button>
-            </Card>
-
-            <Card>
-              <SectionTitle count="Palet Warna">Tema Estetika Pernikahan</SectionTitle>
-              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Antarmuka dirancang dengan palet warna khusus pernikahan romantis dan elegan:
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                <div className="p-3 rounded-2xl border border-line dark:border-night-line bg-canvas-sunken/40 dark:bg-night-sunken/40 flex items-center gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#b94460] shadow-sm shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold">Tapestry Rose</p>
-                    <p className="text-[10px] text-ink-faint">Warna utama</p>
-                  </div>
-                </div>
-                <div className="p-3 rounded-2xl border border-line dark:border-night-line bg-canvas-sunken/40 dark:bg-night-sunken/40 flex items-center gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#d3a466] shadow-sm shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold">Warm Brass</p>
-                    <p className="text-[10px] text-ink-faint">Aksen emas</p>
-                  </div>
-                </div>
-                <div className="p-3 rounded-2xl border border-line dark:border-night-line bg-canvas-sunken/40 dark:bg-night-sunken/40 flex items-center gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#3d7a64] shadow-sm shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold">Sage Velvet</p>
-                    <p className="text-[10px] text-ink-faint">Status selesai</p>
-                  </div>
-                </div>
-                <div className="p-3 rounded-2xl border border-line dark:border-night-line bg-canvas-sunken/40 dark:bg-night-sunken/40 flex items-center gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#1e1a22] dark:bg-stone-200 shadow-sm shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold">Night Velvet</p>
-                    <p className="text-[10px] text-ink-faint">Latar gelap</p>
-                  </div>
-                </div>
-              </div>
             </Card>
           </motion.div>
         )}
