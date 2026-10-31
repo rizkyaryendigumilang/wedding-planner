@@ -486,7 +486,7 @@ export default function Gifts() {
                 {editingItem ? "Ubah Data Kado / Angpao" : "Catat Kado / Angpao Baru"}
               </h3>
               <p className="text-xs text-ink-faint mb-5">
-                Semua data tersimpan aman dan terenkripsi dalam dasbor keluarga.
+                Semua data tersimpan aman dan terenkripsi dalam dashboard keluarga.
               </p>
 
               <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">

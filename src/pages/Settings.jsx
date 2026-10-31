@@ -1009,7 +1009,7 @@ export default function Settings() {
                 </div>
               </div>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Perubahan nama pengantin, tanggal, dan venue di sini akan otomatis memperbarui hitungan mundur di Dasbor dan seluruh dokumen perencanaan secara langsung.
+                Perubahan nama pengantin, tanggal, dan venue di sini akan otomatis memperbarui hitungan mundur di Dashboard dan seluruh dokumen perencanaan secara langsung.
               </p>
 
               <form onSubmit={handleSaveCouple} className="space-y-4 mt-5">
@@ -1052,7 +1052,7 @@ export default function Settings() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <Field
                     label="Tanggal Pernikahan (Hari-H)"
-                    hint="Menentukan hitungan mundur dasbor."
+                    hint="Menentukan hitungan mundur dashboard."
                   >
                     <Input
                       type="date"
@@ -1825,7 +1825,7 @@ export default function Settings() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">Peringatan Tenggat Waktu Vendor</p>
                       <p className="text-xs text-ink-muted mt-0.5">
-                        Tampilkan spanduk peringatan merah di halaman vendor dan dasbor.
+                        Tampilkan spanduk peringatan merah di halaman vendor dan dashboard.
                       </p>
                     </div>
                     <ToggleSwitch
@@ -2012,7 +2012,7 @@ export default function Settings() {
                   </div>
                 </Field>
 
-                <Field label="Judul galeri" hint="Muncul sebagai judul bagian foto di dasbor utama.">
+                <Field label="Judul galeri" hint="Muncul sebagai judul bagian foto di dashboard utama.">
                   <Input
                     type="text"
                     value={title}
@@ -2024,14 +2024,14 @@ export default function Settings() {
                 <ToggleRow
                   icon={Check}
                   label="Sudah sesi prewedding"
-                  hint="Aktifkan setelah sesi foto selesai agar bagian galeri muncul di dasbor."
+                  hint="Aktifkan setelah sesi foto selesai agar bagian galeri muncul di dashboard."
                   checked={preweddingDone}
                   onChange={setPreweddingDone}
                 />
 
                 <ToggleRow
                   icon={ImageIcon}
-                  label="Tampilkan galeri di dasbor"
+                  label="Tampilkan galeri di dashboard"
                   hint="Matikan jika ingin foto hanya terlihat saat membuka halaman Galeri."
                   checked={showOnDashboard}
                   onChange={setShowOnDashboard}

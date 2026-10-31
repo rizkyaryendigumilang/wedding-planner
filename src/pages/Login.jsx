@@ -772,7 +772,7 @@ export default function Login() {
           <div className="flex items-start gap-2.5 mt-5 p-3.5 rounded-2xl bg-canvas-sunken/70 dark:bg-night-sunken/70 border border-line/60 dark:border-night-line/60">
             <LockKeyhole size={14} className="text-ink-faint shrink-0 mt-0.5" />
             <p className="text-[11px] text-ink-muted leading-relaxed">
-              Data pernikahan bersifat privat &amp; terlindungi. Masuk dengan akun keluarga atau registrasi akun baru untuk mengakses dasbor.
+              Data pernikahan bersifat privat &amp; terlindungi. Masuk dengan akun keluarga atau registrasi akun baru untuk mengakses dashboard.
             </p>
           </div>
         </motion.div>
@@ -935,7 +935,7 @@ export default function Login() {
                 </p>
                 <ol className="list-decimal list-inside space-y-1 pl-1 bg-canvas-sunken dark:bg-night-sunken p-3 rounded-2xl">
                   <li>
-                    Buka Dasbor Admin:{" "}
+                    Buka Dashboard Admin:{" "}
                     <a
                       href="http://127.0.0.1:8090/_/"
                       target="_blank"

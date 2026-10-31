@@ -391,7 +391,7 @@ export function PWAInstallFloatingBanner() {
 }
 
 /**
- * Banner Inline untuk Dasbor atau Pengaturan: Penjelasan fitur PWA & tombol pasang.
+ * Banner Inline untuk Dashboard atau Pengaturan: Penjelasan fitur PWA & tombol pasang.
  */
 export function PWAInstallBanner({ className = "" }) {
   const { isStandalone, isIOS, isInApp, canPrompt, promptInstall } = usePWA();

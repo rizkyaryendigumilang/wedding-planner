@@ -31,7 +31,7 @@ export default function NotFound() {
         </p>
 
         <Link to="/" className="inline-block mt-6">
-          <Button icon={ArrowLeft}>Kembali ke dasbor</Button>
+          <Button icon={ArrowLeft}>Kembali ke dashboard</Button>
         </Link>
       </Card>
     </Page>

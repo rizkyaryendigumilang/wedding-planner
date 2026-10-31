@@ -199,7 +199,7 @@ export default function Gallery() {
         subtitle={
           gallerySummary.preweddingDone
             ? "Semua momen prewedding tersimpan di satu tempat."
-            : "Belum ada sesi prewedding. Foto akan muncul di dasbor setelah ditambahkan."
+            : "Belum ada sesi prewedding. Foto akan muncul di dashboard setelah ditambahkan."
         }
         icon={ImageIcon}
         action={

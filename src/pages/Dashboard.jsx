@@ -116,7 +116,7 @@ export default function Dashboard() {
     [guests]
   );
 
-  if (loading) return <Loading label="Menyiapkan dasbor…" />;
+  if (loading) return <Loading label="Menyiapkan dashboard…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
   if (!couple) {
     return (
@@ -447,7 +447,7 @@ export default function Dashboard() {
 
       {/* ========================= GALERI (kondisional) ========================= */}
       {/* Foto hanya muncul setelah ditandai "sudah prewedding". Sebelum itu
-          tidak ada satu pun elemen foto di dasbor. */}
+          tidak ada satu pun elemen foto di dashboard. */}
       {showGallery && (
         <motion.section
           initial={reduce ? false : { opacity: 0, y: 14 }}
