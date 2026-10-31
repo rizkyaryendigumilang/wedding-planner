@@ -52,7 +52,7 @@ import { PWAInstallButton, PWAInstallBanner } from "../components/PWAInstallProm
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
-import { formatDateId, formatRupiah } from "../lib/format";
+import { formatDateId, formatDateTime, formatRupiah } from "../lib/format";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
 import { LOGO_URL } from "../lib/icons";
@@ -80,6 +80,7 @@ Rizky & Reina`;
 const TABS = [
   { id: "acara", label: "Acara & Pasangan", icon: Heart },
   { id: "pasangan", label: "Akun & Hak Akses", icon: Users },
+  { id: "demo", label: "Kontrol Demo", icon: Shield },
   { id: "undangan", label: "Undangan & WA", icon: Send },
   { id: "alerts", label: "Peringatan & Alerts", icon: Bell },
   { id: "tampilan", label: "Tampilan & Tema", icon: Palette },
@@ -99,6 +100,16 @@ function generatePanitiaPassword(username) {
     return `${cleanBase}${pin}`;
   }
   return `${cleanBase}2028`;
+}
+
+/** Masa berlaku demo: ISO timestamp `days` hari dari sekarang. */
+function demoExpiryIso(days) {
+  return new Date(Date.now() + days * 86_400_000).toISOString();
+}
+
+/** Menandai akun demo nonaktif dengan masa berlaku yang sudah lewat. */
+function demoExpiredIso() {
+  return new Date(Date.now() - 60_000).toISOString();
 }
 
 export default function Settings() {
@@ -128,7 +139,7 @@ export default function Settings() {
     permanentDeleteFromTrash,
     emptyTrash,
   } = useWedding();
-  const { user, logout, isSuperuser, displayName, isPanitia } = useAuth();
+  const { user, logout, isSuperuser, isAdmin, displayName, isPanitia } = useAuth();
   const { isDark, toggle, followsSystem } = useTheme();
   const reduce = useReducedMotion();
 
@@ -136,7 +147,9 @@ export default function Settings() {
   const activeTab =
     isPanitia && (rawActiveTab === "pasangan" || rawActiveTab === "cadangan" || rawActiveTab === "sampah")
       ? "acara"
-      : rawActiveTab;
+      : rawActiveTab === "demo" && !isAdmin
+        ? "acara"
+        : rawActiveTab;
 
   // --- Form 1: Acara & Pasangan ---
   const [cppNickname, setCppNickname] = useState("");
@@ -223,6 +236,19 @@ export default function Settings() {
   // --- Tempat Sampah ---
   const [trashActionId, setTrashActionId] = useState(null);
   const [trashFilter, setTrashFilter] = useState("ALL");
+
+  // --- Kontrol Akun Demo (khusus admin) ---
+  const [demoActionId, setDemoActionId] = useState(null);
+  // Waktu acuan untuk status demo. Diambil di effect agar render tetap murni.
+  const [nowTs, setNowTs] = useState(0);
+
+  // Penanda waktu status akun demo (diperbarui tiap menit).
+  useEffect(() => {
+    const tick = () => setNowTs(Date.now());
+    tick();
+    const timer = setInterval(tick, 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Ambil daftar user partner untuk Skema 2 Akun
   const refreshUsers = useCallback(async () => {
@@ -314,8 +340,10 @@ export default function Settings() {
     showOnDashboard !== (settings?.show_gallery_on_dashboard ?? true);
 
   const availableTabs = isPanitia
-    ? TABS.filter((t) => t.id !== "pasangan" && t.id !== "cadangan" && t.id !== "sampah")
-    : TABS;
+    ? TABS.filter((t) => t.id !== "pasangan" && t.id !== "cadangan" && t.id !== "sampah" && t.id !== "demo")
+    : isAdmin
+      ? TABS
+      : TABS.filter((t) => t.id !== "demo");
 
   const tabDirtyMap = {
     acara: isCoupleDirty,
@@ -849,6 +877,43 @@ export default function Settings() {
       setTrashActionId(null);
     }
   };
+
+  // --- Kontrol Akun Demo (admin) ---
+  // Akun demo dibatasi 7 hari. Admin dapat mengaktifkan kembali, memperpanjang,
+  // atau menonaktifkan lebih awal. Penegakan tetap di server: aturan koleksi
+  // hanya meloloskan data bila `demo_expires_at` masih di masa depan.
+  const demoUsers = partnerUsers.filter((u) => u.is_demo);
+
+  const applyDemoExpiry = async (target, expiresAt, successMessage) => {
+    setDemoActionId(target.id);
+    try {
+      await pb.collection("users").update(target.id, {
+        is_demo: true,
+        demo_expires_at: expiresAt,
+      });
+      toast.success(successMessage);
+      await refreshUsers();
+    } catch (err) {
+      console.error("Gagal memperbarui status demo:", err);
+      toast.error("Gagal memperbarui status demo: " + (err?.message || "Terjadi kesalahan"));
+    } finally {
+      setDemoActionId(null);
+    }
+  };
+
+  const handleDemoActivate = (target, days = 7) =>
+    applyDemoExpiry(
+      target,
+      demoExpiryIso(days),
+      `Akun demo "${target.name || target.username}" aktif selama ${days} hari.`
+    );
+
+  const handleDemoDisable = (target) =>
+    applyDemoExpiry(
+      target,
+      demoExpiredIso(),
+      `Akun demo "${target.name || target.username}" dinonaktifkan.`
+    );
 
   const filteredTrash = (trashItems || []).filter((it) => {
     if (trashFilter === "ALL") return true;
@@ -2279,6 +2344,101 @@ export default function Settings() {
                   Perbarui Kata Sandi
                 </Button>
               </form>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ===================== TAB: KONTROL AKUN DEMO (ADMIN) ===================== */}
+        {activeTab === "demo" && isAdmin && (
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            className="space-y-6"
+          >
+            <Card>
+              <div className="flex items-center justify-between gap-3">
+                <SectionTitle count={`${demoUsers.length} akun`}>Kontrol Akun Demo</SectionTitle>
+                <span className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <Shield size={16} />
+                </span>
+              </div>
+              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                Akun demo otomatis kehilangan akses data setelah masa berlakunya habis. Dari sini
+                admin dapat mengaktifkan kembali, memperpanjang, atau menonaktifkan lebih awal.
+                Masa berlaku baru diterapkan pada server begitu akun tersebut memuat ulang sesinya.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {demoUsers.length === 0 ? (
+                  <EmptyState
+                    icon={Shield}
+                    message="Belum ada akun demo"
+                    hint="Akun dengan penanda demo akan muncul di sini setelah dibuat."
+                  />
+                ) : (
+                  demoUsers.map((demo) => {
+                    const expiresAt = demo.demo_expires_at ? new Date(demo.demo_expires_at).getTime() : NaN;
+                    const isExpired = !Number.isFinite(expiresAt) || expiresAt < nowTs;
+                    const daysLeft = isExpired ? 0 : Math.ceil((expiresAt - nowTs) / 86_400_000);
+
+                    return (
+                      <div
+                        key={demo.id}
+                        className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-2xl border border-canvas-border dark:border-night-border bg-canvas-sunken/40 dark:bg-night-sunken/40"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <Avatar name={demo.name || demo.username || demo.email} size="md" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {demo.name || demo.username || "Akun Demo"}
+                            </p>
+                            <p className="text-xs text-ink-muted truncate mt-0.5">
+                              @{demo.username || "-"} · {demo.email}
+                            </p>
+                            <p className="text-[11px] text-ink-muted mt-1">
+                              Berlaku sampai {formatDateTime(demo.demo_expires_at)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge tone={isExpired ? "rose" : "sage"}>
+                            {isExpired ? "Nonaktif" : `Aktif · ${daysLeft} hari`}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            icon={RotateCcw}
+                            loading={demoActionId === demo.id}
+                            onClick={() => handleDemoActivate(demo, 7)}
+                          >
+                            Aktifkan 7 hari
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            icon={RefreshCw}
+                            disabled={demoActionId === demo.id}
+                            onClick={() => handleDemoActivate(demo, 30)}
+                          >
+                            +30 hari
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={Lock}
+                            disabled={demoActionId === demo.id || isExpired}
+                            onClick={() => handleDemoDisable(demo)}
+                          >
+                            Nonaktifkan
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </Card>
           </motion.div>
         )}

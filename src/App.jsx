@@ -21,6 +21,8 @@ const Seserahan = lazy(() => import("./pages/Seserahan"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function PageLoader() {
@@ -55,6 +57,8 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route
           element={
             <RequireAuth>

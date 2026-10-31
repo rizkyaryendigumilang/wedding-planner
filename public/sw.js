@@ -1,4 +1,4 @@
-const CACHE_NAME = "wedding-planner-v2";
+const CACHE_NAME = "wedding-planner-v3";
 
 // Resolve scope directory as base path (e.g. "/wedding/" or "/")
 const basePath = new URL(self.registration.scope).pathname.replace(/\/?$/, "/");
@@ -58,25 +58,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Media & berkas PocketBase: Cache-first agar foto prewedding terbuka instan & hemat kuota
+  // Media & berkas PocketBase: network-first.
+  // F-11: cache-first membuat foto lama (atau milik akun sebelumnya di
+  // perangkat yang sama) terus tersaji. Cache kini hanya cadangan offline.
   if (url.pathname.startsWith("/api/files/") || url.pathname.startsWith("/wedding-api/files/")) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(request)
-          .then((networkResponse) => {
-            if (
-              networkResponse &&
-              networkResponse.status === 200 &&
-              (networkResponse.type === "basic" || networkResponse.type === "cors")
-            ) {
-              const clone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
-      })
+      fetch(request)
+        .then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            (networkResponse.type === "basic" || networkResponse.type === "cors")
+          ) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }

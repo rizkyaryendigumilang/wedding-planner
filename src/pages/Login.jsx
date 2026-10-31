@@ -7,10 +7,11 @@ import {
   AlertTriangle,
   LogIn,
   UserPlus,
-  Send,
   X,
   ExternalLink,
   HelpCircle,
+  Mail,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { LOGO_URL } from "../lib/icons";
@@ -52,20 +53,12 @@ function GitHubIcon({ className = "w-4 h-4" }) {
   );
 }
 
-function TelegramIcon({ className = "w-4 h-4" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .36z" />
-    </svg>
-  );
-}
-
 /**
- * Halaman Masuk & Daftar Akun dengan dukungan Gmail (Google), GitHub, Telegram,
- * dan PWA branding logo wedding rings.
+ * Halaman Masuk & Daftar Akun dengan dukungan Gmail (Google), GitHub,
+ * reset kata sandi lewat email, dan PWA branding logo wedding rings.
  */
 export default function Login() {
-  const { login, register, loginWithOAuth, loginWithTelegram, isAuthed } = useAuth();
+  const { login, register, loginWithOAuth, requestPasswordReset, isAuthed } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const reduce = useReducedMotion();
@@ -136,10 +129,12 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState("");
 
-  // Modals
-  const [telegramModalOpen, setTelegramModalOpen] = useState(false);
-  const [tgUsername, setTgUsername] = useState("");
-  const [tgName, setTgName] = useState("");
+  // Modal lupa kata sandi
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   const [oauthHelpModal, setOauthHelpModal] = useState({ open: false, provider: "" });
 
@@ -222,25 +217,23 @@ export default function Login() {
     }
   };
 
-  const handleTelegramSubmit = async (e) => {
+  const handleForgotSubmit = async (e) => {
     e.preventDefault();
-    if (!tgUsername.trim()) return;
+    if (!forgotEmail.trim()) return;
 
-    setError("");
-    setBusy(true);
-    setBusyProvider("telegram");
+    setForgotError("");
+    setForgotBusy(true);
     try {
-      await loginWithTelegram({
-        username: tgUsername.trim(),
-        name: tgName.trim() || tgUsername.trim(),
-      });
-      setTelegramModalOpen(false);
-      navigate(location.state?.from?.pathname || "/", { replace: true });
+      await requestPasswordReset(forgotEmail);
+      setForgotSent(true);
     } catch (err) {
-      setError(err?.message || "Gagal masuk via Telegram. Coba lagi.");
+      setForgotError(
+        err?.response?.message ||
+          err?.message ||
+          "Gagal mengirim tautan reset. Pastikan email terdaftar dan server email aktif."
+      );
     } finally {
-      setBusy(false);
-      setBusyProvider("");
+      setForgotBusy(false);
     }
   };
 
@@ -323,7 +316,7 @@ export default function Login() {
             <div className="w-px h-7 bg-white/10" />
             <div>
               <span className="block font-semibold text-white text-sm">Multi-Auth</span>
-              <span>Gmail, GitHub, Telegram</span>
+              <span>Google &amp; GitHub</span>
             </div>
             <div className="w-px h-7 bg-white/10" />
             <div>
@@ -415,13 +408,13 @@ export default function Login() {
             </button>
           </div>
 
-          {/* ---------------- DERETAN TOMBOL OAUTH (GMAIL, GITHUB, TELEGRAM) ---------------- */}
+          {/* ---------------- DERETAN TOMBOL OAUTH (GMAIL, GITHUB) ---------------- */}
           <div className="space-y-2 mb-5">
             <p className="text-[11px] font-medium text-ink-faint text-center uppercase tracking-wider mb-2.5">
               {mode === "login" ? "Masuk cepat dengan" : "Daftar instan dengan"}
             </p>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {/* Tombol Google / Gmail */}
               <button
                 type="button"
@@ -452,24 +445,6 @@ export default function Login() {
                   <GitHubIcon className="w-4 h-4 shrink-0" />
                 )}
                 <span className="truncate">GitHub</span>
-              </button>
-
-              {/* Tombol Telegram */}
-              <button
-                type="button"
-                onClick={() => setTelegramModalOpen(true)}
-                disabled={busy}
-                title="Lanjutkan dengan akun Telegram"
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:bg-canvas-sunken dark:hover:bg-night-sunken text-xs font-medium text-ink dark:text-stone-100 transition shadow-sm active:scale-[0.97] focus-ring disabled:opacity-50"
-              >
-                {busy && busyProvider === "telegram" ? (
-                  <Loader2 size={16} className="animate-spin text-[#229ED9]" />
-                ) : (
-                  <span className="text-[#229ED9] shrink-0">
-                    <TelegramIcon className="w-4 h-4" />
-                  </span>
-                )}
-                <span className="truncate">Telegram</span>
               </button>
             </div>
           </div>
@@ -586,6 +561,21 @@ export default function Login() {
                   placeholder="••••••••"
                   className="field"
                 />
+              </div>
+
+              <div className="flex justify-end -mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotOpen(true);
+                    setForgotSent(false);
+                    setForgotError("");
+                    setForgotEmail(identity.includes("@") ? identity.trim() : "");
+                  }}
+                  className="text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:underline focus-ring rounded"
+                >
+                  Lupa kata sandi?
+                </button>
               </div>
 
               {error && (
@@ -755,6 +745,11 @@ export default function Login() {
                 </motion.div>
               )}
 
+              <p className="flex items-start gap-2 text-[11px] text-ink-faint leading-relaxed">
+                <Mail size={13} className="shrink-0 mt-0.5" />
+                Tautan verifikasi akan dikirim ke email Anda setelah pendaftaran.
+              </p>
+
               <button
                 type="submit"
                 disabled={busy || !email || !password || !passwordConfirm}
@@ -783,15 +778,15 @@ export default function Login() {
         </motion.div>
       </main>
 
-      {/* ---------------- MODAL TELEGRAM AUTH ---------------- */}
+      {/* ---------------- MODAL LUPA KATA SANDI ---------------- */}
       <AnimatePresence>
-        {telegramModalOpen && (
+        {forgotOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setTelegramModalOpen(false)}
+              onClick={() => setForgotOpen(false)}
               className="absolute inset-0 bg-ink/60 dark:bg-black/75 backdrop-blur-sm"
             />
             <motion.div
@@ -801,70 +796,97 @@ export default function Login() {
               className="relative w-full max-w-sm rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10"
             >
               <button
-                onClick={() => setTelegramModalOpen(false)}
+                onClick={() => setForgotOpen(false)}
+                aria-label="Tutup"
                 className="absolute top-4 right-4 p-2 rounded-xl text-ink-muted hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
               >
                 <X size={16} />
               </button>
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#229ED9]/15 text-[#229ED9] grid place-items-center shrink-0">
-                  <TelegramIcon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0">
+                  <Mail size={18} />
                 </div>
                 <div>
-                  <h3 className="font-display font-semibold text-sm">Masuk via Telegram</h3>
-                  <p className="text-xs text-ink-faint">Daftar atau masuk dengan akun Telegram</p>
+                  <h3 className="font-display font-semibold text-sm">Lupa kata sandi</h3>
+                  <p className="text-xs text-ink-faint">Kami kirim tautan pengaturan ulang</p>
                 </div>
               </div>
 
-              <form onSubmit={handleTelegramSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
-                    Username Telegram
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-3 text-ink-faint text-sm">@</span>
+              {forgotSent ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs leading-relaxed">
+                    <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                    <span>
+                      Bila <strong>{forgotEmail}</strong> terdaftar, tautan reset sudah dikirim.
+                      Periksa kotak masuk dan folder spam, lalu buka tautannya.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotSent(false);
+                      setForgotEmail("");
+                    }}
+                    className="w-full py-2.5 rounded-2xl border border-line dark:border-night-line text-xs font-semibold text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+                  >
+                    Kirim ke email lain
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotSubmit} className="space-y-3.5">
+                  <div>
+                    <label
+                      htmlFor="forgot-email"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1"
+                    >
+                      Email terdaftar
+                    </label>
                     <input
-                      type="text"
-                      value={tgUsername}
-                      onChange={(e) => setTgUsername(e.target.value)}
+                      id="forgot-email"
+                      type="email"
+                      autoComplete="email"
+                      value={forgotEmail}
+                      onChange={(e) => {
+                        setForgotEmail(e.target.value);
+                        if (forgotError) setForgotError("");
+                      }}
                       required
                       autoFocus
-                      placeholder="username_anda"
-                      className="field pl-8"
+                      placeholder="nama@email.com"
+                      className="field"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
-                    Nama Panggilan (Opsional)
-                  </label>
-                  <input
-                    type="text"
-                    value={tgName}
-                    onChange={(e) => setTgName(e.target.value)}
-                    placeholder="Contoh: Reina / Keluarga CPP"
-                    className="field"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={busy || !tgUsername.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#229ED9] hover:bg-[#1d8bc0] text-white text-xs font-semibold shadow-soft active:scale-[0.985] transition disabled:opacity-50"
-                >
-                  {busy && busyProvider === "telegram" ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" /> Menghubungkan…
-                    </>
-                  ) : (
-                    <>
-                      <Send size={15} /> Lanjutkan dengan Telegram
-                    </>
+                  {forgotError && (
+                    <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs">
+                      <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                      <span>{forgotError}</span>
+                    </div>
                   )}
-                </button>
-              </form>
+
+                  <button
+                    type="submit"
+                    disabled={forgotBusy || !forgotEmail.trim()}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-glow active:scale-[0.985] transition disabled:opacity-50 disabled:shadow-none"
+                  >
+                    {forgotBusy ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" /> Mengirim…
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={15} /> Kirim tautan reset
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-ink-faint leading-relaxed">
+                    Akun yang masuk lewat Google atau GitHub tidak memakai kata sandi, jadi tidak
+                    perlu pengaturan ulang.
+                  </p>
+                </form>
+              )}
             </motion.div>
           </div>
         )}
@@ -928,7 +950,7 @@ export default function Login() {
                   <li>Masukkan <strong>Client ID</strong> &amp; <strong>Client Secret</strong> Anda</li>
                 </ol>
                 <p className="text-[11px] text-ink-faint pt-1">
-                  💡 <em>Sementara itu, Anda dapat langsung masuk memakai formulir username/password atau opsi Telegram.</em>
+                  Sementara itu, Anda dapat langsung masuk memakai formulir nama pengguna dan kata sandi.
                 </p>
               </div>
 

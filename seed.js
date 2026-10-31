@@ -23,8 +23,17 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
-const PB_EMAIL = process.env.PB_EMAIL || "rizkyaryendigumilang@gmail.com";
-const PB_PASSWORD = process.env.PB_PASSWORD || "Apaya1234";
+const PB_EMAIL = process.env.PB_EMAIL;
+const PB_PASSWORD = process.env.PB_PASSWORD;
+
+if (!PB_EMAIL || !PB_PASSWORD) {
+  console.error(
+    "\nKredensial superuser wajib diisi lewat environment variable.\n" +
+      "Contoh (PowerShell):\n" +
+      '  $env:PB_EMAIL="admin@contoh.com"; $env:PB_PASSWORD="..."; node seed.js\n'
+  );
+  process.exit(1);
+}
 
 const pb = new PocketBase(PB_URL);
 pb.autoCancellation(false);
