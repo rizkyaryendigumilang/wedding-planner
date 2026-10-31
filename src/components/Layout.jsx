@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle } from "lucide-react";
@@ -24,10 +24,15 @@ export default function Layout() {
       ? `${couple.cpp_nickname} & ${couple.cpw_nickname}`
       : "Wedding Planner";
 
+  // Judul tab browser mengikuti nama CPP & CPW secara otomatis.
+  useEffect(() => {
+    document.title = `Wedding Planner — ${coupleName}`;
+  }, [coupleName]);
+
   const navItems = useMemo(() => {
     if (isPanitia) {
       return [
-        { to: "/", label: "Dasbor", icon: "dashboard", end: true },
+        { to: "/", label: "Dashboard", icon: "dashboard", end: true },
         { to: "/rundown", label: "Itinerary", icon: "rundown" },
         { to: "/reception", label: "Meja Tamu", icon: "reception" },
         { to: "/guests", label: "Tamu", icon: "guests" },
@@ -37,7 +42,7 @@ export default function Layout() {
       ];
     }
     return [
-      { to: "/", label: "Dasbor", icon: "dashboard", end: true },
+      { to: "/", label: "Dashboard", icon: "dashboard", end: true },
       { to: "/rundown", label: "Itinerary", icon: "rundown" },
       { to: "/reception", label: "Meja Tamu", icon: "reception" },
       { to: "/budget", label: "Anggaran", icon: "budget" },
