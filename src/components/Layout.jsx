@@ -13,7 +13,7 @@ const WEDDING_DATE = "2028-02-17";
 export default function Layout() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { couple, reload, loading, isLiveConnected } = useWedding();
-  const { user, logout, isSuperuser, isPanitia } = useAuth();
+  const { user, logout, isSuperuser, isPanitia, isDemo, demoDaysLeft } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
   const location = useLocation();
 
@@ -160,6 +160,17 @@ export default function Layout() {
             </Link>
           </div>
         </header>
+
+        {isDemo && (
+          <div className="mx-4 sm:mx-6 lg:mx-8 mt-4 sm:mt-6 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 flex items-center gap-3 text-sm">
+            <span className="shrink-0 text-amber-600 dark:text-amber-300">⚠️</span>
+            <p className="flex-1 text-amber-800 dark:text-amber-200">
+              <span className="font-semibold">Akun Demo</span> — data contoh, kadaluarsa dalam{" "}
+              <span className="font-semibold">{demoDaysLeft ?? 0} hari</span>. Daftar akun sendiri
+              untuk data pribadi.
+            </p>
+          </div>
+        )}
 
         <main
           className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8"

@@ -79,6 +79,21 @@ export function AuthProvider({ children }) {
     }
 
     const current = record || pb.authStore.record || null;
+
+    // Akun demo yang sudah kadaluarsa tidak boleh masuk. Cek di sisi klien
+    // untuk UX yang ramah; aturan server (bila diaktifkan) tetap menjadi
+    // penegak utama.
+    if (current?.is_demo && current?.demo_expires_at) {
+      const expires = new Date(current.demo_expires_at).getTime();
+      if (Number.isFinite(expires) && expires < Date.now()) {
+        pb.authStore.clear();
+        setUser(null);
+        const err = new Error("Akun demo telah kadaluarsa (lebih dari 7 hari).");
+        err.code = "demo_expired";
+        throw err;
+      }
+    }
+
     setUser(current);
 
     if (current) {
@@ -227,6 +242,17 @@ export function AuthProvider({ children }) {
     const isOwner = !isPanitia;
     const canViewBudget = isOwner;
 
+    // Akun demo: tandai dan hitung sisa hari sebelum kadaluarsa.
+    const isDemo = !!user?.is_demo;
+    let demoDaysLeft = null;
+    if (isDemo && user?.demo_expires_at) {
+      const expires = new Date(user.demo_expires_at).getTime();
+      if (Number.isFinite(expires)) {
+        // eslint-disable-next-line react-hooks/purity
+        demoDaysLeft = Math.max(0, Math.ceil((expires - Date.now()) / 86400000));
+      }
+    }
+
     return {
       user,
       ready,
@@ -237,6 +263,8 @@ export function AuthProvider({ children }) {
       isOwner,
       isPanitia,
       canViewBudget,
+      isDemo,
+      demoDaysLeft,
       /** Nama yang layak ditampilkan — username lebih dikenali daripada email. */
       displayName: user?.name || user?.username || user?.email || "Pemilik",
       login,
