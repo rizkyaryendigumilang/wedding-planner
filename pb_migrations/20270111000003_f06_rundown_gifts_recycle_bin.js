@@ -1,17 +1,15 @@
 /// <summary>
-/// 20270111000003 — Isolasi tenant untuk rundown_events, wedding_gifts, recycle_bin
-/// (F-06 perbaikan: tambahkan field `couple` lalu terapkan aturan tenant-scoped).
+/// 20270111000003 — Isolasi tenant untuk rundown_events, wedding_gifts, recycle_bin (F-06).
 ///
-/// Tanpa perubahan skema di kode aplikasi: field `couple` ditambahkan secara
-/// manual ke tiga koleksi lewat PocketBase Admin API (relasi ke `couples`),
-/// lalu migrasi ini menambahkan aturan akses yang cocok dengan pola F-02.
+/// Menambahkan field `couple` (relasi ke `couples`) pada ketiga koleksi bila
+/// belum ada, lalu terapkan aturan tenant-scoped yang sama dengan F-02:
+///  - list/view hanya untuk pemilik couple (couple = auth.couple ||
+///    couple.owner = auth.id), dan akun demo tidak kadaluarsa.
+///  - create hanya boleh menetapkan couple milik sendiri.
+///  - update/delete: pemilik couple atau admin aplikasi (username = "admin").
 ///
-/// Aturan:
-///  - list/view/create/update/delete hanya untuk pemilik couple
-///    (couple = auth.couple || couple.owner = auth.id)
-///  - Akun demo yang kedaluwarsa tidak bisa membaca data (EXPIRY gate)
-///  - Admin aplikasi (username = "admin") retained access untuk kontrol demo
-///    di recycle_bin jika diperlukan.
+/// Tanpa perubahan skema di kode aplikasi: field `couple` ditambahkan lewat
+/// migrasi PocketBase (relasi ke koleksi `couples`).
 /// </summary>
 migrate(
   (app) => {
@@ -24,10 +22,26 @@ migrate(
     const baseAccess =
       '@request.auth.id != "" && ' + tenant + " && " + EXPIRY;
 
-    // Data terkait couple: rundown_events, wedding_gifts
-    for (const name of ["rundown_events", "wedding_gifts"]) {
-      const collection = app.findCollectionByNameOrId(name);
+    const ensureCoupleField = (collection) => {
+      const names = collection.fields.map((f) => f.name);
+      if (names.includes("couple")) return;
+      collection.fields.addAt(
+        collection.fields.length,
+        new Field({
+          collectionId: "pbc_2240088416",
+          cascadeDelete: false,
+          maxSelect: 1,
+          minSelect: 0,
+          name: "couple",
+          presentable: false,
+          required: false,
+          system: false,
+          type: "relation",
+        })
+      );
+    };
 
+    const setRules = (collection) => {
       collection.listRule = baseAccess;
       collection.viewRule = baseAccess;
 
@@ -36,32 +50,22 @@ migrate(
         '(@request.body.couple:isset = true && ' +
         '@request.body.couple.owner = @request.auth.id)';
 
-      collection.updateRule =
-        baseAccess + ' || (@request.auth.username = "admin")';
+      collection.updateRule = baseAccess + ' || (@request.auth.username = "admin")';
+      collection.deleteRule = baseAccess + ' || (@request.auth.username = "admin")';
+    };
 
-      collection.deleteRule =
-        baseAccess + ' || (@request.auth.username = "admin")';
-
+    // Data terkait couple: rundown_events, wedding_gifts
+    for (const name of ["rundown_events", "wedding_gifts"]) {
+      const collection = app.findCollectionByNameOrId(name);
+      ensureCoupleField(collection);
+      setRules(collection);
       app.save(collection);
     }
 
     // recycle_bin: catatan item yang dihapus, scoping via couple
     const bin = app.findCollectionByNameOrId("recycle_bin");
-
-    bin.listRule = baseAccess;
-    bin.viewRule = baseAccess;
-
-    bin.createRule =
-      '@request.auth.id != "" && ' +
-      '(@request.body.couple:isset = true && ' +
-      '@request.body.couple.owner = @request.auth.id)';
-
-    bin.updateRule =
-        baseAccess + ' || (@request.auth.username = "admin")';
-
-    bin.deleteRule =
-        baseAccess + ' || (@request.auth.username = "admin")';
-
+    ensureCoupleField(bin);
+    setRules(bin);
     app.save(bin);
   },
   (_app) => {

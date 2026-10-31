@@ -425,12 +425,14 @@ export function WeddingProvider({ children }) {
         pb.authStore.model?.email ||
         "Pengguna";
 
-      // 1. Simpan salinan ke recycle_bin
+      // 1. Simpan salinan ke recycle_bin (pertahankan pemetaan couple agar
+      //    data tetap terisolasi per-akun saat dipulihkan)
       await pb.collection("recycle_bin").create({
         collection_name: collectionName,
         item_title: title,
         item_data: item,
         deleted_by: userIdentifier,
+        couple: item.couple || null,
       });
 
       // 2. Hapus dari koleksi asli
