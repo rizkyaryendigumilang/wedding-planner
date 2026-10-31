@@ -142,7 +142,7 @@ export default function Settings() {
   } = useWedding();
   const { user, logout, isSuperuser, isAdmin, displayName, isPanitia } = useAuth();
   const { isDark, toggle, followsSystem } = useTheme();
-  const { lang, setLang } = useLang();
+  const { lang, setLang, t } = useLang();
   const reduce = useReducedMotion();
 
   const [rawActiveTab, setActiveTab] = useState("acara");
@@ -654,13 +654,13 @@ export default function Settings() {
   // 7. Ekspor CSV
   const exportGuestsCsv = () => {
     const headers = [
-      { key: "name", label: "Nama Tamu" },
-      { key: "category", label: "Kategori" },
+      { key: "name", label: t("Nama Tamu") },
+      { key: "category", label: t("Kategori") },
       { key: "side", label: "Pihak" },
-      { key: "priority", label: "Prioritas" },
-      { key: "pax", label: "Jumlah Pax" },
-      { key: "status", label: "Status RSVP" },
-      { key: "phone", label: "No. WhatsApp" },
+      { key: "priority", label: t("Prioritas") },
+      { key: "pax", label: t("Jumlah Pax") },
+      { key: "status", label: t("Status RSVP") },
+      { key: "phone", label: t("No. WhatsApp") },
       { key: "invitation_sent", label: "Sudah Kirim Undangan", format: (v) => (v ? "Ya" : "Belum") },
       { key: "invitation_url", label: "Link Undangan Personal" },
       { key: "notes", label: "Catatan" },
@@ -672,7 +672,7 @@ export default function Settings() {
   const exportBudgetsCsv = () => {
     const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const headers = [
-      { key: "category", label: "Kategori" },
+      { key: "category", label: t("Kategori") },
       { key: "item", label: "Nama Pos / Item" },
       { key: "allocated", label: "Alokasi Target (Rp)", format: (v) => v || 0 },
       { key: "actual", label: "Realisasi (Rp)", format: (v) => v || 0 },
@@ -686,7 +686,7 @@ export default function Settings() {
   const exportVendorsCsv = () => {
     const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
     const headers = [
-      { key: "category", label: "Kategori" },
+      { key: "category", label: t("Kategori") },
       { key: "name", label: "Nama Vendor" },
       { key: "contact", label: "Kontak / PIC" },
       { key: "phone", label: "No. HP / WA" },
@@ -1907,7 +1907,7 @@ export default function Settings() {
 
                 <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-line/60 dark:border-night-line/60">
                   <Button onClick={handleSaveAlerts} loading={savingAlerts} icon={savedAlerts ? Check : Save}>
-                    {savedAlerts ? "Tersimpan!" : "Simpan Pengaturan"}
+                    {savedAlerts ? t("Tersimpan!") : t("Simpan Pengaturan")}
                   </Button>
                   {savedAlerts && (
                     <span className="text-xs text-sage-600 dark:text-sage-300 flex items-center gap-1.5">
@@ -2014,12 +2014,12 @@ export default function Settings() {
 
               <div className="space-y-4 mt-4">
                 <Field
-                  label="Tautan Google Drive"
+                  label={t("Tautan Google Drive")}
                   hint={
                     drive
                       ? isDriveFolder(drive)
-                        ? "Tautan folder — foto di dalamnya dapat ditambahkan di halaman Galeri."
-                        : "Tautan berkas dikenali."
+                        ? t("Tautan folder — foto di dalamnya dapat ditambahkan di halaman Galeri.")
+                        : t("Tautan berkas dikenali.")
                       : "Boleh tautan berkas atau folder Google Drive. Kosongkan jika belum ada."
                   }
                 >
@@ -2045,7 +2045,7 @@ export default function Settings() {
                   </div>
                 </Field>
 
-                <Field label="Judul galeri" hint="Muncul sebagai judul bagian foto di dashboard utama.">
+                <Field label={t("Judul galeri")} hint={t("Muncul sebagai judul bagian foto di dashboard utama.")}>
                   <Input
                     type="text"
                     value={title}
@@ -2056,23 +2056,23 @@ export default function Settings() {
 
                 <ToggleRow
                   icon={Check}
-                  label="Sudah sesi prewedding"
-                  hint="Aktifkan setelah sesi foto selesai agar bagian galeri muncul di dashboard."
+                  label={t("Sudah sesi prewedding")}
+                  hint={t("Aktifkan setelah sesi foto selesai agar bagian galeri muncul di dashboard.")}
                   checked={preweddingDone}
                   onChange={setPreweddingDone}
                 />
 
                 <ToggleRow
                   icon={ImageIcon}
-                  label="Tampilkan galeri di dashboard"
-                  hint="Matikan jika ingin foto hanya terlihat saat membuka halaman Galeri."
+                  label={t("Tampilkan galeri di dashboard")}
+                  hint={t("Matikan jika ingin foto hanya terlihat saat membuka halaman Galeri.")}
                   checked={showOnDashboard}
                   onChange={setShowOnDashboard}
                 />
 
                 <div className="flex items-center gap-3 pt-1">
                   <Button onClick={handleSaveGallery} loading={savingGallery} icon={savedGallery ? Check : Save}>
-                    {savedGallery ? "Tersimpan" : "Simpan Pengaturan Galeri"}
+                    {savedGallery ? t("Tersimpan") : t("Simpan Pengaturan Galeri")}
                   </Button>
                 </div>
               </div>
