@@ -149,9 +149,26 @@ export function WeddingProvider({ children }) {
           couple = await pb.collection("couples").getFirstListItem(`owner="${user.id}"`);
         } catch (_) {}
       }
-      if (!couple) {
-        const couples = await pb.collection("couples").getFullList({ sort: "-created" });
-        couple = couples[0] || null;
+      if (!couple && user?.id) {
+        // Tidak ada couple untuk user ini -> buat couple baru (default) agar
+        // data antar akun tidak saling bocor. Jangan pernah fallback ke couple
+        // pertama di database (itu milik orang lain).
+        try {
+          couple = await pb.collection("couples").create({
+            owner: user.id,
+            cpp_nickname: user?.name || "CPP",
+            cpw_nickname: "CPW",
+            wedding_date: "2028-02-17",
+            venue: "Gedung Pernikahan",
+            target_budget: 85000000,
+          });
+          // Tautkan couple baru ke user agar kunjungan berikutnya langsung.
+          try {
+            await pb.collection("users").update(user.id, { couple: couple.id });
+          } catch (_) {}
+        } catch (_) {
+          couple = null;
+        }
       }
       const coupleId = couple?.id;
 
