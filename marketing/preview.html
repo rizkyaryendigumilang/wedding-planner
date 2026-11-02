@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Preview — Materi Posting</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 56px 48px 80px;
+    background: #efebe5;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #1c1917;
+  }
+  h1 { font-size: 22px; letter-spacing: .01em; margin: 0 0 6px; }
+  p.lede { margin: 0 0 40px; color: #78716c; font-size: 14px; max-width: 760px; line-height: 1.6; }
+  h2 {
+    font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: #a8a29e; margin: 44px 0 16px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+  figure { margin: 0; }
+  figure img {
+    display: block; background: #fff; border-radius: 14px;
+    box-shadow: 0 18px 40px -24px rgba(28,25,23,.5), 0 2px 6px rgba(28,25,23,.08);
+  }
+  figcaption { margin-top: 10px; font-size: 12px; color: #78716c; letter-spacing: .02em; }
+  figcaption b { color: #1c1917; font-weight: 600; }
+  .carousel img { width: 372px; }
+  .tall img { width: 340px; }
+  .sq img { width: 400px; }
+</style>
+</head>
+<body>
+  <h1>Materi posting — Wedding Planner</h1>
+  <p class="lede">
+    Semua gambar sudah dipotong ke rasio Instagram yang benar. File PNG asli ada di
+    <code>marketing/out/</code>. Carousel 1080×1350 (4:5) untuk feed, story 1080×1920 (9:16),
+    dan satu versi 1080×1080 (1:1).
+  </p>
+
+  <h2>Carousel feed — 1080 × 1350 (4:5)</h2>
+  <div class="row carousel">
+    <figure><img src="/m/out/ig-01-cover.png" alt=""><figcaption><b>01</b> Cover · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-02-dasbor.png" alt=""><figcaption><b>02</b> Dasbor · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-03-anggaran.png" alt=""><figcaption><b>03</b> Anggaran · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-04-tamu.png" alt=""><figcaption><b>04</b> Tamu · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-05-vendor.png" alt=""><figcaption><b>05</b> Vendor · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-06-seserahan.png" alt=""><figcaption><b>06</b> Seserahan · 1080×1350</figcaption></figure>
+    <figure><img src="/m/out/ig-07-cta.png" alt=""><figcaption><b>07</b> CTA demo · 1080×1350</figcaption></figure>
+  </div>
+
+  <h2>Story / Reels cover — 1080 × 1920 (9:16)</h2>
+  <div class="row tall">
+    <figure><img src="/m/out/story-01-cover.png" alt=""><figcaption><b>Story</b> cover · 1080×1920</figcaption></figure>
+  </div>
+
+  <h2>Feed persegi — 1080 × 1080 (1:1)</h2>
+  <div class="row sq">
+    <figure><img src="/m/out/square-01-cover.png" alt=""><figcaption><b>Square</b> cover · 1080×1080</figcaption></figure>
+  </div>
+</body>
+</html>

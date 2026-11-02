@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>slide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#faf7f4;
+    --ink:#1c1917;
+    --ink-muted:#78716c;
+    --ink-faint:#a8a29e;
+    --line:#ebe4dd;
+    --rose:#b94460;
+    --rose-deep:#9a3450;
+    --brass:#cfa347;
+    --sage:#4d7d55;
+    --night:#141118;
+    --pad:88px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:#e9e2da; }
+  body{ font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+
+  #stage{
+    position:relative;
+    width:1080px; height:1350px;
+    background:var(--canvas);
+    overflow:hidden;
+    color:var(--ink);
+    isolation:isolate;
+  }
+  #stage::before{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      radial-gradient(760px 620px at 94% -8%, rgba(185,68,96,.13), transparent 62%),
+      radial-gradient(720px 640px at 2% 106%, rgba(207,163,71,.17), transparent 64%),
+      radial-gradient(900px 700px at 46% 42%, rgba(255,255,255,.6), transparent 72%);
+    z-index:-1;
+  }
+  #stage::after{
+    content:"";
+    position:absolute; inset:26px;
+    border:1px solid rgba(28,25,23,.07);
+    border-radius:28px;
+    pointer-events:none;
+    z-index:6;
+  }
+
+  .top{
+    position:absolute; left:var(--pad); right:var(--pad); top:62px;
+    display:flex; align-items:center; justify-content:space-between;
+    z-index:4;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .mark{
+    width:38px; height:38px; border-radius:13px;
+    background:linear-gradient(145deg,#c2506b,#96314c);
+    display:grid; place-items:center;
+    box-shadow:0 10px 22px -12px rgba(154,52,80,.75), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .mark img{ width:23px; height:23px; object-fit:contain; }
+  .wordmark{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-size:14px; font-weight:600; letter-spacing:.26em; text-transform:uppercase;
+    padding-top:1px;
+  }
+  .counter{
+    font-size:12px; font-weight:600; letter-spacing:.22em;
+    color:var(--ink-faint); font-variant-numeric:tabular-nums;
+  }
+
+  .eyebrow{
+    position:absolute; left:var(--pad); top:176px;
+    display:flex; align-items:center; gap:14px;
+    font-size:12px; font-weight:700; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--rose);
+  }
+  .eyebrow i{ display:block; width:38px; height:1px; background:var(--rose); opacity:.55; }
+
+  h1{
+    position:absolute; left:var(--pad); top:212px; width:904px;
+    font-family:'Bricolage Grotesque','Inter',sans-serif;
+    font-weight:700; font-size:74px; line-height:1.02; letter-spacing:-.035em;
+  }
+  h1 span{ display:block; }
+  h1 em{
+    font-family:'Fraunces',Georgia,serif; font-style:italic; font-weight:400;
+    color:var(--rose-deep); letter-spacing:-.018em;
+  }
+  .sub{
+    position:absolute; left:var(--pad); width:648px;
+    font-size:21.5px; line-height:1.62; color:var(--ink-muted);
+  }
+
+  .phone{
+    position:absolute;
+    background:var(--night);
+    border-radius:52px;
+    padding:11px;
+    box-shadow:
+      0 44px 90px -44px rgba(28,25,23,.58),
+      0 12px 26px -14px rgba(28,25,23,.32),
+      inset 0 0 0 1px rgba(255,255,255,.10);
+    z-index:3;
+  }
+  .phone .screen{
+    display:block; width:100%; height:100%;
+    border-radius:41px; object-fit:cover; object-position:top center;
+    background:#faf7f4;
+  }
+  .halo{
+    position:absolute; border-radius:50%;
+    border:1px solid rgba(207,163,71,.45);
+    pointer-events:none; z-index:1;
+  }
+  .halo.b{ border-color:rgba(185,68,96,.18); }
+
+  .chip{
+    position:absolute; display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.95);
+    border:1px solid rgba(28,25,23,.07);
+    border-radius:999px; padding:13px 22px 13px 17px;
+    box-shadow:0 18px 40px -18px rgba(28,25,23,.36), 0 2px 6px rgba(28,25,23,.05);
+    z-index:4;
+  }
+  .chip .dot{
+    width:9px; height:9px; border-radius:50%; background:var(--sage);
+    box-shadow:0 0 0 4px rgba(77,125,85,.16);
+  }
+  .chip b{ font-size:16px; font-weight:600; letter-spacing:-.01em; }
+  .chip span{ font-size:13px; color:var(--ink-muted); }
+
+  .creds{ position:absolute; display:flex; align-items:center; gap:10px; z-index:4; }
+  .pill{
+    font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;
+    font-size:16px; font-weight:600;
+    background:#fff; border:1px solid var(--line);
+    border-radius:14px; padding:12px 18px;
+    box-shadow:0 10px 24px -16px rgba(28,25,23,.5);
+  }
+  .pill span{
+    color:var(--ink-faint); font-weight:600; margin-right:9px; font-size:11px;
+    letter-spacing:.16em; text-transform:uppercase; font-family:'Inter',sans-serif;
+  }
+
+  .laptop{ position:absolute; z-index:3; }
+  .laptop .lid{
+    background:#1b1720; border-radius:18px 18px 3px 3px; padding:12px 12px 14px;
+    box-shadow:0 44px 84px -44px rgba(28,25,23,.62), inset 0 0 0 1px rgba(255,255,255,.12);
+  }
+  .laptop .lid img{ display:block; width:100%; border-radius:8px; }
+  .laptop .base{
+    height:15px; margin:0 -14px;
+    background:linear-gradient(#3b3440,#221d29 58%,#141118);
+    border-radius:0 0 12px 12px; position:relative;
+  }
+  .laptop .base::after{
+    content:""; position:absolute; left:50%; top:0; transform:translateX(-50%);
+    width:86px; height:6px; background:rgba(255,255,255,.14); border-radius:0 0 6px 6px;
+  }
+
+  .foot{
+    position:absolute; left:var(--pad); right:var(--pad); bottom:54px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-faint); font-weight:600;
+  }
+
+  body.story #stage{ height:1920px; }
+  body.story .eyebrow{ top:250px; }
+  body.story h1{ top:290px; font-size:96px; }
+  body.story .sub{ font-size:24px; width:700px; }
+
+  body.square #stage{ height:1080px; }
+  body.square .eyebrow{ top:150px; }
+  body.square h1{ top:186px; font-size:64px !important; }
+  body.square .sub{ font-size:18px !important; width:556px !important; line-height:1.58; }
+  body.square .foot{ bottom:44px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  const Q = new URLSearchParams(location.search);
+  const N = parseInt(Q.get("n") || "1", 10);
+  const FMT = Q.get("fmt") || "portrait";
+  const logo = "/logo-transparent.png";
+  const shot = (name) => "/m/shots/" + name + ".png" + (Q.get("imgv") ? "?v=" + Q.get("imgv") : "");
+
+  const slides = {
+    1: {
+      eyebrow: "Untuk pasangan yang serius",
+      head: ["Semua urusan", "nikah, <em>satu tempat.</em>"],
+      sub: "Anggaran, tamu, vendor, seserahan, sampai galeri prewedding \u2014 rapi di satu aplikasi.",
+      phone: "m-dashboard",
+      size: 86,
+      cover: true
+    },
+    2: {
+      eyebrow: "01 \u2014 Dasbor",
+      head: ["Hitung mundur,", "dana, dan <em>pengingat.</em>"],
+      sub: "Satu layar untuk sisa hari menuju hari-H, dana terkumpul, dan apa yang perlu dibereskan minggu ini.",
+      phone: "m-dashboard",
+      chip: { b: "473 hari lagi", s: "menuju 17 Feb 2028", side: "left" },
+      foot: ["01 \u2014 dasbor", "02 / 07"]
+    },
+    3: {
+      eyebrow: "02 \u2014 Anggaran",
+      head: ["Rp 85 juta.", "Tahu ke mana", "<em>perginya.</em>"],
+      sub: "Pemasukan CPP & CPW, pengeluaran, DP vendor. Sisa target tabungan dihitung otomatis.",
+      phone: "m-budget",
+      size: 66,
+      chip: { b: "Rp 62.000.000", s: "terkumpul dari 85 jt", side: "right" },
+      foot: ["02 \u2014 anggaran", "03 / 07"]
+    },
+    4: {
+      eyebrow: "03 \u2014 Tamu",
+      head: ["165 tamu,", "prioritas A/B/C,", "<em>dan RSVP.</em>"],
+      sub: "Kelompokkan per circle, tandai undangan digital atau fisik, kirim e-invite WhatsApp satu klik.",
+      phone: "m-guests",
+      size: 66,
+      chip: { b: "281 pax", s: "terdata", side: "left" },
+      foot: ["03 \u2014 tamu", "04 / 07"]
+    },
+    5: {
+      eyebrow: "04 \u2014 Vendor",
+      head: ["Tidak ada lagi", "<em>\u201csudah DP belum?\u201d</em>"],
+      sub: "Checklist vendor dengan tenggat, hitung mundur, dan status pembayaran. Semua kelihatan.",
+      phone: "m-vendors",
+      chip: { b: "52 tugas", s: "terpantau", side: "right" },
+      foot: ["04 \u2014 vendor", "05 / 07"]
+    },
+    6: {
+      eyebrow: "05 \u2014 Seserahan",
+      head: ["Daftar seserahan,", "plus <em>link Shopee.</em>"],
+      sub: "Simpan tautan barang, estimasi anggaran, dan harga aktual. Centang setiap kali dibeli.",
+      phone: "m-seserahan",
+      chip: { b: "45 item", s: "di 7 kategori", side: "left" },
+      foot: ["05 \u2014 seserahan", "06 / 07"]
+    },
+    7: {
+      eyebrow: "Coba dulu",
+      head: ["Akun sendiri,", "<em>data sendiri.</em>"],
+      sub: "Daftar dan mulai dari nol dalam satu menit. Atau lihat isinya lewat akun demo 7 hari.",
+      laptop: "d-dashboard",
+      size: 80,
+      cover: true,
+      foot: ["07 \u2014 mulai", "dm \u201cdemo\u201d untuk akses"]
+    }
+  };
+
+  const s = slides[N];
+  document.body.className = FMT;
+  const stage = document.getElementById("stage");
+  const H = () => stage.getBoundingClientRect().height;
+
+  const el = (html) => {
+    const t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  };
+  const rect = (node) => {
+    const sb = stage.getBoundingClientRect();
+    const r = node.getBoundingClientRect();
+    return { x: Math.round(r.left - sb.left), y: Math.round(r.top - sb.top), w: Math.round(r.width), h: Math.round(r.height), bottom: Math.round(r.bottom - sb.top) };
+  };
+
+  function build() {
+    stage.appendChild(el(`
+      <div class="top">
+        <div class="brand">
+          <div class="mark"><img src="${logo}" alt=""></div>
+          <div class="wordmark">Wedding Planner</div>
+        </div>
+        <div class="counter">${String(N).padStart(2, "0")} / 07</div>
+      </div>
+    `));
+
+    stage.appendChild(el(`<div class="eyebrow"><i></i>${s.eyebrow}</div>`));
+
+    const h1 = el(`<h1>${s.head.map(l => `<span>${l}</span>`).join("")}</h1>`);
+    if (s.size) h1.style.fontSize = s.size + "px";
+    stage.appendChild(h1);
+
+    const hb = rect(h1);
+    const sub = el(`<div class="sub">${s.sub}</div>`);
+    sub.style.top = (hb.bottom + 26) + "px";
+    stage.appendChild(sub);
+    const sbx = rect(sub);
+
+    const limit = H() - 34;
+
+    if (s.phone) {
+      const isCover = !!s.cover;
+      const isSquare = FMT === "square";
+      // Ukuran telepon menyesuaikan sisa ruang supaya tidak pernah melimpah.
+      let top = isCover ? Math.max(sbx.bottom + 44, 430) : (sbx.bottom + 52);
+      let maxBottom = isCover ? H() + (isSquare ? 380 : -36) : limit - 8;
+      let w = isCover ? (isSquare ? 424 : 404) : 392;
+      if (FMT === "story") w = Math.min(520, Math.floor(((H() - 70) - top) / 844 * 390));
+      let h = Math.round((w / 390) * 844);
+      if (top + h > maxBottom) {
+        h = maxBottom - top;
+        w = Math.round((h / 844) * 390);
+      }
+      const left = Math.round((1080 - w) / 2);
+
+      stage.appendChild(el(`<div class="halo b" style="width:760px;height:760px;left:${left + w - 300}px;top:${top - 250}px"></div>`));
+      stage.appendChild(el(`<div class="halo" style="width:620px;height:620px;left:${left + w - 230}px;top:${top + 210}px"></div>`));
+
+      const p = el(`<div class="phone"><img class="screen" src="${shot(s.phone)}" alt=""></div>`);
+      Object.assign(p.style, { width: w + "px", height: h + "px", left: left + "px", top: top + "px" });
+      stage.appendChild(p);
+
+      if (s.chip) {
+        const c = el(`<div class="chip"><i class="dot"></i><b>${s.chip.b}</b><span>${s.chip.s}</span></div>`);
+        c.style.top = (top + 74) + "px";
+        if (s.chip.side === "left") c.style.left = Math.max(64, left - 62) + "px";
+        else c.style.left = Math.min(1080 - 64, left + w - 120) + "px";
+        // jaga agar chip tidak melewati tepi kanan
+        stage.appendChild(c);
+        const cb = rect(c);
+        if (cb.x + cb.w > 1080 - 46) c.style.left = (1080 - 46 - cb.w) + "px";
+        if (cb.x < 46) c.style.left = "46px";
+      }
+    }
+
+    if (s.laptop) {
+      const wrapW = 940;
+      const imgH = Math.round(wrapW / 1.6);
+      const left = Math.round((1080 - wrapW) / 2);
+      const credsTop = sbx.bottom + 40;
+      const lpTop = credsTop + 92;
+
+      stage.appendChild(el(`<div class="halo" style="width:880px;height:880px;left:${left + 30}px;top:${lpTop - 240}px;border-color:rgba(207,163,71,.5)"></div>`));
+
+      stage.appendChild(el(`
+        <div class="creds" style="left:88px;top:${credsTop}px">
+          <div class="pill"><span>demo</span>demo</div>
+          <div class="pill"><span>sandi</span>demo123</div>
+        </div>
+      `));
+
+      stage.appendChild(el(`
+        <div class="laptop" style="left:${left}px;top:${lpTop}px;width:${wrapW}px">
+          <div class="lid"><img src="${shot(s.laptop)}" alt=""></div>
+          <div class="base"></div>
+        </div>
+      `));
+    }
+
+    if (s.foot) {
+      stage.appendChild(el(`<div class="foot"><span>${s.foot[0]}</span><span>${s.foot[1]}</span></div>`));
+    }
+
+    stage.dataset.ready = "1";
+  }
+
+  // ---------- QA ----------
+  window.__qa = () => {
+    const sb = stage.getBoundingClientRect();
+    return [...stage.children].map(ch => {
+      const r = ch.getBoundingClientRect();
+      return {
+        cls: (ch.className || ch.tagName).toString().slice(0, 14),
+        x: Math.round(r.left - sb.left), y: Math.round(r.top - sb.top),
+        w: Math.round(r.width), h: Math.round(r.height),
+        bottom: Math.round(r.bottom - sb.top),
+        over: ch.classList.contains("foot") || ch.classList.contains("top") ? false : (r.bottom - sb.top > sb.height + 0.5 || r.top - sb.top < -0.5 || r.right - sb.left > 1080.5)
+      };
+    });
+  };
+
+  const start = () => {
+    build();
+    requestAnimationFrame(() => { document.title = "READY"; });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+</script>
+</body>
+</html>

@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { useLang } from "../lib/i18n";
 import { LOGO_URL } from "../lib/icons";
 import { PWAInstallButton } from "../components/PWAInstallPrompt";
 import pb from "../lib/pocketbase";
@@ -62,6 +63,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const reduce = useReducedMotion();
+  const { t } = useLang();
 
   // Mode: 'login' | 'register'
   const [mode, setMode] = useState("login");
@@ -262,13 +264,13 @@ export default function Login() {
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-2 shadow-glow grid place-items-center shrink-0 border border-white/20">
               <img
                 src={LOGO_URL}
-                alt="Logo Wedding Rings"
+                alt={t("Logo Wedding Rings")}
                 className="w-full h-full object-contain filter drop-shadow"
               />
             </div>
             <div>
               <p className="font-display font-semibold text-white tracking-tight text-base">Wedding Planner</p>
-              <p className="text-xs text-stone-400">Rizky &amp; Reina • 17 Februari 2028</p>
+              <p className="text-xs text-stone-400">{t("Rizky & Reina • 17 Februari 2028")}</p>
             </div>
           </div>
 
@@ -293,9 +295,9 @@ export default function Login() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-4xl xl:text-5xl font-semibold text-white leading-[1.12] tracking-tight"
           >
-            Rencana pernikahan
+            {t("Rencana pernikahan")}
             <br />
-            <span className="font-accent italic font-normal text-brass-300">dalam satu genggaman.</span>
+            <span className="font-accent italic font-normal text-brass-300">{t("dalam satu genggaman.")}</span>
           </motion.h1>
 
           <motion.p
@@ -304,8 +306,9 @@ export default function Login() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="mt-5 text-stone-300/80 text-[15px] leading-relaxed"
           >
-            Akses menyeluruh untuk Anggaran, Administrasi, Daftar Tamu, Seserahan, dan Galeri.
-            Tersedia dalam format PWA untuk Android, iPhone, iPad, dan Desktop.
+            {t(
+              "Akses menyeluruh untuk Anggaran, Administrasi, Daftar Tamu, Seserahan, dan Galeri. Tersedia dalam format PWA untuk Android, iPhone, iPad, dan Desktop."
+            )}
           </motion.p>
 
           <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10 text-xs text-stone-400">
@@ -321,7 +324,7 @@ export default function Login() {
             <div className="w-px h-7 bg-white/10" />
             <div>
               <span className="block font-semibold text-white text-sm">Gedung PINDAD</span>
-              <span>17 Februari 2028</span>
+              <span>{t("17 Februari 2028")}</span>
             </div>
           </div>
         </div>
@@ -329,7 +332,7 @@ export default function Login() {
         {/* Footer info */}
         <div className="relative flex items-center justify-between text-stone-400 text-xs">
           <span>&copy; 2028 Rizky &amp; Reina</span>
-          <span className="text-stone-500">Tersinkron dengan PocketBase</span>
+          <span className="text-stone-500">{t("Tersinkron dengan PocketBase")}</span>
         </div>
       </aside>
 
@@ -351,14 +354,14 @@ export default function Login() {
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-rose-600 to-rose-700 p-2.5 shadow-glow grid place-items-center shrink-0 border border-white/20">
               <img
                 src={LOGO_URL}
-                alt="Logo Wedding Planner"
+                alt={t("Logo Wedding Planner")}
                 className="w-full h-full object-contain filter drop-shadow"
               />
             </div>
             <h1 className="font-display text-xl font-semibold mt-3 text-ink dark:text-stone-50">
               Wedding Planner
             </h1>
-            <p className="text-xs text-ink-muted mt-0.5">Rizky &amp; Reina • 17 Februari 2028</p>
+            <p className="text-xs text-ink-muted mt-0.5">{t("Rizky & Reina • 17 Februari 2028")}</p>
             <div className="mt-3">
               <PWAInstallButton />
             </div>
@@ -367,12 +370,12 @@ export default function Login() {
           {/* Heading desktop */}
           <div className="hidden lg:block mb-6">
             <h2 className="font-display text-2xl font-semibold text-ink dark:text-stone-50">
-              {mode === "login" ? "Selamat datang kembali" : "Buat akun baru"}
+              {mode === "login" ? t("Selamat datang kembali") : t("Buat akun baru")}
             </h2>
             <p className="text-xs text-ink-muted mt-1">
               {mode === "login"
-                ? "Masuk untuk melanjutkan persiapan pernikahan."
-                : "Daftar untuk mengakses perencanaan pernikahan."}
+                ? t("Masuk untuk melanjutkan persiapan pernikahan.")
+                : t("Daftar untuk mengakses perencanaan pernikahan.")}
             </p>
           </div>
 
@@ -390,7 +393,7 @@ export default function Login() {
                   : "text-ink-muted hover:text-ink dark:hover:text-stone-200"
               }`}
             >
-              Masuk
+              {t("Masuk")}
             </button>
             <button
               type="button"
@@ -404,14 +407,14 @@ export default function Login() {
                   : "text-ink-muted hover:text-ink dark:hover:text-stone-200"
               }`}
             >
-              Daftar
+              {t("Daftar")}
             </button>
           </div>
 
           {/* ---------------- DERETAN TOMBOL OAUTH (GMAIL, GITHUB) ---------------- */}
           <div className="space-y-2 mb-5">
             <p className="text-[11px] font-medium text-ink-faint text-center uppercase tracking-wider mb-2.5">
-              {mode === "login" ? "Masuk cepat dengan" : "Daftar instan dengan"}
+              {mode === "login" ? t("Masuk cepat dengan") : t("Daftar instan dengan")}
             </p>
 
             <div className="grid grid-cols-2 gap-2">
@@ -420,7 +423,7 @@ export default function Login() {
                 type="button"
                 onClick={() => handleOAuthClick("google")}
                 disabled={busy}
-                title="Lanjutkan dengan akun Google / Gmail"
+                title={t("Lanjutkan dengan akun Google / Gmail")}
                 className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:bg-canvas-sunken dark:hover:bg-night-sunken text-xs font-medium text-ink dark:text-stone-100 transition shadow-sm active:scale-[0.97] focus-ring disabled:opacity-50"
               >
                 {busy && busyProvider === "google" ? (
@@ -436,7 +439,7 @@ export default function Login() {
                 type="button"
                 onClick={() => handleOAuthClick("github")}
                 disabled={busy}
-                title="Lanjutkan dengan akun GitHub"
+                title={t("Lanjutkan dengan akun GitHub")}
                 className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card hover:bg-canvas-sunken dark:hover:bg-night-sunken text-xs font-medium text-ink dark:text-stone-100 transition shadow-sm active:scale-[0.97] focus-ring disabled:opacity-50"
               >
                 {busy && busyProvider === "github" ? (
@@ -453,7 +456,7 @@ export default function Login() {
           <div className="relative flex items-center justify-center my-4">
             <div className="w-full border-t border-line dark:border-night-line" />
             <span className="absolute bg-canvas dark:bg-night px-3 text-[11px] text-ink-faint">
-              atau gunakan formulir
+              {t("atau gunakan formulir")}
             </span>
           </div>
 
@@ -463,7 +466,7 @@ export default function Login() {
               {/* Role Switcher: Calon Pengantin Pria & Calon Pengantin Wanita */}
               <div className="p-1.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line">
                 <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-1.5 text-center">
-                  Masuk Sebagai Mempelai
+                  {t("Masuk Sebagai Mempelai")}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button

@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>capture</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #faf7f4; }
+  #frame { display: block; border: 0; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const route = q.get("route") || "";
+  const w = parseInt(q.get("w") || "390", 10);
+  const h = parseInt(q.get("h") || "844", 10);
+  const base = q.get("base") || "https://43.156.236.102/wedding/";
+  const f = document.createElement("iframe");
+  f.id = "frame";
+  f.width = w;
+  f.height = h;
+  f.style.width = w + "px";
+  f.style.height = h + "px";
+  f.src = base + route;
+  document.body.style.width = w + "px";
+  document.body.style.height = h + "px";
+  document.body.appendChild(f);
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>shot</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #faf7f4; }
+  #frame { display: block; border: 0; background: #faf7f4; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const route = q.get("route") || "/";
+  const w = parseInt(q.get("w") || "390", 10);
+  const h = parseInt(q.get("h") || "844", 10);
+  const y = parseInt(q.get("y") || "0", 10);
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  const f = document.createElement("iframe");
+  f.id = "frame";
+  f.width = w; f.height = h;
+  f.style.width = w + "px";
+  f.style.height = h + "px";
+  // Untuk viewport lebih lebar dari jendela, biarkan halaman tumbuh agar
+  // tangkapan layar penuh tidak terpotong selebar jendela.
+  if (w > 900) {
+    document.documentElement.style.overflow = "visible";
+    document.body.style.overflow = "visible";
+    document.body.style.width = w + "px";
+    document.documentElement.style.width = w + "px";
+  }
+  document.body.appendChild(f);
+
+  f.onload = async () => {
+    try {
+      await sleep(1400);
+      const win = f.contentWindow;
+      if (y) { win.scrollTo(0, y); }
+      await sleep(900);
+      const doc = f.contentDocument;
+      window.__info = {
+        innerH: win.innerHeight,
+        scrollY: win.scrollY,
+        scrollH: doc.documentElement.scrollHeight,
+        text: (doc.body.innerText || "").replace(/\s+/g, " ").slice(0, 400),
+      };
+      document.title = "READY";
+    } catch (e) {
+      window.__info = { error: String(e) };
+      document.title = "ERROR";
+    }
+  };
+  f.src = route;
+</script>
+</body>
+</html>
