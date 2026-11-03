@@ -30,6 +30,7 @@ migrate(
       try {
         if (typeof $os !== "undefined" && $os.readFile) {
           const candidates = [
+            "/home/ubuntu/platform-repos/wedding-planner/pb_data/oauth_credentials.json",
             "pb_data/oauth_credentials.json",
             "./pb_data/oauth_credentials.json",
             "../pb_data/oauth_credentials.json",
