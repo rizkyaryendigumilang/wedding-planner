@@ -3,6 +3,21 @@ import PocketBase from "pocketbase";
 const VPS_HOST = "43.156.236.102";
 
 /**
+ * Memeriksa apakah suatu hostname merupakan VPS ini (baik via IP langsung maupun domain FQDN seperti sslip.io).
+ */
+const isVpsHostname = (hostname) => {
+  if (!hostname || typeof hostname !== "string") return false;
+  const h = hostname.toLowerCase();
+  return (
+    h === VPS_HOST ||
+    h === "43.156.236.102.sslip.io" ||
+    h === "43.156.236.102.nip.io" ||
+    h.endsWith(".43.156.236.102.sslip.io") ||
+    h.endsWith(".43.156.236.102.nip.io")
+  );
+};
+
+/**
  * Normalisasi URL PocketBase:
  * - Menjamin protocol http:// atau https://
  * - Mengembalikan origin murni (protokol + hostname + port jika ada)
@@ -46,6 +61,14 @@ const getEffectivePbUrl = () => {
         return normalizedCustom;
       }
     } catch (_) {}
+
+    // Jika berjalan di browser melalui domain VPS (misal: 43.156.236.102.sslip.io),
+    // gunakan window.location.origin secara dinamis agar sesuai domain aktif & ramah OAuth
+    if (window.location && window.location.origin && typeof window.location.hostname === "string") {
+      if (isVpsHostname(window.location.hostname)) {
+        return window.location.origin;
+      }
+    }
   }
   const envUrl = normalizePbUrl(import.meta.env?.VITE_PB_URL);
   return envUrl || "http://127.0.0.1:8090";
@@ -72,8 +95,8 @@ const isVpsPublicProxy = (urlStr) => {
     const baseOrigin = PB_URL.startsWith("http") ? PB_URL : "http://127.0.0.1:8090";
     const parsed = new URL(urlStr, isAbsolute ? undefined : baseOrigin);
 
-    // Hostname harus tepat VPS_HOST
-    if (parsed.hostname !== VPS_HOST) {
+    // Hostname harus tepat VPS_HOST atau domain resmi VPS
+    if (!isVpsHostname(parsed.hostname)) {
       return false;
     }
 
@@ -87,7 +110,7 @@ const isVpsPublicProxy = (urlStr) => {
     if (!isAbsolute) {
       const baseParsed = new URL(baseOrigin);
       return (
-        baseParsed.hostname === VPS_HOST &&
+        isVpsHostname(baseParsed.hostname) &&
         baseParsed.protocol === "https:" &&
         (baseParsed.port === "" || baseParsed.port === "443")
       );

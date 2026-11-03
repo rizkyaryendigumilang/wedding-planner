@@ -217,6 +217,17 @@ export default function Login() {
     setBusy(true);
     setBusyProvider(providerName);
     try {
+      // Kebijakan Google OAuth 2.0 melarang raw IP address (43.156.236.102) dan mewajibkan nama domain (FQDN).
+      // Jika pengguna saat ini mengakses lewat raw IP, alihkan secara mulus ke domain sslip.io VPS.
+      if (
+        providerName === "google" &&
+        typeof window !== "undefined" &&
+        window.location.hostname === "43.156.236.102"
+      ) {
+        window.location.href = `https://43.156.236.102.sslip.io${window.location.pathname}${window.location.search}`;
+        return;
+      }
+
       await loginWithOAuth(providerName);
       navigate(location.state?.from?.pathname || "/", { replace: true });
     } catch (err) {
