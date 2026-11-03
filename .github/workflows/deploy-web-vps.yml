@@ -132,7 +132,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '2222' }}
           VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
@@ -154,7 +154,7 @@ jobs:
               done
               echo ""
               echo "Required secrets: \`VPS_HOST\`, \`VPS_USERNAME\`, \`VPS_SSH_KEY\`, \`VPS_SSH_KNOWN_HOSTS\`."
-              echo "Optional secrets: \`VPS_SSH_PORT\` or \`VPS_PORT\` (defaults to 22)."
+              echo "Optional secrets: \`VPS_SSH_PORT\` or \`VPS_PORT\` (defaults to 2222)."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
@@ -317,7 +317,7 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT || secrets.VPS_PORT || '2222' }}
         run: |
           set -euo pipefail
           RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
