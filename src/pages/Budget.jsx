@@ -113,7 +113,7 @@ export default function Budget() {
         subtitle="Rincian biaya pertunangan, pernikahan, dan arus kas persiapan."
         icon={Wallet}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               icon={Download}

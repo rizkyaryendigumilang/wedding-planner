@@ -281,7 +281,7 @@ export default function Rundown() {
         title="Itinerary Hari-H"
         subtitle="Susunan jadwal acara akad &amp; resepsi, lokasi, dan kontak penanggung jawab."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             {rundowns.length > 0 && (
               <Button
                 variant="secondary"
@@ -501,18 +501,18 @@ export default function Rundown() {
                       )}
                     </div>
 
-                    {/* Tombol Aksi */}
+                    {/* Tombol Aksi Ramah Sentuh */}
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => openEditModal(item)}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-ink dark:hover:text-stone-100 hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+                        className="p-2 sm:p-1.5 rounded-xl text-ink-muted hover:text-ink dark:hover:text-stone-100 hover:bg-canvas-sunken dark:hover:bg-night-sunken transition min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
                         aria-label="Edit agenda"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => handleDeleteEvent(item)}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition"
+                        className="p-2 sm:p-1.5 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
                         aria-label="Hapus agenda"
                       >
                         <Trash2 size={15} />

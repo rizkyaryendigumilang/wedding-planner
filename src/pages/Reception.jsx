@@ -202,7 +202,7 @@ export default function Reception() {
         title="Meja Penerima Tamu"
         subtitle="Pencatatan kehadiran langsung di lokasi resepsi secara cepat dan real-time."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             {guests.length > 0 && (
               <Button
                 variant="outline"

@@ -449,21 +449,21 @@ const PhotoCard = memo(function PhotoCard({ photo, index, reduce, onOpen, onRemo
         </Badge>
       )}
 
-      {/* Kendali muncul saat hover / fokus di perangkat berkemampuan hover saja */}
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      {/* Kendali foto: selalu terlihat di mobile touch (opacity-100) dan hover di desktop */}
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Opsi foto"
-          className="p-1.5 rounded-lg bg-ink/60 text-white backdrop-blur-sm"
+          aria-label="Jadikan sampul atau opsi foto"
+          className="p-2 sm:p-1.5 rounded-xl bg-ink/65 hover:bg-ink/80 text-white backdrop-blur-sm active:scale-95 transition"
         >
-          <Star size={13} />
+          <Star size={14} />
         </button>
         <button
           onClick={onRemove}
-          aria-label="Hapus foto"
-          className="p-1.5 rounded-lg bg-ink/60 text-white backdrop-blur-sm hover:bg-rose-600"
+          aria-label="Hapus foto dari galeri"
+          className="p-2 sm:p-1.5 rounded-xl bg-ink/65 hover:bg-rose-600 text-white backdrop-blur-sm active:scale-95 transition"
         >
-          <Trash2 size={13} />
+          <Trash2 size={14} />
         </button>
       </div>
 

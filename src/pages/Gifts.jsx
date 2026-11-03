@@ -228,7 +228,7 @@ export default function Gifts() {
         title="Pencatatan Angpao &amp; Kado"
         subtitle="Rekapitulasi amplop fisik, transfer bank, kado pernikahan, dan ucapan terima kasih."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             {gifts.length > 0 && (
               <Button
                 variant="secondary"
@@ -424,29 +424,30 @@ export default function Gifts() {
                         </p>
                       )}
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleSendWaThankYou(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium transition active:scale-[0.97]"
+                          aria-label={`Kirim ucapan terima kasih via WhatsApp ke ${item.guest_name || "tamu"}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium transition active:scale-[0.97] min-h-[36px]"
                           title="Kirim ucapan terima kasih via WhatsApp"
                         >
-                          <MessageCircle size={13} />
+                          <MessageCircle size={14} />
                           <span className="hidden sm:inline">WhatsApp</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => openEditModal(item)}
-                          className="p-1.5 rounded-xl text-ink-muted hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
-                          aria-label="Ubah data"
+                          className="p-2 sm:p-1.5 rounded-xl text-ink-muted hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
+                          aria-label="Ubah data hadiah"
                         >
                           <Pencil size={15} />
                         </button>
                         <button
                           type="button"
                           onClick={() => deleteGift(item)}
-                          className="p-1.5 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition"
-                          aria-label="Hapus data"
+                          className="p-2 sm:p-1.5 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
+                          aria-label="Hapus data hadiah"
                         >
                           <Trash2 size={15} />
                         </button>

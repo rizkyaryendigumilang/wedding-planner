@@ -524,7 +524,7 @@ export default function Vendors() {
         subtitle="55 tugas vendor, hitung mundur hari H, notifikasi jatuh tempo, dan pengingat WhatsApp."
         icon={CalendarCheck}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"

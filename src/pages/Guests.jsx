@@ -971,7 +971,7 @@ export default function Guests() {
         subtitle="Manajemen 165 tamu, kirim undangan WhatsApp 1-klik, dan lacak konfirmasi kehadiran (pax)."
         icon={Users}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <input
               type="file"
               ref={importFileRef}
@@ -1659,8 +1659,8 @@ export default function Guests() {
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-2">
                         Pratinjau Data (Maks 5 Tamu Pertama):
                       </p>
-                      <div className="border border-line dark:border-night-line rounded-2xl overflow-hidden max-h-52 overflow-y-auto">
-                        <table className="w-full text-left text-xs border-collapse">
+                      <div className="border border-line dark:border-night-line rounded-2xl overflow-x-auto overflow-y-auto scroll-area max-h-52">
+                        <table className="w-full min-w-[420px] text-left text-xs border-collapse">
                           <thead className="bg-canvas-sunken dark:bg-night-sunken sticky top-0 text-[11px] font-semibold text-ink-muted">
                             <tr>
                               <th className="py-2 px-3 border-b border-line dark:border-night-line">Nama</th>
@@ -1743,7 +1743,7 @@ export default function Guests() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-40 bg-ink dark:bg-night-card text-canvas dark:text-stone-100 px-4 py-3 rounded-3xl shadow-lift border border-line-strong/20 dark:border-night-line flex flex-wrap items-center gap-3 backdrop-blur-md"
+            className="fixed bottom-[calc(var(--nav-height,4.25rem)+var(--safe-bottom,0px)+0.75rem)] lg:bottom-8 left-1/2 -translate-x-1/2 z-40 bg-ink dark:bg-night-card text-canvas dark:text-stone-100 px-4 py-3 rounded-3xl shadow-lift border border-line-strong/20 dark:border-night-line flex flex-wrap items-center gap-3 backdrop-blur-md max-w-[calc(100vw-2rem)] w-max"
             role="region"
             aria-label="Aksi massal tamu terpilih"
           >

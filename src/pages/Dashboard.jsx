@@ -597,7 +597,7 @@ export default function Dashboard() {
                 <ProgressBar value={spendPct} tone="bg-rose-400" />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1">
                 <MiniStat label="Pemasukan CPP" value={finance.incomeCpp} />
                 <MiniStat label="Pemasukan CPW" value={finance.incomeCpw} />
                 <MiniStat label="Masih kurang" value={finance.remainingTarget} tone="text-rose-600 dark:text-rose-300" />
@@ -774,8 +774,8 @@ function MoneyBlock({ icon: Icon, tone, label, value }) {
 
 function MiniStat({ label, value, tone = "" }) {
   return (
-    <div>
-      <p className="text-[11px] text-ink-faint">{label}</p>
+    <div className="min-w-0">
+      <p className="text-[11px] text-ink-faint truncate" title={label}>{label}</p>
       <p className={`text-sm font-semibold mt-0.5 tabular-nums ${tone || "text-ink dark:text-stone-100"}`}>
         {formatCompact(value)}
       </p>
@@ -794,7 +794,7 @@ function ModuleRow({ to, module, label, value, progress, tone }) {
         </span>
         <ArrowUpRight
           size={13}
-          className="text-ink-faint opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-[opacity,transform] duration-200 ease-glide shrink-0"
+          className="text-ink-faint opacity-60 sm:opacity-0 sm:-translate-x-1 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-[opacity,transform] duration-200 ease-glide shrink-0"
         />
       </div>
       <ProgressBar value={progress} tone={tone} height="h-1.5" />

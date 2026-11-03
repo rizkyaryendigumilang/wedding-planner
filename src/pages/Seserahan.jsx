@@ -225,7 +225,7 @@ export default function Seserahan() {
         subtitle="Daftar barang seserahan dengan tautan Shopee, estimasi anggaran, dan harga aktual."
         icon={Gift}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
