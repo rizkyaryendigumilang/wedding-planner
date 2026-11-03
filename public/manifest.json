@@ -1,7 +1,7 @@
 {
-  "name": "Wedding Planner — Rizky & Reina",
+  "name": "Wedding Planner",
   "short_name": "Wedding Planner",
-  "description": "Aplikasi perencanaan pernikahan Rizky & Reina — 17 Februari 2028",
+  "description": "Aplikasi Perencanaan Pernikahan & Buku Tamu Digital",
   "start_url": "./",
   "id": "./",
   "scope": "./",

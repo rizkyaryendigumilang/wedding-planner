@@ -1,2 +1,45 @@
-// Kamus EN untuk src/pages/Settings.jsx — diisi oleh proses penerjemahan.
-export default {};
+// Kamus EN untuk src/pages/Settings.jsx
+export default {
+  // Navigation tabs
+  "Acara & Pasangan": "Event & Couple",
+  "Akun & Hak Akses": "Accounts & Access",
+  "Rekening & QRIS": "Bank Accounts & QRIS",
+  "Kategori & Adat": "Categories & Traditions",
+  "Kontrol Demo": "Demo Control",
+  "Undangan & WA": "Invitations & WA",
+  "Peringatan": "Alerts",
+  "Tampilan & Waktu": "Appearance & Time",
+  "Tampilan & Tema": "Appearance & Theme",
+  "Prewedding & Galeri": "Prewedding & Gallery",
+  "Ekspor & Cadangan": "Export & Backup",
+  "Tempat Sampah": "Trash",
+  "Kata Sandi": "Password",
+  "Sistem & PWA": "System & PWA",
+
+  // Settings Features 1, 3, 5
+  "Zona Waktu Acara": "Event Timezone",
+  "Format Tampilan Tanggal": "Date Display Format",
+  "Rekening Bank & QRIS Digital": "Bank Accounts & Digital QRIS",
+  "Kategori Tradisi Adat & Vendor": "Custom Categories & Vendor Tasks",
+
+  // Tampilan & Tema (Language & Theme)
+  "Bahasa Aplikasi": "App Language",
+  "Pilih bahasa yang dipakai di seluruh halaman aplikasi.": "Choose the language used across the application.",
+  "Bahasa Indonesia": "Bahasa Indonesia",
+  "Bawaan aplikasi": "App default",
+  "Bawaan aplikasi (Bahasa Indonesia)": "Default language (Bahasa Indonesia)",
+  "English translation (US)": "English translation (US)",
+  "Aktif": "Active",
+  "Dipilih": "Selected",
+  "Pilihan bahasa belum diterapkan.": "Language selection has not been applied yet.",
+  "Bahasa saat ini: ": "Current language: ",
+  "Terapkan": "Apply",
+  "Terapkan Bahasa": "Apply Language",
+  "Bahasa berhasil diterapkan: Bahasa Indonesia": "Language applied successfully: Bahasa Indonesia",
+  "Language applied successfully: English": "Language applied successfully: English",
+  "Mode Tampilan": "Appearance Mode",
+  "Mode gelap (Dark Mode)": "Dark mode",
+  "Mode terang (Light Mode)": "Light mode",
+  "Mengikuti setelan sistem operasi perangkat": "Follows device system settings",
+  "Dipilih manual": "Selected manually",
+};

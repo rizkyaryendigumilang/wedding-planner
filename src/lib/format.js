@@ -27,12 +27,51 @@ const MONTHS_ID = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
+export const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+export const TIMEZONES = [
+  { value: "Asia/Jakarta", short: "WIB", offset: 7, label: "WIB (Waktu Indonesia Barat • UTC+7)", desc: "Jawa, Sumatera, Kalbar, Kalteng" },
+  { value: "Asia/Makassar", short: "WITA", offset: 8, label: "WITA (Waktu Indonesia Tengah • UTC+8)", desc: "Bali, NTB, NTT, Sulawesi, Kalsel, Kaltim, Kaltara" },
+  { value: "Asia/Jayapura", short: "WIT", offset: 9, label: "WIT (Waktu Indonesia Timur • UTC+9)", desc: "Maluku, Maluku Utara, Papua" },
+];
+
 /** 2028-02-17 -> "17 Februari 2028" */
 export function formatDateId(value) {
   if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
   return `${d.getDate()} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** 2028-02-17 -> Formal "Kamis, 17 Februari 2028" */
+export function formatDateFormal(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return `${DAYS_ID[d.getDay()]}, ${d.getDate()} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** Format dinamis berdasarkan preferensi pengguna: 'formal' | 'standard' | 'numeric' */
+export function formatDateConfigured(value, style = "formal") {
+  if (!value) return "-";
+  if (style === "standard") return formatDateId(value);
+  if (style === "numeric") return formatDateNumeric(value);
+  return formatDateFormal(value);
+}
+
+/** Waktu saat ini di zona waktu yang dipilih */
+export function getCurrentTimeInTimezone(tz = "Asia/Jakarta") {
+  try {
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date());
+  } catch (_) {
+    return new Date().toLocaleTimeString("id-ID");
+  }
 }
 
 /** 2026-10-30 -> "30 Okt 2026" */
@@ -80,7 +119,7 @@ export function countdownParts(target) {
   };
 }
 
-/** Ambil inisial dari nama: "Rizky Aryendi" -> "RA" */
+/** Ambil inisial dari nama: "Budi Santoso" -> "BS" */
 export function initials(name) {
   return String(name || "")
     .trim()

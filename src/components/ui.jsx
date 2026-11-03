@@ -3,6 +3,7 @@ import { Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, memo } from "react";
 import { parseRupiahInput, formatRupiahInput } from "../lib/format";
+import { triggerHaptic } from "../lib/haptic";
 
 /* ========================================================================== */
 /*  Kerangka halaman                                                          */
@@ -123,6 +124,81 @@ export function Button({
       {children}
       {IconRight && <IconRight size={15} className="shrink-0" />}
     </button>
+  );
+}
+
+/**
+ * ToggleSwitch / Switch presisi tinggi.
+ * Menggunakan lebar 44px (w-11) dan tinggi 24px (h-6) dengan padding 2px (p-0.5).
+ * Knob berukuran 20px x 20px (w-5 h-5), bergeser tepat 20px (translate-x-5) saat aktif,
+ * menyisakan jarak 2px simetris di kedua sisi tanpa pernah tembus/offset keluar track.
+ */
+export function ToggleSwitch({
+  checked = false,
+  onChange,
+  disabled = false,
+  size = "md",
+  className = "",
+  id,
+  name,
+  "aria-label": ariaLabel,
+}) {
+  const isSm = size === "sm";
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      id={id}
+      name={name}
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={() => {
+        triggerHaptic("selection");
+        onChange && onChange(!checked);
+      }}
+      className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+        isSm ? "h-5 w-9 p-0.5" : "h-6 w-11 p-0.5"
+      } ${
+        checked
+          ? "bg-rose-600 dark:bg-rose-600"
+          : "bg-line-strong dark:bg-night-line"
+      } ${className}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none inline-block rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${
+          isSm
+            ? `h-4 w-4 ${checked ? "translate-x-4" : "translate-x-0"}`
+            : `h-5 w-5 ${checked ? "translate-x-5" : "translate-x-0"}`
+        }`}
+      />
+    </button>
+  );
+}
+
+export function ToggleRow({ icon: Icon, label, hint, checked, onChange, disabled = false, className = "" }) {
+  return (
+    <div
+      onClick={() => !disabled && onChange && onChange(!checked)}
+      className={`w-full flex items-center justify-between gap-4 p-3.5 rounded-2xl hover:bg-canvas-sunken/60 dark:hover:bg-night-sunken/60 transition-colors cursor-pointer select-none ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      } ${className}`}
+    >
+      <div className="flex items-center gap-3.5 min-w-0">
+        {Icon && (
+          <span className="p-2.5 rounded-2xl bg-canvas-sunken dark:bg-night-sunken text-ink-muted shrink-0">
+            <Icon size={18} />
+          </span>
+        )}
+        <div className="min-w-0">
+          <span className="block text-sm font-semibold text-ink dark:text-stone-100">{label}</span>
+          {hint && <span className="block text-xs text-ink-muted mt-0.5 leading-relaxed">{hint}</span>}
+        </div>
+      </div>
+      <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} />
+    </div>
   );
 }
 

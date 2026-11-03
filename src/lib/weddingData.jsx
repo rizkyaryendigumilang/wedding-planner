@@ -54,15 +54,37 @@ export function normalizePhoto(record) {
   };
 }
 
-const CACHE_KEY = "wedding_planner_cache_v2";
+export function getScopedCacheKey(userOrCoupleId) {
+  if (!userOrCoupleId) return "wedding_planner_cache_v2";
+  const id = typeof userOrCoupleId === "string" ? userOrCoupleId : userOrCoupleId?.couple || userOrCoupleId?.id;
+  return id ? `wedding_planner_cache_v2_${id}` : "wedding_planner_cache_v2";
+}
 
-function loadCachedData() {
+function loadCachedData(user) {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const targetUserId = user?.id || pb.authStore.record?.id;
+    const targetCoupleId = user?.couple || pb.authStore.record?.couple;
+
+    // 1. Coba baca cache ber-namespace spesifik untuk user/couple ini
+    let raw = null;
+    if (targetCoupleId) raw = localStorage.getItem(getScopedCacheKey(targetCoupleId));
+    if (!raw && targetUserId) raw = localStorage.getItem(getScopedCacheKey(targetUserId));
+    if (!raw) raw = localStorage.getItem("wedding_planner_cache_v2");
+
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && parsed.couple) {
+      // Isolasi ketat: jika user sudah terotentikasi dan data cache milik couple/owner lain, abaikan
+      if (
+        targetUserId &&
+        parsed.couple.owner &&
+        parsed.couple.owner !== targetUserId &&
+        targetCoupleId &&
+        parsed.couple.id !== targetCoupleId
+      ) {
+        return null;
+      }
       return {
         ...EMPTY,
         ...parsed,
@@ -81,25 +103,28 @@ function loadCachedData() {
 function saveCachedData(freshData) {
   if (typeof window === "undefined" || !freshData?.couple) return;
   try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({
-        couple: freshData.couple,
-        budgets: freshData.budgets,
-        administrations: freshData.administrations,
-        seserahan: freshData.seserahan,
-        vendors: freshData.vendors,
-        guests: freshData.guests,
-        cashflow: freshData.cashflow,
-        logs: (freshData.logs || []).slice(0, 30),
-        settings: freshData.settings,
-        photos: freshData.photos,
-        trashItems: freshData.trashItems || [],
-        rundowns: freshData.rundowns || [],
-        gifts: freshData.gifts || [],
-        cachedAt: Date.now(),
-      })
-    );
+    const coupleId = freshData.couple.id;
+    const ownerId = freshData.couple.owner;
+    const serialized = JSON.stringify({
+      couple: freshData.couple,
+      budgets: freshData.budgets,
+      administrations: freshData.administrations,
+      seserahan: freshData.seserahan,
+      vendors: freshData.vendors,
+      guests: freshData.guests,
+      cashflow: freshData.cashflow,
+      logs: (freshData.logs || []).slice(0, 30),
+      settings: freshData.settings,
+      photos: freshData.photos,
+      trashItems: freshData.trashItems || [],
+      rundowns: freshData.rundowns || [],
+      gifts: freshData.gifts || [],
+      cachedAt: Date.now(),
+    });
+
+    if (coupleId) localStorage.setItem(getScopedCacheKey(coupleId), serialized);
+    if (ownerId && ownerId !== coupleId) localStorage.setItem(getScopedCacheKey(ownerId), serialized);
+    localStorage.setItem("wedding_planner_cache_v2", serialized);
   } catch (err) {
     console.warn("Gagal menyimpan cache lokal:", err);
   }
@@ -115,12 +140,12 @@ export function useWedding() {
 export function WeddingProvider({ children }) {
   const { user, isAuthed, ready: authReady } = useAuth();
   const [data, setData] = useState(() => {
-    // SWR Instant launch: gunakan cache lokal jika tersedia
-    const cached = loadCachedData();
+    // SWR Instant launch: gunakan cache lokal jika tersedia untuk akun ini
+    const cached = loadCachedData(user);
     return cached || EMPTY;
   });
   // Jika cache lokal sudah ada, jangan kunci layar dengan spinner (0ms render!)
-  const [loading, setLoading] = useState(() => !loadCachedData());
+  const [loading, setLoading] = useState(() => !loadCachedData(user));
   const [error, setError] = useState("");
 
   const load = useCallback(async (isBackground = false) => {
@@ -132,7 +157,7 @@ export function WeddingProvider({ children }) {
       return;
     }
     // Cek apakah data lokal sudah ada agar tidak memicu spinner yang mengganggu
-    const hasLocalData = Boolean(loadCachedData()?.couple?.id);
+    const hasLocalData = Boolean(loadCachedData(user)?.couple?.id);
     if (!isBackground && !hasLocalData) {
       setLoading(true);
     }
@@ -154,10 +179,11 @@ export function WeddingProvider({ children }) {
         // data antar akun tidak saling bocor. Jangan pernah fallback ke couple
         // pertama di database (itu milik orang lain).
         try {
+          const isCpw = user?.partner_role === "CPW";
           couple = await pb.collection("couples").create({
             owner: user.id,
-            cpp_nickname: user?.name || "CPP",
-            cpw_nickname: "CPW",
+            cpp_nickname: isCpw ? "CPP" : (user?.name || "CPP"),
+            cpw_nickname: isCpw ? (user?.name || "CPW") : "CPW",
             wedding_date: "2028-02-17",
             venue: "Gedung Pernikahan",
             target_budget: 85000000,
@@ -210,12 +236,14 @@ export function WeddingProvider({ children }) {
           .catch(() => []),
         pb
           .collection("app_settings")
-          .getFirstListItem(`owner_key="default"`)
+          .getFirstListItem(`couple="${coupleId}"`)
+          .catch(() => pb.collection("app_settings").getFirstListItem(`owner_key="default"`))
           .catch(() => null),
         pb
           .collection("recycle_bin")
-          .getList(1, 50, { sort: "-created" })
-          .then((res) => res.items)
+          .getList(1, 50, { filter: `couple="${coupleId}"`, sort: "-created" })
+          .catch(() => pb.collection("recycle_bin").getList(1, 50, { sort: "-created" }))
+          .then((res) => res.items || [])
           .catch(() => []),
         pb
           .collection("rundown_events")
@@ -227,6 +255,14 @@ export function WeddingProvider({ children }) {
           .catch(() => []),
       ]);
 
+      let mergedSettings = settings;
+      try {
+        const localExtra = JSON.parse(localStorage.getItem(`wedding_settings_extra_${coupleId}`) || "{}");
+        if (localExtra && Object.keys(localExtra).length > 0) {
+          mergedSettings = { ...(settings || {}), ...localExtra };
+        }
+      } catch (_) {}
+
       const freshData = {
         couple,
         budgets,
@@ -237,7 +273,7 @@ export function WeddingProvider({ children }) {
         cashflow,
         logs,
         photos: photosRaw.map(normalizePhoto),
-        settings,
+        settings: mergedSettings,
         trashItems,
         rundowns,
         gifts,
@@ -333,20 +369,34 @@ export function WeddingProvider({ children }) {
       const payload = { couple: coupleId, owner_key: "default", ...patch };
 
       try {
-        const existing = await pb
-          .collection("app_settings")
-          .getFirstListItem('owner_key="default"');
-        const updated = await pb.collection("app_settings").update(existing.id, payload);
-        await load();
-        return updated;
+        const localKey = `wedding_settings_extra_${coupleId}`;
+        const prev = JSON.parse(localStorage.getItem(localKey) || "{}");
+        localStorage.setItem(localKey, JSON.stringify({ ...prev, ...patch }));
+      } catch (_) {}
+
+      try {
+        let existing = null;
+        try {
+          existing = await pb.collection("app_settings").getFirstListItem(`couple="${coupleId}"`);
+        } catch (_) {
+          try {
+            existing = await pb.collection("app_settings").getFirstListItem('owner_key="default"');
+          } catch (_) {}
+        }
+
+        if (existing) {
+          const updated = await pb.collection("app_settings").update(existing.id, payload);
+          await load();
+          return updated;
+        } else {
+          const created = await pb.collection("app_settings").create(payload);
+          await load();
+          return created;
+        }
       } catch (err) {
-        // Hanya "belum ada baris pengaturan" (404) yang boleh berujung pada
-        // pembuatan baris baru. Kesalahan lain (mis. jaringan) diteruskan agar
-        // tidak menghasilkan baris ganda.
-        if (err?.status !== 404) throw err;
-        const created = await pb.collection("app_settings").create(payload);
+        console.warn("Sinkronisasi server pengaturan parsial:", err?.message || err);
         await load();
-        return created;
+        return { ...payload, id: "local-mirror" };
       }
     },
     [coupleId, load]
@@ -432,7 +482,7 @@ export function WeddingProvider({ children }) {
         item_title: title,
         item_data: item,
         deleted_by: userIdentifier,
-        couple: item.couple || null,
+        couple: item.couple || coupleId || null,
       });
 
       // 2. Hapus dari koleksi asli
@@ -444,7 +494,7 @@ export function WeddingProvider({ children }) {
       // 4. Muat ulang data
       await load(true);
     },
-    [addLog, load]
+    [addLog, load, coupleId]
   );
 
   /**

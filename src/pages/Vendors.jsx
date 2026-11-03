@@ -35,6 +35,8 @@ import {
 } from "../components/ui";
 import { DatePicker } from "../components/DatePicker";
 import { useWedding } from "../lib/weddingData";
+import { useAuth } from "../lib/auth";
+import { getCoupleDisplayName, getCoupleSlug } from "../lib/couple";
 import pb from "../lib/pocketbase";
 import { daysUntil, formatDateShort, pct, formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
@@ -165,7 +167,7 @@ const VendorTaskItem = memo(function VendorTaskItem({
         )}
         <button
           onClick={() => onRemove(item)}
-          className="p-1.5 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition"
+          className="p-1.5 rounded-xl text-ink-faint opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition"
           aria-label="Hapus tugas"
         >
           <Trash2 size={14} />
@@ -176,8 +178,16 @@ const VendorTaskItem = memo(function VendorTaskItem({
 });
 
 export default function Vendors() {
-  const { vendors, vendorSummary, couple, loading, error, reload, addLog, moveToTrash } =
+  const { vendors, vendorSummary, couple, settings, loading, error, reload, addLog, moveToTrash } =
     useWedding();
+  const { user } = useAuth();
+  const coupleName = getCoupleDisplayName(couple, user, "Calon Pengantin");
+  const coupleSlug = getCoupleSlug(couple, user);
+  const vendorCategories = useMemo(() => {
+    return settings?.custom_vendor_categories?.length
+      ? settings.custom_vendor_categories
+      : CATEGORIES;
+  }, [settings?.custom_vendor_categories]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, OVERDUE, WEEK, PENDING, DONE
   const [showForm, setShowForm] = useState(false);
@@ -344,12 +354,13 @@ export default function Vendors() {
         ? cleanPhone
         : `62${cleanPhone}`
       : "";
-    const msg = `Halo ${v.activity_name},\n\nSalam hangat dari Rizky & Reina (Pernikahan 17 Februari 2028). Ingin konfirmasi mengenai persiapan vendor dan tenggat waktu kegiatan kami.\n\nTerima kasih!`;
+    const dateText = couple?.wedding_date ? ` (Pernikahan ${formatDateShort(couple.wedding_date)})` : "";
+    const msg = `Halo ${v.activity_name},\n\nSalam hangat dari ${coupleName}${dateText}. Ingin konfirmasi mengenai persiapan vendor dan tenggat waktu kegiatan kami.\n\nTerima kasih!`;
     const waUrl = formattedPhone
       ? `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`
       : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, "_blank");
-  }, []);
+  }, [couple, coupleName]);
 
   const remove = useCallback(async (item) => {
     if (!confirm(`Pindahkan tugas "${item.activity_name}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
@@ -394,12 +405,13 @@ export default function Vendors() {
   };
 
   /**
-   * Generator ringkasan teks pengingat WhatsApp untuk Rizky & Reina.
+   * Generator ringkasan teks pengingat WhatsApp untuk kedua mempelai.
    */
   const handleCopyWaBriefing = () => {
+    const dateText = couple?.wedding_date ? ` • Menuju ${formatDateShort(couple.wedding_date)}` : "";
     const lines = [
       `⏰ *PENGINGAT TENGGAT VENDOR PERNIKAHAN*`,
-      `Rizky & Reina • Menuju 17 Februari 2028`,
+      `${coupleName}${dateText}`,
       ``,
     ];
 
@@ -472,7 +484,7 @@ export default function Vendors() {
         format: (val) => (val ? "Selesai" : "Belum"),
       },
     ];
-    exportToCsv("Checklist_Vendor_Rizky_Reina", headers, vendors);
+    exportToCsv(`Checklist_Vendor_${coupleSlug}`, headers, vendors);
   };
 
   const handleToggleNotification = async () => {
@@ -684,7 +696,7 @@ export default function Vendors() {
                   <Select
                     value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    options={CATEGORIES.map((c) => [c, c])}
+                    options={vendorCategories.map((c) => [c, c])}
                   />
                 </Field>
                 <div className="sm:col-span-2">

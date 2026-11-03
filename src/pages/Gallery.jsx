@@ -41,7 +41,7 @@ const EASE = [0.22, 1, 0.36, 1];
  *   - URL gambar langsung (https://…/foto.jpg)
  */
 export default function Gallery() {
-  const { photos, gallerySummary, loading, error, reload, addLog } = useWedding();
+  const { couple, photos, gallerySummary, loading, error, reload, addLog } = useWedding();
   const [showForm, setShowForm] = useState(false);
   const [links, setLinks] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,6 +78,9 @@ export default function Gallery() {
         formData.append("image", optimizedFile);
         formData.append("alt", file.name.replace(/\.[^/.]+$/, ""));
         formData.append("sort_order", photos.length + successCount);
+        if (couple?.id) {
+          formData.append("couple", couple.id);
+        }
         if (photos.length === 0 && successCount === 0) {
           formData.append("is_cover", true);
         }
@@ -123,6 +126,7 @@ export default function Gallery() {
           continue;
         }
         await pb.collection("gallery_photos").create({
+          couple: couple?.id,
           source_url: url,
           alt: guessAltFromUrl(url),
           sort_order: photos.length + added,

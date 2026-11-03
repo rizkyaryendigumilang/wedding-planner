@@ -34,9 +34,13 @@ import {
   Select,
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
+import { useAuth } from "../lib/auth";
+import { getCppNickname, getCpwNickname, getCoupleSlug } from "../lib/couple";
 import pb from "../lib/pocketbase";
 import { exportToCsv } from "../lib/export";
-import { formatDateId } from "../lib/format";
+import { formatDateConfigured } from "../lib/format";
+import { formatBankAccountsForWa } from "../lib/masterData";
+import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -83,6 +87,8 @@ const GuestRow = memo(function GuestRow({
   guest: g,
   index: i,
   reduce,
+  isSelected,
+  onToggleSelect,
   isMsgCopied,
   isLinkCopied,
   onSendWhatsApp,
@@ -98,9 +104,23 @@ const GuestRow = memo(function GuestRow({
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(i * 0.01, 0.2), duration: 0.2, ease: EASE }}
-      className="group hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors cv-auto"
+      className={`group transition-colors cv-auto ${
+        isSelected
+          ? "bg-rose-500/10 dark:bg-rose-950/25"
+          : "hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50"
+      }`}
     >
-      <td className="py-3 px-3 first:pl-0">
+      <td className="py-3 px-3 first:pl-3 w-10">
+        <input
+          type="checkbox"
+          checked={!!isSelected}
+          onChange={() => onToggleSelect && onToggleSelect(g.id)}
+          aria-label={`Pilih baris tamu ${g.name}`}
+          className="w-4 h-4 rounded-md border-line-strong dark:border-night-line text-rose-600 focus:ring-rose-500 cursor-pointer"
+        />
+      </td>
+
+      <td className="py-3 px-3">
         <p className="font-medium text-sm text-ink dark:text-stone-100">{g.name}</p>
         <div className="flex items-center gap-2 mt-0.5 text-xs text-ink-faint">
           {g.relationship && <span>{g.relationship}</span>}
@@ -136,6 +156,7 @@ const GuestRow = memo(function GuestRow({
           <button
             type="button"
             onClick={() => onSendWhatsApp(g)}
+            aria-label={`Kirim pesan undangan WhatsApp ke ${g.name}`}
             title="Buka obrolan WhatsApp dengan pesan undangan"
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.97]"
           >
@@ -146,6 +167,7 @@ const GuestRow = memo(function GuestRow({
           <button
             type="button"
             onClick={() => onCopyMessage(g)}
+            aria-label={`Salin teks pesan undangan untuk ${g.name}`}
             title="Salin teks pesan undangan"
             className="p-1.5 rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
           >
@@ -159,6 +181,7 @@ const GuestRow = memo(function GuestRow({
           <button
             type="button"
             onClick={() => onCopyLink(g)}
+            aria-label={`Salin tautan undangan personal untuk ${g.name}`}
             title="Salin tautan undangan personal"
             className="p-1.5 rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
           >
@@ -175,6 +198,7 @@ const GuestRow = memo(function GuestRow({
       <td className="py-3 px-3 whitespace-nowrap">
         <button
           onClick={() => onToggleSentStatus(g)}
+          aria-label={`Ubah status pengiriman undangan ${g.name}`}
           title="Klik untuk mengubah status sudah/belum terkirim"
           className="focus-ring rounded-lg mr-1.5"
         >
@@ -184,6 +208,7 @@ const GuestRow = memo(function GuestRow({
         </button>
         <button
           onClick={() => onToggleInvitation(g)}
+          aria-label={`Ubah jenis undangan fisik/digital untuk ${g.name}`}
           title="Ubah jenis fisik / digital"
           className="focus-ring rounded-lg text-xs"
         >
@@ -208,7 +233,7 @@ const GuestRow = memo(function GuestRow({
       <td className="py-3 px-3 text-right">
         <button
           onClick={() => onRemoveGuest(g)}
-          aria-label={`Hapus ${g.name}`}
+          aria-label={`Hapus ${g.name} ke Tempat Sampah`}
           className="p-2 rounded-xl text-ink-faint opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
         >
           <Trash2 size={15} />
@@ -222,6 +247,8 @@ const GuestCard = memo(function GuestCard({
   guest: g,
   index: i,
   reduce,
+  isSelected,
+  onToggleSelect,
   isMsgCopied,
   isLinkCopied,
   onSendWhatsApp,
@@ -237,22 +264,35 @@ const GuestCard = memo(function GuestCard({
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(i * 0.015, 0.25), duration: 0.2, ease: EASE }}
-      className="p-3.5 rounded-2xl border border-line dark:border-night-line bg-canvas-card dark:bg-night-card shadow-xs space-y-2.5"
+      className={`p-3.5 rounded-2xl border transition-colors shadow-xs space-y-2.5 ${
+        isSelected
+          ? "border-rose-400 dark:border-rose-600 bg-rose-500/10 dark:bg-rose-950/25"
+          : "border-line dark:border-night-line bg-canvas-card dark:bg-night-card"
+      }`}
     >
-      {/* Baris 1: Nama, Pihak, Pax */}
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h4 className="font-semibold text-sm text-ink dark:text-stone-100 leading-snug">
-            {g.name}
-          </h4>
-          <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-ink-muted">
-            {g.relationship && <span>{g.relationship}</span>}
-            {g.origin && <span>• {g.origin}</span>}
-            {g.table_number && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400">
-                Meja {g.table_number}
-              </span>
-            )}
+      {/* Baris 1: Checkbox, Nama, Pihak, Pax */}
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={() => onToggleSelect && onToggleSelect(g.id)}
+            aria-label={`Pilih ${g.name}`}
+            className="mt-0.5 w-4 h-4 rounded border-line-strong dark:border-night-line text-rose-600 focus:ring-rose-500 cursor-pointer shrink-0"
+          />
+          <div className="min-w-0">
+            <h4 className="font-semibold text-sm text-ink dark:text-stone-100 leading-snug truncate">
+              {g.name}
+            </h4>
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-ink-muted">
+              {g.relationship && <span>{g.relationship}</span>}
+              {g.origin && <span>• {g.origin}</span>}
+              {g.table_number && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                  Meja {g.table_number}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -280,6 +320,7 @@ const GuestCard = memo(function GuestCard({
         <button
           type="button"
           onClick={() => onSendWhatsApp(g)}
+          aria-label={`Kirim pesan WhatsApp ke ${g.name}`}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98]"
         >
           <WhatsAppIcon className="w-4 h-4" />
@@ -289,6 +330,7 @@ const GuestCard = memo(function GuestCard({
         <button
           type="button"
           onClick={() => onCopyMessage(g)}
+          aria-label={`Salin pesan undangan ${g.name}`}
           title="Salin pesan undangan"
           className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
         >
@@ -298,6 +340,7 @@ const GuestCard = memo(function GuestCard({
         <button
           type="button"
           onClick={() => onCopyLink(g)}
+          aria-label={`Salin tautan personal ${g.name}`}
           title="Salin tautan personal"
           className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
         >
@@ -310,6 +353,7 @@ const GuestCard = memo(function GuestCard({
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => onToggleSentStatus(g)}
+            aria-label={`Ubah status kirim undangan ${g.name}`}
             title="Klik untuk ubah status terkirim"
             className="focus-ring rounded-lg"
           >
@@ -319,6 +363,7 @@ const GuestCard = memo(function GuestCard({
           </button>
           <button
             onClick={() => onToggleInvitation(g)}
+            aria-label={`Ubah jenis undangan fisik/digital ${g.name}`}
             title="Ubah jenis fisik / digital"
             className="focus-ring rounded-lg text-xs"
           >
@@ -326,6 +371,7 @@ const GuestCard = memo(function GuestCard({
           </button>
           <button
             onClick={() => onCycleStatus(g)}
+            aria-label={`Ubah status kehadiran RSVP ${g.name}`}
             title="Klik untuk ubah status RSVP"
             className="focus-ring rounded-lg"
           >
@@ -338,7 +384,7 @@ const GuestCard = memo(function GuestCard({
         <button
           type="button"
           onClick={() => onRemoveGuest(g)}
-          aria-label={`Hapus ${g.name}`}
+          aria-label={`Hapus ${g.name} ke Tempat Sampah`}
           className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition"
         >
           <Trash2 size={15} />
@@ -361,6 +407,10 @@ export default function Guests() {
     settings,
     moveToTrash,
   } = useWedding();
+  const { user } = useAuth();
+  const cppNickname = getCppNickname(couple, user);
+  const cpwNickname = getCpwNickname(couple, user);
+  const coupleSlug = getCoupleSlug(couple, user);
   const [side, setSide] = useState("ALL");
   const [priority, setPriority] = useState("ALL");
   const [group, setGroup] = useState("ALL");
@@ -371,11 +421,33 @@ export default function Guests() {
   const [showForm, setShowForm] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [selectedGuestIds, setSelectedGuestIds] = useState(() => new Set());
+  const searchInputRef = useRef(null);
   const reduce = useReducedMotion();
+
+  // REC-05: Shortcut keyboard global (/ untuk fokus pencarian tamu, Esc untuk batal seleksi)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "/" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "Escape") {
+        if (selectedGuestIds.size > 0) {
+          setSelectedGuestIds(new Set());
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedGuestIds]);
 
   // Settings State: Base link undangan & template WA
   const [baseInvitationUrl, setBaseInvitationUrl] = useState(
-    () => settings?.invitation_base_url || "https://undangan-pernikahan.me/rizky-reina"
+    () => settings?.invitation_base_url || `https://undangan-pernikahan.me/${coupleSlug}`
   );
   const [waTemplate, setWaTemplate] = useState(
     () => settings?.wa_invitation_template || DEFAULT_WA_TEMPLATE
@@ -499,8 +571,11 @@ export default function Guests() {
       : couple?.cpp_full_name && couple?.cpw_full_name
       ? `${couple.cpp_full_name} & ${couple.cpw_full_name}`
       : "Calon Pengantin Pria & Wanita";
-    const dateStr = couple?.wedding_date ? formatDateId(couple.wedding_date) : "Tanggal Acara";
+    const dateStr = couple?.wedding_date
+      ? formatDateConfigured(couple.wedding_date, settings?.date_format_style || "formal")
+      : "Tanggal Acara";
     const venueStr = couple?.venue || "Tempat Resepsi";
+    const rekeningStr = formatBankAccountsForWa(settings?.bank_accounts);
 
     return (waTemplate || DEFAULT_WA_TEMPLATE)
       .replace(/{nama}/g, g.name)
@@ -509,8 +584,9 @@ export default function Guests() {
       .replace(/{pengantin}/g, coupleNames)
       .replace(/{tanggal}/g, dateStr)
       .replace(/{venue}/g, venueStr)
-      .replace(/{meja}/g, g.table_number || "Meja Resepsi");
-  }, [baseInvitationUrl, couple, getGuestInvitationLink, waTemplate]);
+      .replace(/{meja}/g, g.table_number || "Meja Resepsi")
+      .replace(/{rekening}/g, rekeningStr);
+  }, [baseInvitationUrl, couple, getGuestInvitationLink, settings?.bank_accounts, settings?.date_format_style, waTemplate]);
 
   /**
    * Buka WhatsApp langsung ke nomor tamu (atau buka Web WA) dan tandai undangan terkirim.
@@ -601,7 +677,7 @@ export default function Guests() {
       },
     ];
 
-    exportToCsv("Daftar_Tamu_Rizky_Reina", headers, guests);
+    exportToCsv(`Daftar_Tamu_${coupleSlug}`, headers, guests);
   };
 
   const handleCsvFileSelect = (e) => {
@@ -669,7 +745,8 @@ export default function Guests() {
       if (!name) continue;
 
       const rawSide = (row["pihak"] || row["side"] || "").toUpperCase();
-      const side = rawSide.includes("CPW") || rawSide.includes("REINA") ? "CPW" : "CPP";
+      const cpwTag = (cpwNickname || "").toUpperCase();
+      const side = rawSide.includes("CPW") || (cpwTag && cpwTag !== "CPW" && rawSide.includes(cpwTag)) ? "CPW" : "CPP";
 
       const pax = parseInt(row["pax"] || row["jumlah"] || row["kursi"] || "1", 10) || 1;
       const phone = row["phone"] || row["whatsapp"] || row["nohp"] || row["wa"] || row["telepon"] || "";
@@ -797,6 +874,91 @@ export default function Guests() {
     toast.info(`Jenis undangan ${g.name} diubah ke ${nextType}`);
     reload();
   }, [reload]);
+
+  // REC-02: Seleksi Baris & Batch Actions
+  const handleToggleSelect = useCallback((id) => {
+    triggerHaptic("selection");
+    setSelectedGuestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    triggerHaptic("selection");
+    setSelectedGuestIds((prev) => {
+      if (prev.size === filtered.length && filtered.length > 0) {
+        return new Set();
+      }
+      return new Set(filtered.map((g) => g.id));
+    });
+  }, [filtered]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedGuestIds(new Set());
+  }, []);
+
+  const handleBatchSetInvitationSent = useCallback(
+    async (sent = true) => {
+      const ids = Array.from(selectedGuestIds);
+      if (ids.length === 0) return;
+      triggerHaptic("medium");
+      try {
+        await Promise.all(
+          ids.map((id) => pb.collection("wedding_guests").update(id, { invitation_sent: sent }))
+        );
+        toast.success(`${ids.length} tamu ditandai ${sent ? "Terkirim" : "Belum Kirim"}!`);
+        setSelectedGuestIds(new Set());
+        reload();
+      } catch (err) {
+        toast.error("Gagal update status undangan: " + (err?.message || ""));
+      }
+    },
+    [selectedGuestIds, reload]
+  );
+
+  const handleBatchSetStatus = useCallback(
+    async (status = "Hadir") => {
+      const ids = Array.from(selectedGuestIds);
+      if (ids.length === 0) return;
+      triggerHaptic("medium");
+      try {
+        await Promise.all(
+          ids.map((id) => pb.collection("wedding_guests").update(id, { status }))
+        );
+        toast.success(`${ids.length} tamu ditandai ${status}!`);
+        setSelectedGuestIds(new Set());
+        reload();
+      } catch (err) {
+        toast.error("Gagal update status RSVP: " + (err?.message || ""));
+      }
+    },
+    [selectedGuestIds, reload]
+  );
+
+  const handleBatchRemove = useCallback(async () => {
+    const ids = Array.from(selectedGuestIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Pindahkan ${ids.length} tamu terpilih ke Tempat Sampah?`)) return;
+    triggerHaptic("warning");
+    try {
+      const guestsToRemove = guests.filter((g) => selectedGuestIds.has(g.id));
+      for (const g of guestsToRemove) {
+        if (moveToTrash) {
+          await moveToTrash("wedding_guests", g, g.name);
+        } else {
+          await pb.collection("wedding_guests").delete(g.id);
+        }
+      }
+      toast.info(`${ids.length} tamu dipindahkan ke Tempat Sampah.`);
+      setSelectedGuestIds(new Set());
+      reload();
+    } catch (err) {
+      toast.error("Gagal menghapus tamu: " + (err?.message || ""));
+    }
+  }, [selectedGuestIds, guests, moveToTrash, reload]);
 
   if (loading) return <Loading label="Memuat daftar tamu…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -941,8 +1103,8 @@ export default function Guests() {
                       value={form.side}
                       onChange={(e) => setForm({ ...form, side: e.target.value })}
                       options={[
-                        ["CPP", "CPP (Rizky)"],
-                        ["CPW", "CPW (Reina)"],
+                        ["CPP", `CPP (${cppNickname})`],
+                        ["CPW", `CPW (${cpwNickname})`],
                       ]}
                     />
                   </Field>
@@ -1048,12 +1210,30 @@ export default function Guests() {
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
             />
             <Input
+              ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari nama, nomor WA, kota, atau grup tamu…"
-              className="!pl-10"
-              aria-label="Cari tamu"
+              className="!pl-10 !pr-14"
+              aria-label="Cari tamu (Tekan tombol slash untuk fokus)"
             />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Bersihkan kata kunci pencarian"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-faint hover:text-ink transition"
+              >
+                <X size={15} />
+              </button>
+            ) : (
+              <kbd
+                title="Tekan tombol slash untuk mencari langsung"
+                className="hidden sm:inline-block absolute right-3.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-ink-faint bg-canvas-sunken dark:bg-night-sunken rounded border border-line dark:border-night-line pointer-events-none"
+              >
+                /
+              </kbd>
+            )}
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -1138,8 +1318,8 @@ export default function Guests() {
                     onChange={(e) => setSide(e.target.value)}
                     options={[
                       ["ALL", "Semua pihak"],
-                      ["CPP", "CPP (Rizky)"],
-                      ["CPW", "CPW (Reina)"],
+                      ["CPP", `CPP (${cppNickname})`],
+                      ["CPW", `CPW (${cpwNickname})`],
                     ]}
                   />
                 </Field>
@@ -1209,6 +1389,14 @@ export default function Guests() {
             <div className="hidden sm:block overflow-x-auto">
               <Table
                 head={[
+                  <input
+                    key="select-all"
+                    type="checkbox"
+                    checked={selectedGuestIds.size === filtered.length && filtered.length > 0}
+                    onChange={handleToggleSelectAll}
+                    aria-label="Pilih semua baris tamu"
+                    className="w-4 h-4 rounded-md border-line-strong dark:border-night-line text-rose-600 focus:ring-rose-500 cursor-pointer"
+                  />,
                   "Nama tamu",
                   "Pihak",
                   "Pax",
@@ -1225,6 +1413,8 @@ export default function Guests() {
                     guest={g}
                     index={i}
                     reduce={reduce}
+                    isSelected={selectedGuestIds.has(g.id)}
+                    onToggleSelect={handleToggleSelect}
                     isMsgCopied={copiedId === `msg-${g.id}`}
                     isLinkCopied={copiedId === `link-${g.id}`}
                     onSendWhatsApp={sendWhatsApp}
@@ -1247,6 +1437,8 @@ export default function Guests() {
                   guest={g}
                   index={i}
                   reduce={reduce}
+                  isSelected={selectedGuestIds.has(g.id)}
+                  onToggleSelect={handleToggleSelect}
                   isMsgCopied={copiedId === `msg-${g.id}`}
                   isLinkCopied={copiedId === `link-${g.id}`}
                   onSendWhatsApp={sendWhatsApp}
@@ -1333,7 +1525,7 @@ export default function Guests() {
                   <Input
                     value={baseInvitationUrl}
                     onChange={(e) => setBaseInvitationUrl(e.target.value)}
-                    placeholder="https://undangan.me/rizky-reina"
+                    placeholder={`https://undangan.me/${coupleSlug}`}
                   />
                   <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
                     💡 <strong>Tips:</strong> Karena undangan dibuat di vendor/website lain, cukup
@@ -1541,6 +1733,69 @@ export default function Guests() {
               )}
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      {/* Floating Toolbar Aksi Massal Tamu (REC-02) */}
+      <AnimatePresence>
+        {selectedGuestIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-40 bg-ink dark:bg-night-card text-canvas dark:text-stone-100 px-4 py-3 rounded-3xl shadow-lift border border-line-strong/20 dark:border-night-line flex flex-wrap items-center gap-3 backdrop-blur-md"
+            role="region"
+            aria-label="Aksi massal tamu terpilih"
+          >
+            <div className="flex items-center gap-2 pr-2 border-r border-white/20">
+              <span className="w-6 h-6 rounded-full bg-rose-600 text-white font-bold text-xs flex items-center justify-center">
+                {selectedGuestIds.size}
+              </span>
+              <span className="text-xs font-semibold whitespace-nowrap">Tamu Dipilih</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleBatchSetInvitationSent(true)}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                title="Tandai undangan terkirim untuk semua yang dipilih"
+              >
+                <Mail size={13} />
+                <span>Tandai Terkirim</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBatchSetStatus("Hadir")}
+                className="px-3 py-1.5 rounded-xl bg-sage-500/20 hover:bg-sage-500/30 text-sage-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                title="Tandai konfirmasi Hadir"
+              >
+                <Check size={13} />
+                <span>RSVP Hadir</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBatchRemove}
+                className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                title="Hapus tamu terpilih ke Tempat Sampah"
+              >
+                <Trash2 size={13} />
+                <span>Hapus</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition"
+                aria-label="Batalkan pilihan massal"
+                title="Batal pilih (Esc)"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </Page>

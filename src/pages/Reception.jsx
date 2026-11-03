@@ -22,8 +22,10 @@ import {
   EmptyState,
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
+import { getCppNickname, getCpwNickname } from "../lib/couple";
 import pb from "../lib/pocketbase";
 import { exportToCsv } from "../lib/export";
+import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -31,6 +33,7 @@ const EASE = [0.22, 1, 0.36, 1];
 export default function Reception() {
   const reduce = useReducedMotion();
   const {
+    couple,
     guests = [],
     guestSummary = {},
     checkInGuest,
@@ -110,6 +113,7 @@ export default function Reception() {
         });
         setRecentlyCheckedInId(guest.id);
         setTimeout(() => setRecentlyCheckedInId(null), 3000);
+        triggerHaptic("success");
         toast.success(`Check-in berhasil: ${guest.name} (${pax} pax)`, {
           action: {
             label: "Batalkan",
@@ -130,7 +134,7 @@ export default function Reception() {
 
     setWalkInBusy(true);
     try {
-      const coupleId = guests[0]?.couple;
+      const coupleId = couple?.id || guests[0]?.couple;
       await pb.collection("wedding_guests").create({
         couple: coupleId,
         name: walkInForm.name.trim(),
@@ -148,6 +152,7 @@ export default function Reception() {
         priority: "C - If Capacity Allows",
       });
       await reload();
+      triggerHaptic("success");
       toast.success(`Tamu walk-in "${walkInForm.name.trim()}" berhasil ditambahkan & check-in!`);
       setWalkInModal(false);
       setWalkInForm({
@@ -532,8 +537,8 @@ export default function Reception() {
                       onChange={(e) => setWalkInForm({ ...walkInForm, side: e.target.value })}
                       className="field"
                     >
-                      <option value="CPP">CPP (Rizky)</option>
-                      <option value="CPW">CPW (Reina)</option>
+                      <option value="CPP">CPP ({getCppNickname(couple)})</option>
+                      <option value="CPW">CPW ({getCpwNickname(couple)})</option>
                     </select>
                   </div>
                   <div>

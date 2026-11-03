@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle } from "lucide-react";
+import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff } from "lucide-react";
+import { toast } from "sonner";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { MODULE_ICONS, UI_ICONS, LOGO_URL } from "../lib/icons";
 import { Avatar } from "./Avatar";
+import { getCoupleDisplayName } from "../lib/couple";
 
 const WEDDING_DATE = "2028-02-17";
 
@@ -19,15 +21,54 @@ export default function Layout() {
 
   const ThemeIcon = isDark ? UI_ICONS.light : UI_ICONS.dark;
 
-  const coupleName =
-    couple?.cpp_nickname && couple?.cpw_nickname
-      ? `${couple.cpp_nickname} & ${couple.cpw_nickname}`
-      : "Wedding Planner";
+  const coupleDisplayName = useMemo(
+    () => getCoupleDisplayName(couple, user),
+    [couple, user]
+  );
+  const coupleName = coupleDisplayName;
 
-  // Judul tab browser mengikuti nama CPP & CPW secara otomatis.
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== "undefined" && typeof navigator.onLine === "boolean"
+      ? navigator.onLine
+      : true
+  );
+
+  // REC-03: Deteksi status jaringan & notifikasi offline
   useEffect(() => {
-    document.title = `Wedding Planner — ${coupleName}`;
-  }, [coupleName]);
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success("Koneksi pulih — Sinkronisasi langsung aktif kembali.");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning("Koneksi terputus — Mode offline aktif (data tersimpan di perangkat).");
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // REC-05: Shortcut keyboard global (Escape untuk menutup menu lembar bawah)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSheetOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Judul tab browser mengikuti nama CPP & CPW akun aktif secara otomatis.
+  useEffect(() => {
+    document.title =
+      coupleDisplayName && coupleDisplayName !== "Wedding Planner"
+        ? `Wedding Planner — ${coupleDisplayName}`
+        : "Wedding Planner";
+  }, [coupleDisplayName]);
 
   const navItems = useMemo(() => {
     if (isPanitia) {
@@ -64,7 +105,32 @@ export default function Layout() {
   const overflowActive = bottomOverflow.some((n) => location.pathname.startsWith(n.to));
 
   return (
-    <div className="min-h-[100dvh] bg-canvas dark:bg-night text-ink dark:text-stone-100 flex">
+    <div className="min-h-[100dvh] bg-canvas dark:bg-night text-ink dark:text-stone-100 flex flex-col lg:flex-row">
+      {/* Aksesibilitas: Lewati langsung ke konten utama */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:rounded-2xl focus:bg-rose-600 focus:text-white focus:font-semibold focus:text-xs focus:shadow-lift focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition"
+      >
+        Lewati ke konten utama
+      </a>
+
+      {/* Banner status offline (REC-03) */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            role="status"
+            aria-live="polite"
+            className="w-full bg-amber-500 dark:bg-amber-600 text-stone-900 font-medium text-xs px-4 py-2 flex items-center justify-center gap-2 text-center sticky top-0 z-50 shadow-sm"
+          >
+            <WifiOff size={14} className="shrink-0" />
+            <span>Mode Offline: Tidak terhubung ke internet. Data tetap aman dan disimpan di perangkat.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ===================== Sidebar (desktop) ===================== */}
       <aside className="hidden lg:flex w-[16.5rem] shrink-0 flex-col border-r border-line dark:border-night-line bg-canvas-card dark:bg-night-card">
         <div className="flex items-center gap-3 px-5 py-5">
@@ -178,7 +244,9 @@ export default function Layout() {
         )}
 
         <main
-          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8"
+          id="main-content"
+          tabIndex="-1"
+          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 focus:outline-none"
           style={{ paddingBottom: "calc(var(--nav-height) + var(--safe-bottom) + 1.5rem)" }}
         >
           <Outlet />
@@ -187,8 +255,9 @@ export default function Layout() {
         <footer className="hidden lg:flex items-center justify-center gap-2 px-8 pb-6 text-center text-[11px] text-ink-faint">
           <img src={LOGO_URL} alt="Logo" className="w-4 h-4 object-contain inline-block opacity-75" />
           <span>
-            Wedding Planner • Rizky &amp; Reina •{" "}
-            {loading ? "menyinkronkan…" : isLiveConnected ? "tersinkron langsung" : "tersimpan di server"}
+            Wedding Planner
+            {coupleDisplayName && coupleDisplayName !== "Wedding Planner" ? ` • ${coupleDisplayName}` : ""}{" "}
+            • {loading ? "menyinkronkan…" : isLiveConnected ? "tersinkron langsung" : "tersimpan di server"}
           </span>
         </footer>
       </div>
@@ -244,84 +313,86 @@ export default function Layout() {
                 // Seret ke bawah lebih dari 100px atau flick cepat (velocity > 200) = tutup
                 if (info.offset.y > 100 || info.velocity.y > 200) setSheetOpen(false);
               }}
-              className="relative w-full bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift overscroll-contain"
+              className="relative w-full max-h-[88dvh] flex flex-col bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift overscroll-contain"
               style={{ paddingBottom: "calc(var(--safe-bottom) + 1rem)" }}
             >
-              <div className="flex justify-center pt-3 pb-2.5 cursor-grab active:cursor-grabbing touch-none select-none">
+              <div className="flex justify-center pt-3 pb-2.5 cursor-grab active:cursor-grabbing touch-none select-none shrink-0">
                 <span className="w-10 h-1.5 rounded-full bg-line-strong/70 dark:bg-night-line" />
               </div>
 
-              <div className="flex items-center justify-between px-5 py-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 p-1 shadow-glow grid place-items-center shrink-0 border border-white/20">
-                    <img
-                      src={LOGO_URL}
-                      alt="Logo"
-                      className="w-full h-full object-contain filter drop-shadow"
-                    />
+              <div className="overflow-y-auto flex-1 scroll-area px-1">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 p-1 shadow-glow grid place-items-center shrink-0 border border-white/20">
+                      <img
+                        src={LOGO_URL}
+                        alt="Logo"
+                        className="w-full h-full object-contain filter drop-shadow"
+                      />
+                    </div>
+                    <p className="font-display font-semibold">Menu lainnya</p>
                   </div>
-                  <p className="font-display font-semibold">Menu lainnya</p>
+                  <button
+                    onClick={() => setSheetOpen(false)}
+                    aria-label="Tutup"
+                    className="p-2 rounded-xl text-ink-muted hover:bg-canvas-sunken dark:hover:bg-night-sunken focus-ring"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSheetOpen(false)}
-                  aria-label="Tutup"
-                  className="p-2 rounded-xl text-ink-muted hover:bg-canvas-sunken dark:hover:bg-night-sunken focus-ring"
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              <div className="px-3 pb-2 grid grid-cols-1 gap-0.5">
-                {bottomOverflow.map((item) => (
-                  <SheetItem key={item.to} item={item} onNavigate={() => setSheetOpen(false)} />
-                ))}
-              </div>
+                <div className="px-2 pb-2 grid grid-cols-1 gap-0.5">
+                  {bottomOverflow.map((item) => (
+                    <SheetItem key={item.to} item={item} onNavigate={() => setSheetOpen(false)} />
+                  ))}
+                </div>
 
-              <div className="px-5 pt-3 mt-2 border-t border-line dark:border-night-line space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint pt-2">
-                  Akun
-                </p>
-                <Link
-                  to="/settings"
-                  onClick={() => setSheetOpen(false)}
-                  className="flex items-center gap-4 py-3 text-sm text-ink dark:text-stone-200"
-                >
-                  <Avatar name={user?.name || user?.email} size="sm" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium truncate">
-                      {user?.name || "Pemilik"}
+                <div className="px-4 pt-3 mt-2 border-t border-line dark:border-night-line space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint pt-2">
+                    Akun
+                  </p>
+                  <Link
+                    to="/settings"
+                    onClick={() => setSheetOpen(false)}
+                    className="flex items-center gap-4 py-3 text-sm text-ink dark:text-stone-200"
+                  >
+                    <Avatar name={user?.name || user?.email} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium truncate">
+                        {user?.name || "Pemilik"}
+                      </span>
+                      <span className="block text-xs text-ink-faint truncate">
+                        {user?.email}
+                      </span>
                     </span>
-                    <span className="block text-xs text-ink-faint truncate">
-                      {user?.email}
-                    </span>
-                  </span>
-                </Link>
-                <SheetAction
-                  icon={<ThemeIcon size={18} />}
-                  label={isDark ? "Mode terang" : "Mode gelap"}
-                  onClick={() => {
-                    toggleTheme();
-                    setSheetOpen(false);
-                  }}
-                />
-                <SheetAction
-                  icon={<RefreshCw size={18} />}
-                  label="Muat ulang data"
-                  disabled={loading}
-                  onClick={async () => {
-                    await reload();
-                    setSheetOpen(false);
-                  }}
-                />
-                <SheetAction
-                  icon={<LogOut size={18} />}
-                  label="Keluar"
-                  tone="danger"
-                  onClick={() => {
-                    setSheetOpen(false);
-                    logout();
-                  }}
-                />
+                  </Link>
+                  <SheetAction
+                    icon={<ThemeIcon size={18} />}
+                    label={isDark ? "Mode terang" : "Mode gelap"}
+                    onClick={() => {
+                      toggleTheme();
+                      setSheetOpen(false);
+                    }}
+                  />
+                  <SheetAction
+                    icon={<RefreshCw size={18} />}
+                    label="Muat ulang data"
+                    disabled={loading}
+                    onClick={async () => {
+                      await reload();
+                      setSheetOpen(false);
+                    }}
+                  />
+                  <SheetAction
+                    icon={<LogOut size={18} />}
+                    label="Keluar"
+                    tone="danger"
+                    onClick={() => {
+                      setSheetOpen(false);
+                      logout();
+                    }}
+                  />
+                </div>
               </div>
             </motion.div>
           </div>

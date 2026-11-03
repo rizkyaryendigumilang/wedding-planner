@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from "./lib/theme";
 import { WeddingProvider } from "./lib/weddingData";
 import Layout from "./components/Layout";
 import { Loading } from "./components/ui";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Route Lazy Loading untuk memecah bundle menjadi chunk terpisah
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -118,13 +119,15 @@ function ThemedToaster() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <ThemedToaster />
-      <AuthProvider>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ThemedToaster />
+        <AuthProvider>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

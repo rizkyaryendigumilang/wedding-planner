@@ -345,7 +345,7 @@ export function PWAInstallFloatingBanner() {
                   </span>
                 </div>
                 <p className="text-[11px] text-ink-muted leading-tight mt-0.5 line-clamp-1">
-                  Akses instan Wedding Planner Rizky &amp; Reina seperti aplikasi asli HP.
+                  Akses instan Wedding Planner seperti aplikasi asli HP.
                 </p>
               </div>
 
@@ -453,7 +453,7 @@ export function PWAInstallBanner({ className = "" }) {
                 </span>
               </div>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Buka Wedding Planner Rizky &amp; Reina langsung dari Home Screen HP tanpa mengetik URL, lebih cepat dan hemat kuota.
+                Buka Wedding Planner langsung dari Home Screen HP tanpa mengetik URL, lebih cepat dan hemat kuota.
               </p>
             </div>
           </div>

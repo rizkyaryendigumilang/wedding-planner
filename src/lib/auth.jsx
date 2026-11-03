@@ -99,9 +99,9 @@ export function AuthProvider({ children }) {
     if (current) {
       try {
         const profile = { name: current.name || current.username, username: current.username || current.email };
-        if (current.partner_role === "CPP" || current.username === "admin") {
+        if (current.partner_role === "CPP" || current.username === "admin" || current.username === "cpp") {
           localStorage.setItem("wedding_cpp_profile", JSON.stringify(profile));
-        } else if (current.partner_role === "CPW" || current.username === "reina") {
+        } else if (current.partner_role === "CPW" || current.username === "cpw") {
           localStorage.setItem("wedding_cpw_profile", JSON.stringify(profile));
         }
       } catch (_) {}
@@ -223,6 +223,25 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     pb.authStore.clear();
     setUser(null);
+
+    // Bersihkan cache aplikasi di localStorage agar tidak bocor ke akun berikutnya pada perangkat bersama
+    if (typeof localStorage !== "undefined") {
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (
+            k &&
+            (k.startsWith("wedding_planner_cache") ||
+              k.startsWith("wedding_settings_extra_") ||
+              k.startsWith("wedding_cache_"))
+          ) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+      } catch (_) {}
+    }
 
     // F-11: hapus cache service worker agar data akun sebelumnya tidak
     // tersaji ulang ke akun berikutnya di perangkat yang sama.

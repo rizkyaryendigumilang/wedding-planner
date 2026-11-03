@@ -26,6 +26,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
+import { getCoupleDisplayName } from "../lib/couple";
 import { formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
 import { toast } from "sonner";
@@ -43,8 +44,10 @@ const GIFT_TYPES = [
 
 export default function Gifts() {
   const reduce = useReducedMotion();
-  const { isPanitia } = useAuth();
+  const { isPanitia, user } = useAuth();
   const {
+    couple,
+    settings,
     gifts = [],
     guests = [],
     giftSummary = {},
@@ -52,6 +55,7 @@ export default function Gifts() {
     updateGift,
     deleteGift,
   } = useWedding();
+  const coupleSignature = getCoupleDisplayName(couple, user, "Kedua Mempelai");
 
   const [typeFilter, setTypeFilter] = useState("Semua");
   const [thankFilter, setThankFilter] = useState("all"); // 'all', 'pending', 'sent'
@@ -190,7 +194,7 @@ export default function Gifts() {
         : `62${cleanPhone}`
       : "";
 
-    const msg = `Kepada Yth. ${item.guest_name},\n\nKami ucapkan terima kasih yang sebesar-besarnya atas kehadiran, doa restu, serta tanda kasih yang diberikan untuk pernikahan kami.\n\nKehadiran dan kebaikan Bapak/Ibu/Saudara/i sangat berarti bagi lembaran baru kehidupan kami.\n\nSalam hangat dan doa terbaik,\nRizky & Reina 💍`;
+    const msg = `Kepada Yth. ${item.guest_name},\n\nKami ucapkan terima kasih yang sebesar-besarnya atas kehadiran, doa restu, serta tanda kasih yang diberikan untuk pernikahan kami.\n\nKehadiran dan kebaikan Bapak/Ibu/Saudara/i sangat berarti bagi lembaran baru kehidupan kami.\n\nSalam hangat dan doa terbaik,\n${coupleSignature} 💍`;
 
     const waUrl = formattedPhone
       ? `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`
@@ -557,11 +561,22 @@ export default function Gifts() {
                     </label>
                     <input
                       type="text"
+                      list="destination-accounts-list"
                       placeholder="Kotak Resepsi Utama / BCA CPP"
                       value={form.destination_account}
                       onChange={(e) => setForm({ ...form, destination_account: e.target.value })}
                       className="field"
                     />
+                    <datalist id="destination-accounts-list">
+                      <option value="Kotak Resepsi Utama" />
+                      <option value="Amplop Digital QRIS" />
+                      {(settings?.bank_accounts || []).map((acc) => (
+                        <option
+                          key={acc.id}
+                          value={`${acc.bank_name} ${acc.account_number} a.n. ${acc.account_holder}`}
+                        />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">

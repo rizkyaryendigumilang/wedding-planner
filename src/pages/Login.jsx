@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -100,7 +100,7 @@ export default function Login() {
           if (!cpw && (parsed.couple.cpw_nickname || parsed.couple.cpw_full_name)) {
             cpw = {
               name: parsed.couple.cpw_nickname || parsed.couple.cpw_full_name,
-              username: "reina",
+              username: "cpw",
             };
           }
         }
@@ -110,6 +110,9 @@ export default function Login() {
   });
 
   useEffect(() => {
+    // Hanya query jika sesi sudah aktif; jangan kirim unauthenticated request yang memicu galat 400
+    if (!pb.authStore.isValid) return;
+
     let active = true;
     pb.collection("couples")
       .getFullList({ sort: "-created" })
@@ -118,7 +121,7 @@ export default function Login() {
         const c = couples[0];
         setPartnerProfiles((prev) => ({
           cpp: prev.cpp || (c.cpp_nickname || c.cpp_full_name ? { name: c.cpp_nickname || c.cpp_full_name, username: "admin" } : null),
-          cpw: prev.cpw || (c.cpw_nickname || c.cpw_full_name ? { name: c.cpw_nickname || c.cpw_full_name, username: "reina" } : null),
+          cpw: prev.cpw || (c.cpw_nickname || c.cpw_full_name ? { name: c.cpw_nickname || c.cpw_full_name, username: "cpw" } : null),
         }));
       })
       .catch(() => {});
@@ -128,6 +131,13 @@ export default function Login() {
   }, []);
 
   const [error, setError] = useState("");
+
+  const coupleSubtitle = useMemo(() => {
+    if (partnerProfiles.cpp?.name && partnerProfiles.cpw?.name) {
+      return `${partnerProfiles.cpp.name} & ${partnerProfiles.cpw.name}`;
+    }
+    return t("Platform Digital Pernikahan");
+  }, [partnerProfiles, t]);
   const [busy, setBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState("");
 
@@ -270,7 +280,7 @@ export default function Login() {
             </div>
             <div>
               <p className="font-display font-semibold text-white tracking-tight text-base">Wedding Planner</p>
-              <p className="text-xs text-stone-400">{t("Rizky & Reina • 17 Februari 2028")}</p>
+              <p className="text-xs text-stone-400">{coupleSubtitle}</p>
             </div>
           </div>
 
@@ -331,7 +341,7 @@ export default function Login() {
 
         {/* Footer info */}
         <div className="relative flex items-center justify-between text-stone-400 text-xs">
-          <span>&copy; 2028 Rizky &amp; Reina</span>
+          <span>&copy; {new Date().getFullYear()} Wedding Planner</span>
           <span className="text-stone-500">{t("Tersinkron dengan PocketBase")}</span>
         </div>
       </aside>
@@ -361,7 +371,7 @@ export default function Login() {
             <h1 className="font-display text-xl font-semibold mt-3 text-ink dark:text-stone-50">
               Wedding Planner
             </h1>
-            <p className="text-xs text-ink-muted mt-0.5">{t("Rizky & Reina • 17 Februari 2028")}</p>
+            <p className="text-xs text-ink-muted mt-0.5">{coupleSubtitle}</p>
             <div className="mt-3">
               <PWAInstallButton />
             </div>
@@ -498,12 +508,12 @@ export default function Login() {
                     type="button"
                     onClick={() => {
                       setError("");
-                      const target = partnerProfiles.cpw?.username || "reina";
+                      const target = partnerProfiles.cpw?.username || "cpw";
                       setIdentity(target);
                       document.getElementById("password")?.focus();
                     }}
                     className={`flex items-center gap-2 p-2 rounded-xl text-left border transition ${
-                      identity === (partnerProfiles.cpw?.username || "reina")
+                      identity === (partnerProfiles.cpw?.username || "cpw")
                         ? "border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 font-semibold shadow-xs"
                         : "border-transparent bg-canvas-card/80 dark:bg-night-card/80 hover:border-rose-400 text-ink"
                     }`}

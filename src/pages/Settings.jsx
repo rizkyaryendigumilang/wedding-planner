@@ -12,8 +12,6 @@ import {
   FileJson,
   ShieldCheck,
   Laptop,
-  Moon,
-  Sun,
   Save,
   ExternalLink,
   Check,
@@ -33,6 +31,8 @@ import {
   Trash2,
   Lock,
   Shield,
+  Landmark,
+  Tags,
 } from "lucide-react";
 import {
   Page,
@@ -46,19 +46,40 @@ import {
   Loading,
   KeyValue,
   EmptyState,
+  ToggleSwitch,
+  ToggleRow,
 } from "../components/ui";
+import RekeningQrisTab from "./settings/RekeningQrisTab";
+import CategoriesAdatTab from "./settings/CategoriesAdatTab";
+import TimezoneThemeTab from "./settings/TimezoneThemeTab";
+import TrashTab from "./settings/TrashTab";
 import { Avatar } from "../components/Avatar";
 import { PWAInstallButton, PWAInstallBanner } from "../components/PWAInstallPrompt";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { formatDateId, formatDateTime, formatRupiah } from "../lib/format";
+import {
+  formatDateId,
+  formatDateTime,
+  formatRupiah,
+  formatDateConfigured,
+} from "../lib/format";
+import {
+  formatBankAccountsForWa,
+} from "../lib/masterData";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
 import { LOGO_URL } from "../lib/icons";
 import pb from "../lib/pocketbase";
 import { toast } from "sonner";
+import {
+  getCoupleDisplayName,
+  getCppNickname,
+  getCpwNickname,
+  getCoupleInitials,
+  getCoupleSlug,
+} from "../lib/couple";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -66,9 +87,9 @@ const DEFAULT_WA_TEMPLATE = `Kepada Yth. {nama},
 
 Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan kami:
 
-💍 Rizky & Reina
-📅 17 Februari 2028
-📍 Gedung PINDAD, Bandung
+💍 {pengantin}
+📅 {tanggal}
+📍 {venue}
 
 Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
 {link}
@@ -76,19 +97,21 @@ Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
 Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
 
 Terima kasih,
-Rizky & Reina`;
+{pengantin}`;
 
 const TABS = [
   { id: "acara", label: "Acara & Pasangan", icon: Heart },
   { id: "pasangan", label: "Akun & Hak Akses", icon: Users },
-  { id: "demo", label: "Kontrol Demo", icon: Shield },
+  { id: "rekening", label: "Rekening & QRIS", icon: Landmark },
+  { id: "kategori", label: "Kategori & Adat", icon: Tags },
   { id: "undangan", label: "Undangan & WA", icon: Send },
   { id: "alerts", label: "Peringatan", icon: Bell },
-  { id: "tampilan", label: "Tampilan & Tema", icon: Palette },
+  { id: "tampilan", label: "Tampilan & Waktu", icon: Palette },
   { id: "prewedding", label: "Prewedding & Galeri", icon: ImageIcon },
   { id: "cadangan", label: "Ekspor & Cadangan", icon: FileSpreadsheet },
   { id: "sampah", label: "Tempat Sampah", icon: Trash2 },
   { id: "keamanan", label: "Kata Sandi", icon: ShieldCheck },
+  { id: "demo", label: "Kontrol Demo", icon: Shield },
   { id: "sistem", label: "Sistem & PWA", icon: Laptop },
 ];
 
@@ -143,11 +166,23 @@ export default function Settings() {
   const { user, logout, isSuperuser, isAdmin, displayName, isPanitia } = useAuth();
   const { isDark, toggle, followsSystem } = useTheme();
   const { lang, setLang, t } = useLang();
+  const [userSelectedLang, setUserSelectedLang] = useState(null);
+  const selectedLang = userSelectedLang ?? lang;
   const reduce = useReducedMotion();
+
+  const handleApplyLanguage = () => {
+    setLang(selectedLang);
+    setUserSelectedLang(null);
+    if (selectedLang === "id") {
+      toast.success(t("Bahasa berhasil diterapkan: Bahasa Indonesia"));
+    } else {
+      toast.success(t("Language applied successfully: English"));
+    }
+  };
 
   const [rawActiveTab, setActiveTab] = useState("acara");
   const activeTab =
-    isPanitia && (rawActiveTab === "pasangan" || rawActiveTab === "cadangan" || rawActiveTab === "sampah")
+    isPanitia && (rawActiveTab === "pasangan" || rawActiveTab === "cadangan" || rawActiveTab === "sampah" || rawActiveTab === "rekening" || rawActiveTab === "demo")
       ? "acara"
       : rawActiveTab === "demo" && !isAdmin
         ? "acara"
@@ -235,10 +270,6 @@ export default function Settings() {
   const fileInputRef = useRef(null);
   const [restoreStatus, setRestoreStatus] = useState(null);
 
-  // --- Tempat Sampah ---
-  const [trashActionId, setTrashActionId] = useState(null);
-  const [trashFilter, setTrashFilter] = useState("ALL");
-
   // --- Kontrol Akun Demo (khusus admin) ---
   const [demoActionId, setDemoActionId] = useState(null);
   // Waktu acuan untuk status demo. Diambil di effect agar render tetap murni.
@@ -288,6 +319,10 @@ export default function Settings() {
     settings?.alert_vendor_deadline ? 1 : 0
   }|${settings?.alert_vendor_days || 7}|${settings?.alert_budget_overrun ? 1 : 0}|${
     settings?.alert_rsvp_reminder ? 1 : 0
+  }|${JSON.stringify(settings?.bank_accounts || [])}|${settings?.qris_image_url || ""}|${
+    JSON.stringify(settings?.custom_budget_categories || [])
+  }|${JSON.stringify(settings?.custom_vendor_categories || [])}|${settings?.event_timezone || "Asia/Jakarta"}|${
+    settings?.date_format_style || "formal"
   }`;
   const [loadedSnapshot, setLoadedSnapshot] = useState(null);
 
@@ -342,7 +377,7 @@ export default function Settings() {
     showOnDashboard !== (settings?.show_gallery_on_dashboard ?? true);
 
   const availableTabs = isPanitia
-    ? TABS.filter((t) => t.id !== "pasangan" && t.id !== "cadangan" && t.id !== "sampah" && t.id !== "demo")
+    ? TABS.filter((t) => !["pasangan", "cadangan", "sampah", "demo", "rekening"].includes(t.id))
     : isAdmin
       ? TABS
       : TABS.filter((t) => t.id !== "demo");
@@ -354,7 +389,11 @@ export default function Settings() {
     prewedding: isGalleryDirty,
   };
 
-  const isAnyDirty = isCoupleDirty || isInvitationDirty || isAlertsDirty || isGalleryDirty;
+  const isAnyDirty =
+    isCoupleDirty ||
+    isInvitationDirty ||
+    isAlertsDirty ||
+    isGalleryDirty;
 
   if (loading) return <Loading label="Memuat pengaturan…" />;
 
@@ -791,16 +830,30 @@ export default function Settings() {
     }, 0);
   };
 
-  const samplePreviewText = waTemplate
+  const coupleName = getCoupleDisplayName(couple, user, "Calon Pengantin");
+  const cppNicknameResolved = getCppNickname(couple, user);
+  const cpwNicknameResolved = getCpwNickname(couple, user);
+  const coupleSlug = getCoupleSlug(couple, user);
+  const coupleInitials = getCoupleInitials(couple, user);
+
+  const formattedBankAccounts = formatBankAccountsForWa(settings?.bank_accounts || []);
+  const activeDateFormatStyle = settings?.date_format_style || "formal";
+
+  const samplePreviewText = (waTemplate || DEFAULT_WA_TEMPLATE)
     .replace(/\{nama\}/g, "Bapak Budi Santoso")
-    .replace(/\{link\}/g, `${invitationUrl || "https://undangan.me/rizky-reina"}?to=Budi+Santoso`)
+    .replace(/\{link\}/g, `${invitationUrl || `https://undangan.me/${coupleSlug}`}?to=Budi+Santoso`)
     .replace(/\{pax\}/g, "2 pax")
-    .replace(/\{venue\}/g, venue || "Gedung PINDAD, Bandung")
-    .replace(/\{meja\}/g, "Meja 05 (VIP)");
+    .replace(/\{venue\}/g, venue || couple?.venue || "Gedung Resepsi")
+    .replace(/\{meja\}/g, "Meja 05 (VIP)")
+    .replace(/\{pengantin\}/g, coupleName)
+    .replace(/\{cpp\}/g, cppNicknameResolved)
+    .replace(/\{cpw\}/g, cpwNicknameResolved)
+    .replace(/\{tanggal\}/g, weddingDate ? formatDateConfigured(weddingDate, activeDateFormatStyle) : "Hari Bahagia")
+    .replace(/\{rekening\}/g, formattedBankAccounts);
 
   // Cari akun pasangan untuk Skema 2 Akun
-  const cppNickLower = (couple?.cpp_nickname || "").toLowerCase();
-  const cpwNickLower = (couple?.cpw_nickname || "").toLowerCase();
+  const cppNickLower = (cppNicknameResolved || "").toLowerCase();
+  const cpwNickLower = (cpwNicknameResolved || "").toLowerCase();
 
   const cppUser = partnerUsers.find(
     (u) =>
@@ -827,58 +880,7 @@ export default function Settings() {
       u.id !== user?.id
   );
 
-  const ThemeIcon = isDark ? Sun : Moon;
   const driveOpen = toDriveOpenUrl(drive);
-
-  // --- Tempat Sampah Handlers ---
-  const handleRestoreItem = async (item) => {
-    setTrashActionId(item.id);
-    try {
-      await restoreFromTrash(item);
-      toast.success(`"${item.item_title}" berhasil dipulihkan!`);
-    } catch (err) {
-      console.error("Gagal memulihkan:", err);
-      toast.error("Gagal memulihkan item: " + (err.message || "Terjadi kesalahan"));
-    } finally {
-      setTrashActionId(null);
-    }
-  };
-
-  const handlePermanentDeleteItem = async (item) => {
-    if (!confirm(`Hapus permanen "${item.item_title}"? Data ini TIDAK DAPAT dipulihkan lagi.`)) {
-      return;
-    }
-    setTrashActionId(item.id);
-    try {
-      await permanentDeleteFromTrash(item.id, item.item_title);
-      toast.info(`"${item.item_title}" dihapus permanen.`);
-    } catch (err) {
-      console.error("Gagal menghapus permanen:", err);
-      toast.error("Gagal menghapus item: " + (err.message || "Terjadi kesalahan"));
-    } finally {
-      setTrashActionId(null);
-    }
-  };
-
-  const handleEmptyTrash = async () => {
-    if (
-      !confirm(
-        `PERINGATAN: Kosongkan seluruh tempat sampah (${trashItems?.length || 0} item)?\n\nSemua data ini akan dihapus secara permanen dan tidak dapat dikembalikan lagi.`
-      )
-    ) {
-      return;
-    }
-    setTrashActionId("all");
-    try {
-      await emptyTrash();
-      toast.success("Tempat sampah berhasil dikosongkan.");
-    } catch (err) {
-      console.error("Gagal mengosongkan tempat sampah:", err);
-      toast.error("Gagal mengosongkan tempat sampah: " + (err.message || "Terjadi kesalahan"));
-    } finally {
-      setTrashActionId(null);
-    }
-  };
 
   // --- Kontrol Akun Demo (admin) ---
   // Akun demo dibatasi 7 hari. Admin dapat mengaktifkan kembali, memperpanjang,
@@ -916,11 +918,6 @@ export default function Settings() {
       demoExpiredIso(),
       `Akun demo "${target.name || target.username}" dinonaktifkan.`
     );
-
-  const filteredTrash = (trashItems || []).filter((it) => {
-    if (trashFilter === "ALL") return true;
-    return it.collection_name === trashFilter;
-  });
 
   return (
     <Page>
@@ -966,7 +963,7 @@ export default function Settings() {
               }`}
             >
               <Icon size={15} strokeWidth={isActive ? 2.3 : 1.8} />
-              <span>{tab.label}</span>
+              <span>{t(tab.label)}</span>
               {badgeCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white leading-none">
                   {badgeCount}
@@ -1020,7 +1017,7 @@ export default function Settings() {
                     <Input
                       value={cppNickname}
                       onChange={(e) => setCppNickname(e.target.value)}
-                      placeholder="Rizky"
+                      placeholder="Contoh: Dimas"
                       required
                     />
                   </Field>
@@ -1028,7 +1025,7 @@ export default function Settings() {
                     <Input
                       value={cppFullName}
                       onChange={(e) => setCppFullName(e.target.value)}
-                      placeholder="Rizky Ramadhan"
+                      placeholder="Contoh: Dimas Pratama, S.T."
                     />
                   </Field>
                 </div>
@@ -1038,7 +1035,7 @@ export default function Settings() {
                     <Input
                       value={cpwNickname}
                       onChange={(e) => setCpwNickname(e.target.value)}
-                      placeholder="Reina"
+                      placeholder="Contoh: Annisa"
                       required
                     />
                   </Field>
@@ -1046,7 +1043,7 @@ export default function Settings() {
                     <Input
                       value={cpwFullName}
                       onChange={(e) => setCpwFullName(e.target.value)}
-                      placeholder="Reina Nurulita"
+                      placeholder="Contoh: Annisa Larasati, S.Ked."
                     />
                   </Field>
                 </div>
@@ -1630,6 +1627,28 @@ export default function Settings() {
           </motion.div>
         )}
 
+        {/* ===================== TAB REKENING & QRIS (FITUR 1) ===================== */}
+        {activeTab === "rekening" && (
+          <RekeningQrisTab
+            settings={settings}
+            saveSettings={saveSettings}
+            cppNicknameResolved={cppNicknameResolved}
+            cpwNicknameResolved={cpwNicknameResolved}
+            reduce={reduce}
+            t={t}
+          />
+        )}
+
+        {/* ===================== TAB KATEGORI & ADAT (FITUR 3) ===================== */}
+        {activeTab === "kategori" && (
+          <CategoriesAdatTab
+            settings={settings}
+            saveSettings={saveSettings}
+            reduce={reduce}
+            t={t}
+          />
+        )}
+
         {/* ===================== TAB 3: UNDANGAN & WHATSAPP ===================== */}
         {activeTab === "undangan" && (
           <motion.div
@@ -1659,13 +1678,13 @@ export default function Settings() {
               <div className="space-y-5 mt-5">
                 <Field
                   label="URL Dasar Website Undangan"
-                  hint="Contoh: https://undangan.me/rizky-reina (link tiap tamu otomatis ditambahkan ?to=Nama+Tamu)."
+                  hint={`Contoh: https://undangan.me/${coupleSlug} (link tiap tamu otomatis ditambahkan ?to=Nama+Tamu).`}
                 >
                   <Input
                     type="url"
                     value={invitationUrl}
                     onChange={(e) => setInvitationUrl(e.target.value)}
-                    placeholder="https://undangan.me/rizky-reina"
+                    placeholder={`https://undangan.me/${coupleSlug}`}
                   />
                 </Field>
 
@@ -1693,6 +1712,14 @@ export default function Settings() {
                       title="Sisipkan nama tamu"
                     >
                       + {"{nama}"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertVariable("{pengantin}")}
+                      className="px-2.5 py-1 rounded-xl text-xs font-mono bg-canvas-sunken dark:bg-night-sunken hover:bg-rose-500/10 hover:text-rose-600 transition"
+                      title="Sisipkan nama kedua mempelai"
+                    >
+                      + {"{pengantin}"}
                     </button>
                     <button
                       type="button"
@@ -1726,6 +1753,14 @@ export default function Settings() {
                     >
                       + {"{meja}"}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => insertVariable("{rekening}")}
+                      className="px-2.5 py-1 rounded-xl text-xs font-mono bg-canvas-sunken dark:bg-night-sunken hover:bg-rose-500/10 hover:text-rose-600 transition"
+                      title="Sisipkan nomor rekening bank & amplop digital"
+                    >
+                      + {"{rekening}"}
+                    </button>
                   </div>
 
                   <textarea
@@ -1756,11 +1791,11 @@ export default function Settings() {
                     {/* Header bar mini WhatsApp */}
                     <div className="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-black/10 dark:border-white/10 text-xs text-ink dark:text-stone-100">
                       <div className="w-7 h-7 rounded-full bg-[#128C7E] text-white grid place-items-center font-bold text-xs">
-                        R&amp;R
+                        {coupleInitials}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-xs text-[#075E54] dark:text-stone-100 truncate">
-                          {coupleNameDisplay(couple)}
+                          {coupleName}
                         </p>
                         <p className="text-[10px] text-ink-faint">online</p>
                       </div>
@@ -1823,7 +1858,7 @@ export default function Settings() {
               <div className="space-y-4 mt-5">
                 {/* 1. Tenggat Vendor */}
                 <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line space-y-3">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">Peringatan Tenggat Waktu Vendor</p>
                       <p className="text-xs text-ink-muted mt-0.5">
@@ -1833,16 +1868,17 @@ export default function Settings() {
                     <ToggleSwitch
                       checked={alertVendorDeadline}
                       onChange={setAlertVendorDeadline}
+                      aria-label="Peringatan Tenggat Waktu Vendor"
                     />
                   </div>
 
                   {alertVendorDeadline && (
-                    <div className="pt-2 border-t border-line/60 dark:border-night-line/60 flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <span className="text-ink-muted">Batas hari peringatan mendesak:</span>
+                    <div className="pt-3 border-t border-line/60 dark:border-night-line/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <span className="text-ink-muted font-medium">Batas hari peringatan mendesak:</span>
                       <select
                         value={alertVendorDays}
                         onChange={(e) => setAlertVendorDays(Number(e.target.value))}
-                        className="px-3 py-1.5 rounded-xl bg-canvas dark:bg-night-card border border-line dark:border-night-line text-ink dark:text-stone-100 text-xs font-semibold focus-ring"
+                        className="px-3.5 py-1.5 rounded-xl bg-canvas dark:bg-night-card border border-line dark:border-night-line text-ink dark:text-stone-100 text-xs font-semibold focus-ring cursor-pointer shadow-xs"
                       >
                         <option value={3}>H-3 hari sebelum tenggat</option>
                         <option value={7}>H-7 hari (1 minggu)</option>
@@ -1854,7 +1890,7 @@ export default function Settings() {
                 </div>
 
                 {/* 2. Peringatan Pembengkakan Anggaran */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Peringatan Pembengkakan Anggaran</p>
                     <p className="text-xs text-ink-muted mt-0.5">
@@ -1864,11 +1900,12 @@ export default function Settings() {
                   <ToggleSwitch
                     checked={alertBudgetOverrun}
                     onChange={setAlertBudgetOverrun}
+                    aria-label="Peringatan Pembengkakan Anggaran"
                   />
                 </div>
 
                 {/* 3. Pengingat RSVP Tamu */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Pengingat Follow-up Tamu Prioritas</p>
                     <p className="text-xs text-ink-muted mt-0.5">
@@ -1878,11 +1915,12 @@ export default function Settings() {
                   <ToggleSwitch
                     checked={alertRsvpReminder}
                     onChange={setAlertRsvpReminder}
+                    aria-label="Pengingat Follow-up Tamu Prioritas"
                   />
                 </div>
 
-                {/* 4. Notifikasi Browser Web Push */}
-                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-start justify-between gap-4">
+                {/* 4. Notifikasi Perangkat */}
+                <div className="p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">Notifikasi Perangkat</p>
                     <p className="text-xs text-ink-muted mt-0.5">
@@ -1905,15 +1943,24 @@ export default function Settings() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-line/60 dark:border-night-line/60">
-                  <Button onClick={handleSaveAlerts} loading={savingAlerts} icon={savedAlerts ? Check : Save}>
-                    {savedAlerts ? t("Tersimpan!") : t("Simpan Pengaturan")}
-                  </Button>
-                  {savedAlerts && (
-                    <span className="text-xs text-sage-600 dark:text-sage-300 flex items-center gap-1.5">
-                      <Check size={14} /> Preferensi tersimpan
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-line/60 dark:border-night-line/60">
+                  <div className="text-xs text-ink-faint">
+                    {isAlertsDirty ? (
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">• Perubahan belum disimpan</span>
+                    ) : (
+                      <span>Pengaturan notifikasi otomatis aktif</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {savedAlerts && (
+                      <span className="text-xs text-sage-600 dark:text-sage-300 flex items-center gap-1.5">
+                        <Check size={14} /> Preferensi tersimpan
+                      </span>
+                    )}
+                    <Button onClick={handleSaveAlerts} loading={savingAlerts} icon={savedAlerts ? Check : Save}>
+                      {savedAlerts ? t("Tersimpan!") : t("Simpan Pengaturan")}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1922,74 +1969,21 @@ export default function Settings() {
 
         {/* ===================== TAB 5: TAMPILAN & TEMA ===================== */}
         {activeTab === "tampilan" && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className="space-y-6"
-          >
-            <Card>
-              <SectionTitle>Bahasa Aplikasi</SectionTitle>
-              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Pilih bahasa yang dipakai di seluruh halaman aplikasi.
-              </p>
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <button
-                  onClick={() => setLang("id")}
-                  className={`p-4 rounded-3xl border text-left transition-colors focus-ring ${
-                    lang === "id"
-                      ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10"
-                      : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
-                  }`}
-                >
-                  <span className="block text-sm font-semibold">Bahasa Indonesia</span>
-                  <span className="block text-xs text-ink-muted mt-0.5">Bawaan aplikasi</span>
-                </button>
-                <button
-                  onClick={() => setLang("en")}
-                  className={`p-4 rounded-3xl border text-left transition-colors focus-ring ${
-                    lang === "en"
-                      ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10"
-                      : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
-                  }`}
-                >
-                  <span className="block text-sm font-semibold">English</span>
-                  <span className="block text-xs text-ink-muted mt-0.5">English version</span>
-                </button>
-              </div>
-            </Card>
-
-            <Card>
-              <SectionTitle>Mode Tampilan</SectionTitle>
-              <button
-                onClick={toggle}
-                className="w-full flex items-center gap-4 mt-4 p-3 -mx-3 rounded-2xl hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors text-left focus-ring"
-              >
-                <span className="p-2.5 rounded-2xl bg-canvas-sunken dark:bg-night-sunken text-ink-muted shrink-0">
-                  <ThemeIcon size={19} />
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-medium">
-                    {isDark ? "Mode gelap (Dark Mode)" : "Mode terang (Light Mode)"}
-                  </span>
-                  <span className="block text-xs text-ink-faint mt-0.5">
-                    {followsSystem ? "Mengikuti setelan sistem operasi perangkat" : "Dipilih manual"}
-                  </span>
-                </span>
-                <span
-                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                    isDark ? "bg-rose-600" : "bg-line-strong dark:bg-night-line"
-                  }`}
-                >
-                  <motion.span
-                    animate={{ x: isDark ? 22 : 3 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                    className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm"
-                  />
-                </span>
-              </button>
-            </Card>
-          </motion.div>
+          <TimezoneThemeTab
+            settings={settings}
+            saveSettings={saveSettings}
+            weddingDate={weddingDate}
+            isDark={isDark}
+            toggle={toggle}
+            followsSystem={followsSystem}
+            lang={lang}
+            setLang={setLang}
+            userSelectedLang={userSelectedLang}
+            setUserSelectedLang={setUserSelectedLang}
+            handleApplyLanguage={handleApplyLanguage}
+            reduce={reduce}
+            t={t}
+          />
         )}
 
         {/* ===================== TAB 6: PREWEDDING & GALERI ===================== */}
@@ -2050,7 +2044,7 @@ export default function Settings() {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Momen Prewedding Rizky & Reina"
+                    placeholder={`Momen Prewedding ${coupleName}`}
                   />
                 </Field>
 
@@ -2441,130 +2435,13 @@ export default function Settings() {
 
         {/* ===================== TAB: TEMPAT SAMPAH (RECYCLE BIN) ===================== */}
         {activeTab === "sampah" && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className="space-y-6"
-          >
-            <Card>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <SectionTitle count={`${trashItems?.length || 0} item`}>
-                  Tempat Sampah
-                </SectionTitle>
-                {trashItems?.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Trash2}
-                    className="text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/20"
-                    loading={trashActionId === "all"}
-                    onClick={handleEmptyTrash}
-                  >
-                    Kosongkan Tempat Sampah
-                  </Button>
-                )}
-              </div>
-
-              <p className="text-xs text-ink-muted leading-relaxed mt-2">
-                Item yang dihapus dari Tamu, Vendor, Anggaran, Arus Kas, atau Seserahan disimpan di sini untuk menghindari kehilangan data tidak disengaja. Anda dapat memulihkannya kembali ke data aktif kapan saja, atau menghapusnya secara permanen.
-              </p>
-
-              {/* Filter Tabs */}
-              {trashItems?.length > 0 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-3 pb-1 border-t border-line dark:border-night-line mt-4">
-                  {[
-                    { id: "ALL", label: `Semua (${trashItems.length})` },
-                    { id: "wedding_guests", label: `Tamu (${trashItems.filter((i) => i.collection_name === "wedding_guests").length})` },
-                    { id: "vendor_checklists", label: `Vendor (${trashItems.filter((i) => i.collection_name === "vendor_checklists").length})` },
-                    { id: "budgets", label: `Anggaran (${trashItems.filter((i) => i.collection_name === "budgets").length})` },
-                    { id: "cashflow_entries", label: `Arus Kas (${trashItems.filter((i) => i.collection_name === "cashflow_entries").length})` },
-                    { id: "seserahan_items", label: `Seserahan (${trashItems.filter((i) => i.collection_name === "seserahan_items").length})` },
-                  ]
-                    .filter((f) => f.id === "ALL" || !f.label.includes("(0)"))
-                    .map((f) => (
-                      <button
-                        key={f.id}
-                        onClick={() => setTrashFilter(f.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
-                          trashFilter === f.id
-                            ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold"
-                            : "text-ink-muted hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken"
-                        }`}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                </div>
-              )}
-
-              {filteredTrash.length === 0 ? (
-                <div className="mt-4">
-                  <EmptyState
-                    icon={Trash2}
-                    message={trashFilter === "ALL" ? "Tempat sampah kosong" : "Tidak ada item untuk kategori ini"}
-                    hint="Semua item yang dihapus dari aplikasi akan muncul di sini dan dapat dipulihkan kapan saja."
-                  />
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {filteredTrash.map((it) => {
-                    const meta = getTrashCollectionMeta(it.collection_name);
-                    const detailStr = renderTrashItemDetails(it);
-                    const isProcessing = trashActionId === it.id;
-
-                    return (
-                      <div
-                        key={it.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line hover:border-line-strong transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge tone={meta.tone}>{meta.label}</Badge>
-                            <h4 className="font-semibold text-sm text-ink dark:text-stone-100 truncate">
-                              {it.item_title}
-                            </h4>
-                          </div>
-
-                          {detailStr && (
-                            <p className="text-xs text-ink-muted mt-1 font-medium">{detailStr}</p>
-                          )}
-
-                          <p className="text-[11px] text-ink-faint mt-1">
-                            Dihapus oleh <span className="font-medium text-ink-muted">{it.deleted_by || "Pengguna"}</span> •{" "}
-                            {formatDateId(it.created)}{" "}
-                            {new Date(it.created).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            icon={RotateCcw}
-                            loading={isProcessing}
-                            onClick={() => handleRestoreItem(it)}
-                          >
-                            Pulihkan
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={Trash2}
-                            className="text-rose-600 dark:text-rose-400 hover:bg-rose-500/10"
-                            loading={isProcessing}
-                            onClick={() => handlePermanentDeleteItem(it)}
-                          >
-                            Hapus
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
-          </motion.div>
+          <TrashTab
+            trashItems={trashItems}
+            restoreFromTrash={restoreFromTrash}
+            permanentDeleteFromTrash={permanentDeleteFromTrash}
+            emptyTrash={emptyTrash}
+            reduce={reduce}
+          />
         )}
 
         {/* ===================== TAB 9: SISTEM & PWA ===================== */}
@@ -2621,7 +2498,7 @@ export default function Settings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-semibold text-sm truncate">Wedding Planner</p>
-                  <p className="text-xs text-ink-muted">Rizky &amp; Reina • Versi PWA 1.0</p>
+                  <p className="text-xs text-ink-muted">{coupleName} • Versi PWA 1.0</p>
                   <p className="text-[11px] text-ink-faint mt-0.5">Mendukung Android, iPhone, iPad &amp; Desktop</p>
                 </div>
                 <div className="shrink-0">
@@ -2651,94 +2528,4 @@ export default function Settings() {
   );
 }
 
-/* ========================================================================== */
-
-function coupleNameDisplay(couple) {
-  if (couple?.cpp_nickname && couple?.cpw_nickname) {
-    return `${couple.cpp_nickname} & ${couple.cpw_nickname}`;
-  }
-  return "Rizky & Reina";
-}
-
-function ToggleRow({ icon: Icon, label, hint, checked, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className="w-full flex items-center gap-4 p-3 -mx-3 rounded-2xl hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors text-left focus-ring"
-    >
-      <span className="p-2.5 rounded-2xl bg-canvas-sunken dark:bg-night-sunken text-ink-muted shrink-0">
-        <Icon size={18} />
-      </span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-sm font-medium">{label}</span>
-        <span className="block text-xs text-ink-faint mt-0.5 leading-relaxed">{hint}</span>
-      </span>
-      <span
-        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-          checked ? "bg-rose-600" : "bg-line-strong dark:bg-night-line"
-        }`}
-      >
-        <motion.span
-          animate={{ x: checked ? 22 : 3 }}
-          transition={{ type: "spring", stiffness: 500, damping: 32 }}
-          className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm"
-        />
-      </span>
-    </button>
-  );
-}
-
-function ToggleSwitch({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 focus-ring ${
-        checked ? "bg-rose-600" : "bg-line-strong dark:bg-night-line"
-      }`}
-    >
-      <motion.span
-        animate={{ x: checked ? 22 : 3 }}
-        transition={{ type: "spring", stiffness: 500, damping: 32 }}
-        className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm"
-      />
-    </button>
-  );
-}
-
-function getTrashCollectionMeta(collectionName) {
-  switch (collectionName) {
-    case "wedding_guests":
-      return { label: "Tamu Undangan", tone: "sky" };
-    case "vendor_checklists":
-      return { label: "Vendor & Tugas", tone: "plum" };
-    case "budgets":
-      return { label: "Anggaran", tone: "sage" };
-    case "cashflow_entries":
-      return { label: "Arus Kas", tone: "rose" };
-    case "seserahan_items":
-      return { label: "Seserahan", tone: "amber" };
-    default:
-      return { label: collectionName, tone: "neutral" };
-  }
-}
-
-function renderTrashItemDetails(item) {
-  const d = item.item_data || {};
-  switch (item.collection_name) {
-    case "wedding_guests":
-      return `${d.pax || 1} Pax • ${d.side || "CPP"}${d.group_name ? ` • ${d.group_name}` : ""}${d.table_number ? ` • Meja ${d.table_number}` : ""}`;
-    case "vendor_checklists":
-      return `Kategori: ${d.category || "-"}${d.total_cost ? ` • Biaya: ${formatRupiah(d.total_cost)}` : ""}`;
-    case "budgets":
-      return `Kategori: ${d.category || "-"} • Jenis: ${d.budget_type || "-"}${d.total_biaya ? ` • Total: ${formatRupiah(d.total_biaya)}` : ""}`;
-    case "cashflow_entries":
-      return `${d.kind === "income" ? "Pemasukan" : "Pengeluaran"} • ${formatRupiah(d.amount || 0)} (${d.owner || "Bersama"})`;
-    case "seserahan_items":
-      return `Kategori: ${d.category || "-"} • Qty: ${d.qty || 1}${d.brand ? ` • ${d.brand}` : ""}`;
-    default:
-      return "";
-  }
-}
 

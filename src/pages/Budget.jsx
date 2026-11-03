@@ -40,6 +40,7 @@ import pb from "../lib/pocketbase";
 import { formatRupiah, formatDateShort, pct, formatCompact } from "../lib/format";
 import { exportToCsv, printReport } from "../lib/export";
 import { toast } from "sonner";
+import { DEFAULT_BUDGET_CATEGORIES } from "../lib/masterData";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -50,9 +51,15 @@ const TABS = [
 ];
 
 export default function Budget() {
-  const { budgets, cashflow, finance, loading, error, couple, addLog, reload, moveToTrash } =
+  const { budgets, cashflow, finance, loading, error, couple, settings, addLog, reload, moveToTrash } =
     useWedding();
   const [tab, setTab] = useState("cashflow");
+
+  const budgetCategories = useMemo(() => {
+    return settings?.custom_budget_categories?.length
+      ? settings.custom_budget_categories
+      : DEFAULT_BUDGET_CATEGORIES;
+  }, [settings?.custom_budget_categories]);
 
   if (loading) return <Loading label="Memuat anggaran…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -216,6 +223,7 @@ export default function Budget() {
           onChanged={reload}
           addLog={addLog}
           moveToTrash={moveToTrash}
+          categories={budgetCategories}
         />
       )}
       {tab === "wedding" && (
@@ -227,6 +235,7 @@ export default function Budget() {
           onChanged={reload}
           addLog={addLog}
           moveToTrash={moveToTrash}
+          categories={budgetCategories}
         />
       )}
     </Page>
@@ -534,7 +543,16 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
 
 /* ============================== ANGGARAN ============================== */
 
-function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTrash }) {
+function BudgetTable({
+  title,
+  items,
+  coupleId,
+  type,
+  onChanged,
+  addLog,
+  moveToTrash,
+  categories = DEFAULT_BUDGET_CATEGORIES,
+}) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState({});
   const [adding, setAdding] = useState(false);
@@ -661,12 +679,18 @@ function BudgetTable({ title, items, coupleId, type, onChanged, addLog, moveToTr
             className="overflow-hidden"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5 p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60">
-              <Field label="Kategori">
+              <Field label="Kategori" hint="Pilih atau ketik kategori">
                 <Input
                   value={newItem.category}
                   onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                  placeholder="VENUE"
+                  list="budget-categories-list"
+                  placeholder="VENUE & KATERING"
                 />
+                <datalist id="budget-categories-list">
+                  {categories.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </Field>
               <Field label="Detail">
                 <Input
