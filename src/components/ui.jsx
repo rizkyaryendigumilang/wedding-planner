@@ -4,22 +4,22 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, memo } from "react";
 import { parseRupiahInput, formatRupiahInput } from "../lib/format";
 import { triggerHaptic } from "../lib/haptic";
+import { EASE_EXPO_OUT } from "../lib/motion";
 
 /* ========================================================================== */
 /*  Kerangka halaman                                                          */
 /* ========================================================================== */
 
 /**
- * Pembungkus animasi masuk. Durasi sengaja pendek (180ms) — transisi panjang
- * terasa lambat saat berpindah menu bolak-balik.
+ * Pembungkus animasi masuk bergaya Sorvo / Apple Expo Out.
  */
 export function Page({ children, className = "" }) {
   const reduce = useReducedMotion();
   return (
     <motion.div
-      initial={reduce ? false : { opacity: 0, y: 10 }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reduce ? 0 : 0.45, ease: EASE_EXPO_OUT }}
       className={`space-y-5 sm:space-y-6 ${className}`}
     >
       {children}

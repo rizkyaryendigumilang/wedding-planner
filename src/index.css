@@ -13,6 +13,10 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --nav-height: 4.25rem;
     color-scheme: light;
+
+    /* Kurva Easing khas Sorvo & Apple Motion */
+    --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-power-in: cubic-bezier(0.7, 0, 0.84, 0);
   }
 
   html.dark {
@@ -122,6 +126,23 @@
   .glass {
     @apply bg-canvas-card/85 dark:bg-night-card/85 backdrop-blur-xl
            border-t border-line dark:border-night-line;
+  }
+
+  /* Kilauan specular highlight tipis untuk kedalaman visual modal & card (Sorvo Depth) */
+  .glass-specular {
+    position: relative;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08), var(--shadow-lift, 0 16px 40px -16px rgba(28,25,23,0.18));
+  }
+  .dark .glass-specular {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.04), var(--shadow-lift, 0 16px 40px -16px rgba(0,0,0,0.5));
+  }
+  .glass-specular::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 45%);
   }
 }
 

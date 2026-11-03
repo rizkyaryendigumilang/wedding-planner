@@ -42,6 +42,7 @@ import { formatDateConfigured } from "../lib/format";
 import { formatBankAccountsForWa } from "../lib/masterData";
 import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
+import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -1484,17 +1485,19 @@ export default function Guests() {
         {showSettingsModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
               onClick={() => setShowSettingsModal(false)}
-              className="absolute inset-0 bg-ink/60 dark:bg-black/75 backdrop-blur-sm"
+              className="absolute inset-0 bg-ink/50 dark:bg-black/75 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto"
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto glass-specular"
             >
               <button
                 onClick={() => setShowSettingsModal(false)}
@@ -1581,19 +1584,21 @@ export default function Guests() {
         {importModal.open && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
               onClick={() => {
                 if (!importModal.importing) setImportModal({ ...importModal, open: false });
               }}
-              className="absolute inset-0 bg-ink/60 dark:bg-black/75 backdrop-blur-sm"
+              className="absolute inset-0 bg-ink/50 dark:bg-black/75 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-xl rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto"
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="relative w-full max-w-xl rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto glass-specular"
             >
               {!importModal.importing && (
                 <button

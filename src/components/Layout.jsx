@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { Link, NavLink, useLocation, useOutlet } from "react-router-dom";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { useWedding } from "../lib/weddingData";
@@ -9,6 +9,7 @@ import { useTheme } from "../lib/theme";
 import { MODULE_ICONS, UI_ICONS, LOGO_URL } from "../lib/icons";
 import { Avatar } from "./Avatar";
 import { getCoupleDisplayName } from "../lib/couple";
+import { EASE_EXPO_OUT, EASE_POWER_IN } from "../lib/motion";
 
 const WEDDING_DATE = "2028-02-17";
 
@@ -103,6 +104,62 @@ export default function Layout() {
   const current = navItems.find((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)));
 
   const overflowActive = bottomOverflow.some((n) => location.pathname.startsWith(n.to));
+
+  const reduce = useReducedMotion();
+  const outlet = useOutlet();
+
+  // REC-06: Direction-Aware Navigation Index Tracking (Sorvo Motion Architecture)
+  const prevPathRef = useRef(location.pathname);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    if (location.pathname !== prevPathRef.current) {
+      const getIndex = (path) => {
+        const idx = navItems.findIndex((n) => (n.end ? path === n.to : path.startsWith(n.to)));
+        return idx === -1 ? 999 : idx;
+      };
+      const prevIndex = getIndex(prevPathRef.current);
+      const currentIndex = getIndex(location.pathname);
+      setDirection(currentIndex >= prevIndex ? 1 : -1);
+      prevPathRef.current = location.pathname;
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [location.pathname, navItems]);
+
+  const pageVariants = useMemo(
+    () => ({
+      enter: (dir) =>
+        reduce
+          ? { opacity: 1, x: 0, scale: 1 }
+          : {
+              opacity: 0,
+              x: dir > 0 ? 24 : -24,
+              scale: 0.985,
+            },
+      center: {
+        opacity: 1,
+        x: 0,
+        scale: 1,
+        transition: {
+          duration: reduce ? 0 : 0.45,
+          ease: EASE_EXPO_OUT,
+        },
+      },
+      exit: (dir) =>
+        reduce
+          ? { opacity: 0 }
+          : {
+              opacity: 0,
+              x: dir > 0 ? -16 : 16,
+              scale: 0.985,
+              transition: {
+                duration: 0.18,
+                ease: EASE_POWER_IN,
+              },
+            },
+    }),
+    [reduce]
+  );
 
   return (
     <div className="min-h-[100dvh] bg-canvas dark:bg-night text-ink dark:text-stone-100 flex flex-col lg:flex-row">
@@ -246,10 +303,22 @@ export default function Layout() {
         <main
           id="main-content"
           tabIndex="-1"
-          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 focus:outline-none"
+          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 focus:outline-none overflow-x-hidden"
           style={{ paddingBottom: "calc(var(--nav-height) + var(--safe-bottom) + 1.5rem)" }}
         >
-          <Outlet />
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            <motion.div
+              key={location.pathname}
+              custom={direction}
+              variants={pageVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="w-full flex-1"
+            >
+              {outlet}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         <footer className="hidden lg:flex items-center justify-center gap-2 px-8 pb-6 text-center text-[11px] text-ink-faint">
@@ -297,23 +366,23 @@ export default function Layout() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-ink/45 dark:bg-black/60 backdrop-blur-[2px]"
+              transition={{ duration: 0.24, ease: EASE_EXPO_OUT }}
+              className="absolute inset-0 bg-ink/50 dark:bg-black/70 backdrop-blur-sm"
               onClick={() => setSheetOpen(false)}
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
               drag="y"
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.5 }}
+              dragElastic={{ top: 0.08, bottom: 0.5 }}
               onDragEnd={(_, info) => {
-                // Seret ke bawah lebih dari 100px atau flick cepat (velocity > 200) = tutup
-                if (info.offset.y > 100 || info.velocity.y > 200) setSheetOpen(false);
+                // Seret ke bawah lebih dari 80px atau flick cepat (velocity > 250) = tutup
+                if (info.offset.y > 80 || info.velocity.y > 250) setSheetOpen(false);
               }}
-              className="relative w-full max-h-[88dvh] flex flex-col bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift overscroll-contain"
+              className="relative w-full max-h-[88dvh] flex flex-col bg-canvas-card dark:bg-night-card rounded-t-4xl border-t border-line dark:border-night-line shadow-lift overscroll-contain glass-specular"
               style={{ paddingBottom: "calc(var(--safe-bottom) + 1rem)" }}
             >
               <div className="flex justify-center pt-3 pb-2.5 cursor-grab active:cursor-grabbing touch-none select-none shrink-0">
@@ -413,23 +482,40 @@ function NavItem({ item }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[13.5px] font-medium transition-colors ${
           isActive
-            ? "bg-rose-500/10 text-rose-700 dark:text-rose-300"
-            : "text-ink-muted hover:bg-canvas-sunken dark:hover:bg-night-sunken hover:text-ink dark:hover:text-stone-100"
+            ? "text-rose-700 dark:text-rose-300 font-semibold"
+            : "text-ink-muted hover:bg-canvas-sunken/60 dark:hover:bg-night-sunken/60 hover:text-ink dark:hover:text-stone-100"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          {/* Penanda aktif: satu garis tipis, bukan blok warna penuh. */}
+          {/* Elastic Stretchy Sliding Pill (Sorvo technique) */}
           {isActive && (
-            <motion.span
-              layoutId="sidebar-active"
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-rose-600"
-            />
+            <>
+              <motion.span
+                layoutId="sidebar-active-pill"
+                transition={{
+                  type: "spring",
+                  stiffness: 350,
+                  damping: 30, // sedikit melar elastis sebelum mengunci sempurna
+                }}
+                className="absolute inset-0 rounded-2xl bg-rose-500/10 dark:bg-rose-500/15 pointer-events-none"
+              />
+              <motion.span
+                layoutId="sidebar-active-bar"
+                transition={{
+                  type: "spring",
+                  stiffness: 380,
+                  damping: 32,
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3.5px] h-5 rounded-full bg-rose-600 dark:bg-rose-400 pointer-events-none"
+              />
+            </>
           )}
-          <Icon size={18} strokeWidth={isActive ? 2.2 : 1.9} />
-          <span className="truncate">{item.label}</span>
+          <span className="relative z-10 flex items-center gap-3 min-w-0">
+            <Icon size={18} strokeWidth={isActive ? 2.2 : 1.9} className="shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </span>
         </>
       )}
     </NavLink>
@@ -450,21 +536,21 @@ function BottomNavItem({ item }) {
     >
       {({ isActive }) => (
         <>
+          {isActive && (
+            <motion.span
+              layoutId="bottom-active"
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className="absolute top-0 w-8 h-[2.5px] rounded-full bg-rose-600 dark:bg-rose-400"
+            />
+          )}
           <motion.span
-            animate={{ scale: isActive ? 1.06 : 1, y: isActive ? -1 : 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            animate={{ scale: isActive ? 1.08 : 1, y: isActive ? -1 : 0 }}
+            transition={{ type: "spring", stiffness: 450, damping: 28 }}
             className="flex"
           >
             <Icon size={21} strokeWidth={isActive ? 2.3 : 1.9} />
           </motion.span>
           <span className="text-[10px] font-medium leading-none">{item.label}</span>
-          {isActive && (
-            <motion.span
-              layoutId="bottom-active"
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
-              className="absolute top-0 w-8 h-[2.5px] rounded-full bg-rose-600 dark:bg-rose-400"
-            />
-          )}
         </>
       )}
     </NavLink>

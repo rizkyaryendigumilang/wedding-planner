@@ -99,6 +99,9 @@ module.exports = {
         // Kurva khas Apple: cepat di awal, mendarat halus di akhir.
         glide: 'cubic-bezier(0.32, 0.72, 0, 1)',
         swift: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        // Kurva khas Sorvo / Expo Out & Power In
+        expo: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'power-in': 'cubic-bezier(0.7, 0, 0.84, 0)',
       },
       keyframes: {
         shimmer: {
