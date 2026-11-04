@@ -29,6 +29,7 @@ import { useWedding } from "../lib/weddingData";
 import { exportToCsv } from "../lib/export";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
+import { useModalA11y } from "../lib/useModalA11y";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -152,6 +153,9 @@ export default function Rundown() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
+
+  // Aksesibilitas modal agenda (Body Scroll Lock & Escape untuk menutup)
+  useModalA11y(modalOpen, () => setModalOpen(false));
 
   const [form, setForm] = useState({
     phase: "Akad / Pemberkatan",

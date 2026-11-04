@@ -43,6 +43,7 @@ import { formatBankAccountsForWa } from "../lib/masterData";
 import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
+import { useBodyScrollLock } from "../lib/useModalA11y";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -426,26 +427,6 @@ export default function Guests() {
   const searchInputRef = useRef(null);
   const reduce = useReducedMotion();
 
-  // REC-05: Shortcut keyboard global (/ untuk fokus pencarian tamu, Esc untuk batal seleksi)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (
-        e.key === "/" &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA"
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      } else if (e.key === "Escape") {
-        if (selectedGuestIds.size > 0) {
-          setSelectedGuestIds(new Set());
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedGuestIds]);
-
   // Settings State: Base link undangan & template WA
   const [baseInvitationUrl, setBaseInvitationUrl] = useState(
     () => settings?.invitation_base_url || `https://undangan-pernikahan.me/${coupleSlug}`
@@ -479,6 +460,33 @@ export default function Guests() {
     progress: 0,
     result: null,
   });
+
+  // Aksesibilitas: Kunci scroll body saat modal pengaturan atau modal impor aktif
+  useBodyScrollLock(showSettingsModal || importModal.open);
+
+  // Shortcut keyboard global (/ untuk fokus pencarian tamu, Esc untuk tutup modal / batal seleksi)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "/" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "Escape") {
+        if (showSettingsModal) {
+          setShowSettingsModal(false);
+        } else if (importModal.open && !importModal.importing) {
+          setImportModal((prev) => ({ ...prev, open: false }));
+        } else if (selectedGuestIds.size > 0) {
+          setSelectedGuestIds(new Set());
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSettingsModal, importModal.open, importModal.importing, selectedGuestIds]);
 
   const groups = useMemo(
     () => [...new Set(guests.map((g) => g.group_name).filter(Boolean))].sort(),

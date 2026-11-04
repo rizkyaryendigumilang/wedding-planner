@@ -10,6 +10,7 @@ import { MODULE_ICONS, UI_ICONS, LOGO_URL } from "../lib/icons";
 import { Avatar } from "./Avatar";
 import { getCoupleDisplayName } from "../lib/couple";
 import { EASE_EXPO_OUT, EASE_POWER_IN } from "../lib/motion";
+import { useModalA11y } from "../lib/useModalA11y";
 
 const WEDDING_DATE = "2028-02-17";
 
@@ -52,16 +53,8 @@ export default function Layout() {
     };
   }, []);
 
-  // REC-05: Shortcut keyboard global (Escape untuk menutup menu lembar bawah)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        setSheetOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // REC-05: Aksesibilitas lembar bawah (Body Scroll Lock & Escape untuk menutup)
+  useModalA11y(sheetOpen, () => setSheetOpen(false));
 
   // Judul tab browser mengikuti nama CPP & CPW akun aktif secara otomatis.
   useEffect(() => {

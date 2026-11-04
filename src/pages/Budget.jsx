@@ -28,7 +28,6 @@ import {
   EmptyState,
   SectionTitle,
   Button,
-  Chip,
   Field,
   Input,
   Select,
@@ -54,6 +53,7 @@ export default function Budget() {
   const { budgets, cashflow, finance, loading, error, couple, settings, addLog, reload, moveToTrash } =
     useWedding();
   const [tab, setTab] = useState("cashflow");
+  const reduce = useReducedMotion();
 
   const budgetCategories = useMemo(() => {
     return settings?.custom_budget_categories?.length
@@ -196,48 +196,77 @@ export default function Budget() {
         </div>
       </Card>
 
-      {/* Tab */}
+      {/* Tab Navigasi dengan Indikator Gerak Meluncur (Sorvo Motion Architecture) */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-0.5">
-        {TABS.map((t) => (
-          <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
-          </Chip>
-        ))}
+        {TABS.map((t) => {
+          const isActive = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`relative shrink-0 px-4 py-2 rounded-2xl text-[13px] font-medium transition-colors duration-200 focus-ring ${
+                isActive
+                  ? "text-rose-700 dark:text-rose-300 font-semibold"
+                  : "text-ink-muted hover:text-ink dark:hover:text-stone-100 hover:bg-canvas-sunken/60 dark:hover:bg-night-sunken/60"
+              }`}
+            >
+              {isActive && (
+                <motion.span
+                  layoutId="budget-tab-active"
+                  transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                  className="absolute inset-0 rounded-2xl bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/25 pointer-events-none"
+                />
+              )}
+              <span className="relative z-10">{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {tab === "cashflow" && (
-        <CashflowSection
-          entries={cashflow}
-          coupleId={couple?.id}
-          onChanged={reload}
-          addLog={addLog}
-          moveToTrash={moveToTrash}
-        />
-      )}
-      {tab === "sangjit" && (
-        <BudgetTable
-          title="Anggaran sangjit"
-          items={sangjit}
-          coupleId={couple?.id}
-          type="sangjit"
-          onChanged={reload}
-          addLog={addLog}
-          moveToTrash={moveToTrash}
-          categories={budgetCategories}
-        />
-      )}
-      {tab === "wedding" && (
-        <BudgetTable
-          title="Anggaran pernikahan"
-          items={wedding}
-          coupleId={couple?.id}
-          type="wedding"
-          onChanged={reload}
-          addLog={addLog}
-          moveToTrash={moveToTrash}
-          categories={budgetCategories}
-        />
-      )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={tab}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? false : { opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          className="space-y-6"
+        >
+          {tab === "cashflow" && (
+            <CashflowSection
+              entries={cashflow}
+              coupleId={couple?.id}
+              onChanged={reload}
+              addLog={addLog}
+              moveToTrash={moveToTrash}
+            />
+          )}
+          {tab === "sangjit" && (
+            <BudgetTable
+              title="Anggaran sangjit"
+              items={sangjit}
+              coupleId={couple?.id}
+              type="sangjit"
+              onChanged={reload}
+              addLog={addLog}
+              moveToTrash={moveToTrash}
+              categories={budgetCategories}
+            />
+          )}
+          {tab === "wedding" && (
+            <BudgetTable
+              title="Anggaran pernikahan"
+              items={wedding}
+              coupleId={couple?.id}
+              type="wedding"
+              onChanged={reload}
+              addLog={addLog}
+              moveToTrash={moveToTrash}
+              categories={budgetCategories}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </Page>
   );
 }

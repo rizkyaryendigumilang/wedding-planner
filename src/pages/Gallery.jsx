@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, memo } from "react";
+import { useMemo, useState, useRef, useEffect, memo } from "react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import {
   Image as ImageIcon,
@@ -28,6 +28,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
+import { useBodyScrollLock } from "../lib/useModalA11y";
 import { splitLinks, toDirectImageUrl, guessAltFromUrl, isDriveFolder, compressImageFile } from "../lib/photos";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -485,13 +486,34 @@ const PhotoCard = memo(function PhotoCard({ photo, index, reduce, onOpen, onRemo
 });
 
 function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
+  // Aksesibilitas: Kunci scroll body saat penampil foto aktif
+  useBodyScrollLock(true);
+
+  // Aksesibilitas keyboard (Escape tutup, Panah Kiri/Kanan ganti foto)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      } else if (e.key === "ArrowLeft") {
+        e.stopPropagation();
+        if (total > 1) onPrev();
+      } else if (e.key === "ArrowRight") {
+        e.stopPropagation();
+        if (total > 1) onNext();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [total, onClose, onPrev, onNext]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[60] bg-ink/95 dark:bg-black/95 backdrop-blur-sm flex flex-col"
+      className="fixed inset-0 z-[60] bg-ink/95 dark:bg-black/95 backdrop-blur-sm flex flex-col select-none"
       onClick={onClose}
     >
       <div
@@ -510,7 +532,7 @@ function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
             href={photo.openUrl || photo.source_url}
             target="_blank"
             rel="noreferrer"
-            className="p-2 rounded-xl hover:bg-white/10 transition-colors"
+            className="p-2 rounded-xl hover:bg-white/10 transition-colors focus-ring"
             aria-label="Buka di Drive"
           >
             <ExternalLink size={18} />
@@ -518,14 +540,14 @@ function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="p-2 rounded-xl hover:bg-white/10 transition-colors"
+            className="p-2 rounded-xl hover:bg-white/10 transition-colors focus-ring"
           >
             <X size={18} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative flex items-center justify-center px-2">
+      <div className="flex-1 min-h-0 relative flex items-center justify-center px-2 touch-pan-y">
         {total > 1 && (
           <button
             onClick={(e) => {
@@ -533,7 +555,7 @@ function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
               onPrev();
             }}
             aria-label="Foto sebelumnya"
-            className="absolute left-2 sm:left-4 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors"
+            className="absolute left-2 sm:left-4 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors focus-ring"
           >
             <ChevronLeft size={20} />
           </button>
@@ -543,14 +565,25 @@ function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
           <motion.img
             key={photo.id}
             initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.99 }}
             transition={{ duration: 0.2, ease: EASE }}
+            drag={total > 1 ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.35}
+            onDragEnd={(_, info) => {
+              // Swipe gestur: flick cepat (velocity > 250) atau offset > 50px
+              if (info.offset.x > 50 || info.velocity.x > 250) {
+                onPrev();
+              } else if (info.offset.x < -50 || info.velocity.x < -250) {
+                onNext();
+              }
+            }}
             src={photo.fullSrc || photo.src}
             alt={photo.alt}
             decoding="async"
             onClick={(e) => e.stopPropagation()}
-            className="max-h-full max-w-full object-contain rounded-xl"
+            className="max-h-full max-w-full object-contain rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-2xl"
           />
         </AnimatePresence>
 
@@ -561,7 +594,7 @@ function Lightbox({ photo, total, index, onClose, onPrev, onNext }) {
               onNext();
             }}
             aria-label="Foto berikutnya"
-            className="absolute right-2 sm:right-4 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors"
+            className="absolute right-2 sm:right-4 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors focus-ring"
           >
             <ChevronRight size={20} />
           </button>

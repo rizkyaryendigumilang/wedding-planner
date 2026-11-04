@@ -31,6 +31,7 @@ import { formatRupiah } from "../lib/format";
 import { exportToCsv } from "../lib/export";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
+import { useModalA11y } from "../lib/useModalA11y";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -64,6 +65,9 @@ export default function Gifts() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
+
+  // Aksesibilitas modal (Body Scroll Lock & Escape untuk menutup)
+  useModalA11y(modalOpen, () => setModalOpen(false));
 
   const [form, setForm] = useState({
     guest_name: "",

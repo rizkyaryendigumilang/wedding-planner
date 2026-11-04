@@ -199,7 +199,7 @@ export default function Dashboard() {
               </Badge>
             </div>
 
-            <div className="flex items-center gap-3.5 mb-2">
+            <div className="flex items-center gap-3.5 mb-2 min-w-0">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-600/90 to-rose-700/90 p-1.5 shadow-glow grid place-items-center shrink-0 border border-white/20 backdrop-blur-sm">
                 <img
                   src={LOGO_URL}
@@ -207,7 +207,7 @@ export default function Dashboard() {
                   className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
-              <h1 className="font-display text-[28px] leading-[1.08] sm:text-4xl lg:text-[40px] font-semibold tracking-tight text-white">
+              <h1 className="font-display text-[28px] leading-[1.08] sm:text-4xl lg:text-[40px] font-semibold tracking-tight text-white min-w-0 break-words">
                 {coupleName}
               </h1>
             </div>

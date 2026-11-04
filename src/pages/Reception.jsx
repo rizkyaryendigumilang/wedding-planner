@@ -28,6 +28,7 @@ import { exportToCsv } from "../lib/export";
 import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
+import { useModalA11y } from "../lib/useModalA11y";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -47,6 +48,9 @@ export default function Reception() {
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'checked-in', 'pending'
   const [sideFilter, setSideFilter] = useState("ALL"); // 'ALL', 'CPP', 'CPW'
   const [walkInModal, setWalkInModal] = useState(false);
+
+  // Aksesibilitas modal walk-in (Body Scroll Lock & Escape untuk menutup)
+  useModalA11y(walkInModal, () => setWalkInModal(false));
   const [walkInForm, setWalkInForm] = useState({
     name: "",
     side: "CPP",
