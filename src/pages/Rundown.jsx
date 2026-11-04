@@ -27,6 +27,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { exportToCsv } from "../lib/export";
+import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
 import { useModalA11y } from "../lib/useModalA11y";
@@ -434,7 +435,10 @@ export default function Rundown() {
                     {/* Checkbox status selesai */}
                     <button
                       type="button"
-                      onClick={() => toggleRundown(item.id, !isCompleted)}
+                      onClick={() => {
+                        triggerHaptic("selection");
+                        toggleRundown(item.id, !isCompleted);
+                      }}
                       className={`mt-0.5 p-1 rounded-xl transition active:scale-[0.9] shrink-0 ${
                         isCompleted
                           ? "text-emerald-500 hover:text-emerald-600"

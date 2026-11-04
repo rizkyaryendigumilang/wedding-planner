@@ -318,7 +318,7 @@ export function WeddingProvider({ children }) {
       debounceTimer = setTimeout(() => {
         load(true);
         setLastLiveUpdate(Date.now());
-      }, 300);
+      }, 600);
     };
 
     const COLLECTIONS = [
@@ -553,9 +553,7 @@ export function WeddingProvider({ children }) {
     }
     const items = data.trashItems || [];
     if (items.length === 0) return;
-    for (const it of items) {
-      await pb.collection("recycle_bin").delete(it.id).catch(() => {});
-    }
+    await Promise.all(items.map((it) => pb.collection("recycle_bin").delete(it.id).catch(() => {})));
     await addLog(`Mengosongkan Tempat Sampah (${items.length} item dihapus permanen)`, "delete");
     await load(true);
   }, [data.trashItems, addLog, load, user]);
@@ -652,7 +650,7 @@ export function WeddingProvider({ children }) {
         if (souvenirGiven !== undefined) payload.souvenir_given = souvenirGiven;
 
         const updated = await pb.collection("wedding_guests").update(guestId, payload);
-        await addLog(`Check-in tamu resepsi: "${options.guestName || "Tamu"}"`, "guest");
+        addLog(`Check-in tamu resepsi: "${options.guestName || "Tamu"}"`, "guest").catch(() => {});
         return updated;
       } catch (err) {
         // Rollback jika terjadi kesalahan jaringan
