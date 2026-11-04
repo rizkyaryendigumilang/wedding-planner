@@ -510,7 +510,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
               >
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-ink-faint font-mono tabular-nums">
+                    <span className="text-xs text-ink-faint tabular-nums">
                       {formatDateShort(e.entry_date)}
                     </span>
                     <Badge tone={e.owner === "CPP" ? "sky" : e.owner === "CPW" ? "plum" : "gray"}>

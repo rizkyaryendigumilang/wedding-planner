@@ -40,3 +40,7 @@ pocketbase_*.zip
 
 # Temporary scratch scripts
 scratch/
+
+# Python cache
+__pycache__/
+*.py[cod]

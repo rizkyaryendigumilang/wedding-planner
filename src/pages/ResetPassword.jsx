@@ -114,7 +114,7 @@ export default function ResetPassword() {
               <div>
                 <label
                   htmlFor="new-password"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1.5"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1.5"
                 >
                   Kata sandi baru
                 </label>
@@ -138,7 +138,7 @@ export default function ResetPassword() {
               <div>
                 <label
                   htmlFor="new-password-confirm"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1.5"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1.5"
                 >
                   Ulangi kata sandi
                 </label>

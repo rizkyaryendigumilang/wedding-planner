@@ -11,7 +11,10 @@
     "seed": "node seed.js",
     "cap:sync": "cap sync",
     "cap:build": "vite build && cap sync",
-    "cap:android": "cap open android"
+    "cap:android": "cap open android",
+    "remotion:studio": "remotion studio marketing/remotion/index.js",
+    "remotion:reels": "remotion render marketing/remotion/index.js OverviewReels marketing/out/overview-reels-9x16.mp4",
+    "remotion:feed": "remotion render marketing/remotion/index.js OverviewFeed marketing/out/overview-feed-4x5.mp4"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
@@ -30,6 +33,9 @@
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",
     "@eslint/js": "^10.0.1",
+    "@remotion/cli": "^4.0.540",
+    "@remotion/renderer": "^4.0.540",
+    "@remotion/transitions": "^4.0.540",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
@@ -39,6 +45,7 @@
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
     "postcss": "^8.5.28",
+    "remotion": "^4.0.540",
     "tailwindcss": "^3.4.19",
     "vite": "^8.3.5"
   },

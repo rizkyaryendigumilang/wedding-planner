@@ -265,17 +265,13 @@ export default function Login() {
       {/* ---------------- Panel kiri: branding visual ---------------- */}
       <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-gradient-to-b from-stone-900 via-ink to-night-card text-stone-100">
         {/* Efek kilau latar lembut */}
-        <motion.div
+        <div
           aria-hidden
-          animate={reduce ? {} : { x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.08, 0.96, 1] }}
-          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-24 -left-24 w-[30rem] h-[30rem] rounded-full bg-rose-600/20 blur-3xl pointer-events-none"
+          className="absolute -top-24 -left-24 w-[30rem] h-[30rem] rounded-full bg-rose-600/15 blur-3xl pointer-events-none"
         />
-        <motion.div
+        <div
           aria-hidden
-          animate={reduce ? {} : { x: [0, -30, 25, 0], y: [0, 25, -15, 0] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-0 right-0 w-[26rem] h-[26rem] rounded-full bg-brass-400/20 blur-3xl pointer-events-none"
+          className="absolute bottom-0 right-0 w-[26rem] h-[26rem] rounded-full bg-brass-400/15 blur-3xl pointer-events-none"
         />
         <div aria-hidden className="absolute inset-0 grain opacity-40 pointer-events-none" />
 
@@ -408,7 +404,7 @@ export default function Login() {
                 setMode("login");
                 setError("");
               }}
-              className={`relative py-2 text-xs font-semibold rounded-xl transition-all duration-200 ${
+              className={`relative py-2 text-xs font-semibold rounded-xl transition-colors duration-150 ${
                 mode === "login"
                   ? "bg-canvas-card dark:bg-night-card text-rose-600 dark:text-rose-400 shadow-soft"
                   : "text-ink-muted hover:text-ink dark:hover:text-stone-200"
@@ -422,7 +418,7 @@ export default function Login() {
                 setMode("register");
                 setError("");
               }}
-              className={`relative py-2 text-xs font-semibold rounded-xl transition-all duration-200 ${
+              className={`relative py-2 text-xs font-semibold rounded-xl transition-colors duration-150 ${
                 mode === "register"
                   ? "bg-canvas-card dark:bg-night-card text-rose-600 dark:text-rose-400 shadow-soft"
                   : "text-ink-muted hover:text-ink dark:hover:text-stone-200"
@@ -434,7 +430,7 @@ export default function Login() {
 
           {/* ---------------- DERETAN TOMBOL OAUTH (GMAIL, GITHUB) ---------------- */}
           <div className="space-y-2 mb-5">
-            <p className="text-[11px] font-medium text-ink-faint text-center uppercase tracking-wider mb-2.5">
+            <p className="text-xs text-ink-muted dark:text-stone-400 text-center mb-2.5">
               {mode === "login" ? t("Masuk cepat dengan") : t("Daftar instan dengan")}
             </p>
 
@@ -486,7 +482,7 @@ export default function Login() {
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               {/* Role Switcher: Calon Pengantin Pria & Calon Pengantin Wanita */}
               <div className="p-1.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line">
-                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-1.5 text-center">
+                <p className="text-xs font-medium text-ink-muted dark:text-stone-400 mb-1.5 text-center">
                   {t("Masuk Sebagai Mempelai")}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -545,7 +541,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="identity"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1.5"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1.5"
                 >
                   Nama pengguna atau email
                 </label>
@@ -568,7 +564,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1.5"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1.5"
                 >
                   Kata sandi
                 </label>
@@ -616,7 +612,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={busy || !identity || !password}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-rose-600 text-white text-xs font-semibold shadow-glow hover:bg-rose-700 active:scale-[0.985] transition-all duration-150 ease-glide disabled:opacity-50 disabled:shadow-none focus-ring"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-rose-600 text-white text-xs font-semibold shadow-glow hover:bg-rose-700 active:scale-[0.985] transition-colors duration-150 ease-glide disabled:opacity-50 disabled:shadow-none focus-ring"
               >
                 {busy && !busyProvider ? (
                   <>
@@ -632,7 +628,7 @@ export default function Login() {
           ) : (
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1">
+                <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                   Mendaftar Sebagai
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -666,7 +662,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="reg-name"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                 >
                   Nama Lengkap
                 </label>
@@ -686,7 +682,7 @@ export default function Login() {
                 <div>
                   <label
                     htmlFor="reg-user"
-                    className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
+                    className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                   >
                     Username
                   </label>
@@ -703,7 +699,7 @@ export default function Login() {
                 <div>
                   <label
                     htmlFor="reg-email"
-                    className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
+                    className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                   >
                     Email
                   </label>
@@ -723,7 +719,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="reg-pass"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                 >
                   Kata Sandi (min. 5 karakter)
                 </label>
@@ -742,7 +738,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="reg-confirm"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1"
+                  className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                 >
                   Konfirmasi Kata Sandi
                 </label>
@@ -777,7 +773,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={busy || !email || !password || !passwordConfirm}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-rose-600 text-white text-xs font-semibold shadow-glow hover:bg-rose-700 active:scale-[0.985] transition-all duration-150 ease-glide disabled:opacity-50 disabled:shadow-none focus-ring mt-2"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-rose-600 text-white text-xs font-semibold shadow-glow hover:bg-rose-700 active:scale-[0.985] transition-colors duration-150 ease-glide disabled:opacity-50 disabled:shadow-none focus-ring mt-2"
               >
                 {busy && !busyProvider ? (
                   <>
@@ -862,7 +858,7 @@ export default function Login() {
                   <div>
                     <label
                       htmlFor="forgot-email"
-                      className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1"
+                      className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1"
                     >
                       Email terdaftar
                     </label>

@@ -2,62 +2,80 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<title>Preview — Materi Posting</title>
+<title>Pratinjau Materi Instagram & Video Remotion — Wedding Planner</title>
 <style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 56px 48px 80px;
-    background: #efebe5;
-    font-family: "Segoe UI", system-ui, sans-serif;
-    color: #1c1917;
+    margin: 0;
+    padding: 40px;
+    background: #141118;
+    color: #faf7f4;
+    font-family: 'Inter', system-ui, sans-serif;
   }
-  h1 { font-size: 22px; letter-spacing: .01em; margin: 0 0 6px; }
-  p.lede { margin: 0 0 40px; color: #78716c; font-size: 14px; max-width: 760px; line-height: 1.6; }
-  h2 {
-    font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
-    color: #a8a29e; margin: 44px 0 16px;
+  h1 { font-size: 26px; margin: 0 0 8px; }
+  p.sub { color: #a8a29e; margin: 0 0 32px; font-size: 14px; }
+  h2 { font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase; color: #fda4af; margin: 36px 0 16px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
   }
-  .row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
-  figure { margin: 0; }
-  figure img {
-    display: block; background: #fff; border-radius: 14px;
-    box-shadow: 0 18px 40px -24px rgba(28,25,23,.5), 0 2px 6px rgba(28,25,23,.08);
+  .card {
+    background: #1d1922;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 14px;
   }
-  figcaption { margin-top: 10px; font-size: 12px; color: #78716c; letter-spacing: .02em; }
-  figcaption b { color: #1c1917; font-weight: 600; }
-  .carousel img { width: 372px; }
-  .tall img { width: 340px; }
-  .sq img { width: 400px; }
+  .card img, .card video {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+  }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #a8a29e;
+    margin-top: 10px;
+    font-family: monospace;
+  }
 </style>
 </head>
 <body>
-  <h1>Materi posting — Wedding Planner</h1>
-  <p class="lede">
-    Semua gambar sudah dipotong ke rasio Instagram yang benar. File PNG asli ada di
-    <code>marketing/out/</code>. Carousel 1080×1350 (4:5) untuk feed, story 1080×1920 (9:16),
-    dan satu versi 1080×1080 (1:1).
-  </p>
+  <h1>Materi Penjualan Instagram & Video Overview (Remotion)</h1>
+  <p class="sub">Akun Demo Live: https://43.156.236.102/wedding/ — Username: <b>demo</b> / Password: <b>demo123</b></p>
 
-  <h2>Carousel feed — 1080 × 1350 (4:5)</h2>
-  <div class="row carousel">
-    <figure><img src="/m/out/ig-01-cover.png" alt=""><figcaption><b>01</b> Cover · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-02-dasbor.png" alt=""><figcaption><b>02</b> Dasbor · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-03-anggaran.png" alt=""><figcaption><b>03</b> Anggaran · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-04-tamu.png" alt=""><figcaption><b>04</b> Tamu · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-05-vendor.png" alt=""><figcaption><b>05</b> Vendor · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-06-seserahan.png" alt=""><figcaption><b>06</b> Seserahan · 1080×1350</figcaption></figure>
-    <figure><img src="/m/out/ig-07-cta.png" alt=""><figcaption><b>07</b> CTA demo · 1080×1350</figcaption></figure>
+  <h2>1. Video Overview Remotion (Reels 9:16 & Feed 4:5)</h2>
+  <div class="grid">
+    <div class="card">
+      <video src="./out/overview-reels-9x16.mp4" controls autoplay loop muted playsinline></video>
+      <div class="meta"><span>overview-reels-9x16.mp4</span><span>9:16 (1080×1920)</span></div>
+    </div>
+    <div class="card">
+      <video src="./out/overview-feed-4x5.mp4" controls autoplay loop muted playsinline></video>
+      <div class="meta"><span>overview-feed-4x5.mp4</span><span>4:5 (1080×1350)</span></div>
+    </div>
   </div>
 
-  <h2>Story / Reels cover — 1080 × 1920 (9:16)</h2>
-  <div class="row tall">
-    <figure><img src="/m/out/story-01-cover.png" alt=""><figcaption><b>Story</b> cover · 1080×1920</figcaption></figure>
+  <h2>2. Carousel Feed Instagram (10 Slide — 4:5 Portrait 1080×1350)</h2>
+  <div class="grid">
+    <div class="card"><img src="./out/ig-01-cover.png"><div class="meta"><span>ig-01-cover.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-02-dasbor.png"><div class="meta"><span>ig-02-dasbor.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-03-anggaran.png"><div class="meta"><span>ig-03-anggaran.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-04-tamu.png"><div class="meta"><span>ig-04-tamu.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-05-resepsi.png"><div class="meta"><span>ig-05-resepsi.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-06-rundown.png"><div class="meta"><span>ig-06-rundown.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-07-vendor.png"><div class="meta"><span>ig-07-vendor.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-08-admin-seserahan.png"><div class="meta"><span>ig-08-admin-seserahan.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-09-kado-privasi.png"><div class="meta"><span>ig-09-kado-privasi.png</span><span>1080×1350</span></div></div>
+    <div class="card"><img src="./out/ig-10-cta.png"><div class="meta"><span>ig-10-cta.png</span><span>1080×1350</span></div></div>
   </div>
 
-  <h2>Feed persegi — 1080 × 1080 (1:1)</h2>
-  <div class="row sq">
-    <figure><img src="/m/out/square-01-cover.png" alt=""><figcaption><b>Square</b> cover · 1080×1080</figcaption></figure>
+  <h2>3. Story (9:16) & Grid Persegi (1:1)</h2>
+  <div class="grid">
+    <div class="card"><img src="./out/story-01-cover.png"><div class="meta"><span>story-01-cover.png</span><span>1080×1920</span></div></div>
+    <div class="card"><img src="./out/story-10-cta.png"><div class="meta"><span>story-10-cta.png</span><span>1080×1920</span></div></div>
+    <div class="card"><img src="./out/square-01-cover.png"><div class="meta"><span>square-01-cover.png</span><span>1080×1080</span></div></div>
   </div>
 </body>
 </html>

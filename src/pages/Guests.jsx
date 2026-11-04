@@ -1541,7 +1541,7 @@ export default function Guests() {
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Link Website Undangan Anda
                   </label>
                   <Input
@@ -1557,7 +1557,7 @@ export default function Guests() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Template Pesan WhatsApp
                   </label>
                   <textarea
@@ -1680,7 +1680,7 @@ export default function Guests() {
 
                   {importModal.rows.length > 0 ? (
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-2">
+                      <p className="text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-2">
                         Pratinjau Data (Maks 5 Tamu Pertama):
                       </p>
                       <div className="border border-line dark:border-night-line rounded-2xl overflow-x-auto overflow-y-auto scroll-area max-h-52">

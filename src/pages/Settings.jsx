@@ -1382,7 +1382,7 @@ export default function Settings() {
                       <button
                         type="button"
                         onClick={() => setPanitiaForm({ ...panitiaForm, app_role: "panitia" })}
-                        className={`p-3 rounded-2xl text-left border transition-all ${
+                        className={`p-3 rounded-2xl text-left border transition-colors duration-150 ${
                           panitiaForm.app_role === "panitia"
                             ? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-200 ring-2 ring-amber-500/20"
                             : "bg-surface dark:bg-night-surface border-line dark:border-night-line text-ink-muted hover:border-amber-500/30"
@@ -1402,7 +1402,7 @@ export default function Settings() {
                       <button
                         type="button"
                         onClick={() => setPanitiaForm({ ...panitiaForm, app_role: "wo" })}
-                        className={`p-3 rounded-2xl text-left border transition-all ${
+                        className={`p-3 rounded-2xl text-left border transition-colors duration-150 ${
                           panitiaForm.app_role === "wo"
                             ? "bg-violet-500/15 border-violet-500/40 text-violet-900 dark:text-violet-200 ring-2 ring-violet-500/20"
                             : "bg-surface dark:bg-night-surface border-line dark:border-night-line text-ink-muted hover:border-violet-500/30"
@@ -1768,7 +1768,7 @@ export default function Settings() {
                     rows={7}
                     value={waTemplate}
                     onChange={(e) => setWaTemplate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas-sunken dark:bg-night-sunken border border-line dark:border-night-line text-sm text-ink dark:text-stone-100 placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-rose-500/30 transition-all font-sans leading-relaxed"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas-sunken dark:bg-night-sunken border border-line dark:border-night-line text-sm text-ink dark:text-stone-100 placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-rose-500/30 transition-colors font-sans leading-relaxed"
                   />
                 </div>
 

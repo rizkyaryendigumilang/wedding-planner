@@ -567,7 +567,7 @@ export default function Rundown() {
 
               <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Fase Acara
                   </label>
                   <select
@@ -584,7 +584,7 @@ export default function Rundown() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Waktu Mulai *
                     </label>
                     <input
@@ -596,7 +596,7 @@ export default function Rundown() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Waktu Selesai (Opsional)
                     </label>
                     <input
@@ -609,7 +609,7 @@ export default function Rundown() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Nama Agenda / Aktivitas *
                   </label>
                   <input
@@ -623,7 +623,7 @@ export default function Rundown() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Lokasi / Ruangan
                   </label>
                   <input
@@ -637,7 +637,7 @@ export default function Rundown() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       PIC (Penanggung Jawab)
                     </label>
                     <input
@@ -649,7 +649,7 @@ export default function Rundown() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Nomor Telepon / WhatsApp
                     </label>
                     <input
@@ -663,7 +663,7 @@ export default function Rundown() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Catatan / Detail Perlengkapan
                   </label>
                   <textarea

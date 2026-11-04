@@ -519,7 +519,7 @@ export default function Reception() {
 
               <form onSubmit={handleWalkInSubmit} className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Nama Lengkap Tamu *
                   </label>
                   <input
@@ -535,7 +535,7 @@ export default function Reception() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Pihak Pengantin
                     </label>
                     <select
@@ -548,7 +548,7 @@ export default function Reception() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Jumlah Pax Hadir
                     </label>
                     <input
@@ -564,7 +564,7 @@ export default function Reception() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Nomor Meja (Opsional)
                     </label>
                     <input
@@ -576,7 +576,7 @@ export default function Reception() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Kota / Asal
                     </label>
                     <input

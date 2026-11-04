@@ -502,7 +502,7 @@ export default function Gifts() {
 
               <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Nama Tamu / Pemberi *
                   </label>
                   <input
@@ -518,7 +518,7 @@ export default function Gifts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Tipe Hadiah
                     </label>
                     <select
@@ -535,7 +535,7 @@ export default function Gifts() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Nominal Uang (Rp)
                     </label>
                     <input
@@ -549,7 +549,7 @@ export default function Gifts() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Deskripsi Barang / Kado (Jika Ada)
                   </label>
                   <input
@@ -563,7 +563,7 @@ export default function Gifts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Kotak / Rekening Tujuan
                     </label>
                     <input
@@ -586,7 +586,7 @@ export default function Gifts() {
                     </datalist>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                    <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                       Diterima Oleh
                     </label>
                     <input
@@ -600,7 +600,7 @@ export default function Gifts() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-faint mb-1">
+                  <label className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1">
                     Catatan Khusus
                   </label>
                   <textarea

@@ -542,7 +542,7 @@ export function Field({ label, hint, error, children, className = "" }) {
   return (
     <label className={`block ${className}`}>
       {label && (
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint mb-1.5">
+        <span className="block text-[13px] font-medium text-ink-muted dark:text-stone-300 mb-1.5">
           {label}
         </span>
       )}

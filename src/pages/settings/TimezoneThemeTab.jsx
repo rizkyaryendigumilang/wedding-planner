@@ -95,7 +95,7 @@ export default function TimezoneThemeTab({
           <button
             type="button"
             onClick={() => setUserSelectedLang("id")}
-            className={`p-4 rounded-3xl border text-left transition-all duration-150 focus-ring relative ${
+            className={`p-4 rounded-3xl border text-left transition-colors duration-150 focus-ring relative ${
               selectedLang === "id"
                 ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/30"
                 : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
@@ -137,7 +137,7 @@ export default function TimezoneThemeTab({
           <button
             type="button"
             onClick={() => setUserSelectedLang("en")}
-            className={`p-4 rounded-3xl border text-left transition-all duration-150 focus-ring relative ${
+            className={`p-4 rounded-3xl border text-left transition-colors duration-150 focus-ring relative ${
               selectedLang === "en"
                 ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/30"
                 : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
@@ -251,7 +251,7 @@ export default function TimezoneThemeTab({
                 setEventTimezone(tz.value);
                 setCurrentTimeInTz(getCurrentTimeInTimezone(tz.value));
               }}
-              className={`p-4 rounded-3xl border text-left transition-all focus-ring relative ${
+              className={`p-4 rounded-3xl border text-left transition-colors duration-150 focus-ring relative ${
                 eventTimezone === tz.value
                   ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/30"
                   : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
@@ -295,7 +295,7 @@ export default function TimezoneThemeTab({
               key={fmt.id}
               type="button"
               onClick={() => setDateFormatStyle(fmt.id)}
-              className={`p-4 rounded-3xl border text-left transition-all focus-ring relative ${
+              className={`p-4 rounded-3xl border text-left transition-colors duration-150 focus-ring relative ${
                 dateFormatStyle === fmt.id
                   ? "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/30"
                   : "border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken"
