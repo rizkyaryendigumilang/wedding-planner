@@ -33,7 +33,7 @@ import {
   Input,
   Select,
 } from "../components/ui";
-import { useWedding } from "../lib/weddingData";
+import { useWedding, DEFAULT_WA_TEMPLATE } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { getCppNickname, getCpwNickname, getCoupleSlug } from "../lib/couple";
 import pb from "../lib/pocketbase";
@@ -68,22 +68,6 @@ function WhatsAppIcon({ className = "w-4 h-4" }) {
     </svg>
   );
 }
-
-const DEFAULT_WA_TEMPLATE = `Kepada Yth. {nama},
-
-Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan kami:
-
-💍 {pengantin}
-📅 {tanggal}
-📍 {venue}
-
-Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
-{link}
-
-Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
-
-Salam hangat,
-{pengantin}`;
 
 const GuestRow = memo(function GuestRow({
   guest: g,

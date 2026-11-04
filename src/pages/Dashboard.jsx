@@ -39,18 +39,10 @@ import {
   pct,
   timeAgo,
   monthlySavingNeeded,
+  daysUntil,
 } from "../lib/format";
 
 const EASE = [0.22, 1, 0.36, 1];
-
-function daysUntilVendor(d) {
-  if (!d) return null;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const target = new Date(d);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target - now) / 86400000);
-}
 
 export default function Dashboard() {
   const { isPanitia } = useAuth();
@@ -83,7 +75,7 @@ export default function Dashboard() {
   const overdueVendors = useMemo(
     () =>
       (vendors || []).filter(
-        (v) => !v.is_completed && v.deadline_date && daysUntilVendor(v.deadline_date) < 0
+        (v) => !v.is_completed && v.deadline_date && daysUntil(v.deadline_date) < 0
       ),
     [vendors]
   );
@@ -94,8 +86,8 @@ export default function Dashboard() {
         (v) =>
           !v.is_completed &&
           v.deadline_date &&
-          daysUntilVendor(v.deadline_date) >= 0 &&
-          daysUntilVendor(v.deadline_date) <= vendorAlertDays
+          daysUntil(v.deadline_date) >= 0 &&
+          daysUntil(v.deadline_date) <= vendorAlertDays
       ),
     [vendors, vendorAlertDays]
   );
@@ -439,7 +431,7 @@ export default function Dashboard() {
           label="Tenggat terdekat"
           value={`${vendorSummary.remaining}`}
           sub={vendorSummary.remaining === 0 ? "semua tugas beres" : "tugas belum selesai"}
-          icon={CalendarCheckIcon}
+          icon={MODULE_ICONS.vendors}
           tone="amber"
           delay={0.15}
         />
@@ -725,12 +717,6 @@ export default function Dashboard() {
 /* ========================================================================== */
 /*  Komponen pendukung                                                        */
 /* ========================================================================== */
-
-// Ikon kalender diambil dari peta modul supaya tidak ada impor ganda.
-function CalendarCheckIcon(props) {
-  const Icon = MODULE_ICONS.vendors;
-  return <Icon {...props} />;
-}
 
 function PhotoTile({ photo, index }) {
   const reduce = useReducedMotion();

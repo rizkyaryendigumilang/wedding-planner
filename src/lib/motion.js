@@ -6,6 +6,7 @@
  * - Spatial Origin support
  */
 
+export const EASE = [0.22, 1, 0.36, 1];
 export const EASE_EXPO_OUT = [0.16, 1, 0.3, 1];
 export const EASE_POWER_IN = [0.7, 0, 0.84, 0];
 

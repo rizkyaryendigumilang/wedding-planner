@@ -34,7 +34,7 @@ import {
   MoneyInput,
 } from "../components/ui";
 import { DatePicker } from "../components/DatePicker";
-import { useWedding } from "../lib/weddingData";
+import { useWedding, getBudgetPaid } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { formatRupiah, formatDateShort, pct, formatCompact } from "../lib/format";
 import { exportToCsv, printReport } from "../lib/export";
@@ -84,7 +84,7 @@ export default function Budget() {
       const targetItems = tab === "sangjit" ? sangjit : wedding;
       if (targetItems.length === 0) return;
       const data = targetItems.map((b, idx) => {
-        const paid = Number(b.termin1 || 0) + Number(b.termin2 || 0) + Number(b.termin3 || 0) + Number(b.termin4 || 0);
+        const paid = getBudgetPaid(b);
         return {
           No: idx + 1,
           Tipe: b.budget_type,
@@ -595,10 +595,7 @@ function BudgetTable({
   const reduce = useReducedMotion();
 
   const totalSum = items.reduce((s, b) => s + Number(b.total_biaya || 0), 0);
-  const paidSum = items.reduce(
-    (s, b) => s + Number(b.termin1 || 0) + Number(b.termin2 || 0) + Number(b.termin3 || 0) + Number(b.termin4 || 0),
-    0
-  );
+  const paidSum = items.reduce((s, b) => s + getBudgetPaid(b), 0);
 
   // Kelompokkan per kategori, urutkan agar urutannya stabil antar-render.
   const groups = useMemo(() => {
@@ -773,11 +770,7 @@ function BudgetTable({
               >
                 {rows.map((item, i) => {
                   const isEdit = editing === item.id;
-                  const paid =
-                    Number(item.termin1 || 0) +
-                    Number(item.termin2 || 0) +
-                    Number(item.termin3 || 0) +
-                    Number(item.termin4 || 0);
+                  const paid = getBudgetPaid(item);
                   const lunas = item.total_biaya > 0 && paid >= item.total_biaya;
 
                   return (
@@ -887,11 +880,7 @@ function BudgetTable({
             <div className="md:hidden space-y-3 mb-4">
               {rows.map((item, i) => {
                 const isEdit = editing === item.id;
-                const paid =
-                  Number(item.termin1 || 0) +
-                  Number(item.termin2 || 0) +
-                  Number(item.termin3 || 0) +
-                  Number(item.termin4 || 0);
+                const paid = getBudgetPaid(item);
                 const lunas = item.total_biaya > 0 && paid >= item.total_biaya;
 
                 if (isEdit) {

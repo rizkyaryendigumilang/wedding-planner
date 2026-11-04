@@ -55,7 +55,7 @@ import TimezoneThemeTab from "./settings/TimezoneThemeTab";
 import TrashTab from "./settings/TrashTab";
 import { Avatar } from "../components/Avatar";
 import { PWAInstallButton, PWAInstallBanner } from "../components/PWAInstallPrompt";
-import { useWedding } from "../lib/weddingData";
+import { useWedding, DEFAULT_WA_TEMPLATE } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -82,22 +82,6 @@ import {
 } from "../lib/couple";
 
 const EASE = [0.22, 1, 0.36, 1];
-
-const DEFAULT_WA_TEMPLATE = `Kepada Yth. {nama},
-
-Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan kami:
-
-💍 {pengantin}
-📅 {tanggal}
-📍 {venue}
-
-Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
-{link}
-
-Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
-
-Terima kasih,
-{pengantin}`;
 
 const TABS = [
   { id: "acara", label: "Acara & Pasangan", icon: Heart },

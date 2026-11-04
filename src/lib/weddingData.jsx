@@ -27,6 +27,26 @@ const EMPTY = {
   gifts: [],
 };
 
+export const DEFAULT_WA_TEMPLATE = `Kepada Yth. {nama},
+
+Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan kami:
+
+💍 {pengantin}
+📅 {tanggal}
+📍 {venue}
+
+Tautan undangan dan konfirmasi kehadiran (RSVP) dapat diakses melalui:
+{link}
+
+Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+
+Terima kasih,
+{pengantin}`;
+
+export function getBudgetPaid(b) {
+  return Number(b?.termin1 || 0) + Number(b?.termin2 || 0) + Number(b?.termin3 || 0) + Number(b?.termin4 || 0);
+}
+
 /**
  * Ubah rekaman `gallery_photos` menjadi bentuk siap-tampil: tambahkan `src`
  * (URL thumbnail 600x600 untuk grid & card agar hemat kuota ~90%), `fullSrc` untuk resolusi penuh,
@@ -793,59 +813,79 @@ function computeStats(data) {
     settings,
   } = data;
 
-  // ---------------- CASHFLOW ----------------
-  const income = cashflow
-    .filter((e) => e.kind === "income")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
-  const expense = cashflow
-    .filter((e) => e.kind === "expense")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
-  const incomeCpp = cashflow
-    .filter((e) => e.kind === "income" && e.owner === "CPP")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
-  const incomeCpw = cashflow
-    .filter((e) => e.kind === "income" && e.owner === "CPW")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
-  const expenseCpp = cashflow
-    .filter((e) => e.kind === "expense" && e.owner === "CPP")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
-  const expenseCpw = cashflow
-    .filter((e) => e.kind === "expense" && e.owner === "CPW")
-    .reduce((s, e) => s + Number(e.amount || 0), 0);
+  // ---------------- CASHFLOW (Single-pass O(N)) ----------------
+  let income = 0, expense = 0, incomeCpp = 0, incomeCpw = 0, expenseCpp = 0, expenseCpw = 0;
+  for (const e of cashflow) {
+    const amt = Number(e.amount || 0);
+    if (e.kind === "income") {
+      income += amt;
+      if (e.owner === "CPP") incomeCpp += amt;
+      else if (e.owner === "CPW") incomeCpw += amt;
+    } else if (e.kind === "expense") {
+      expense += amt;
+      if (e.owner === "CPP") expenseCpp += amt;
+      else if (e.owner === "CPW") expenseCpw += amt;
+    }
+  }
 
   const targetBudget = Number(couple?.target_budget || 85_000_000);
   const balance = income - expense;
   const remainingTarget = Math.max(targetBudget - balance, 0);
 
   // ---------------- BUDGET ----------------
-  const paid = (b) =>
-    Number(b.termin1 || 0) + Number(b.termin2 || 0) + Number(b.termin3 || 0) + Number(b.termin4 || 0);
   const budgetTotal = budgets.reduce((s, b) => s + Number(b.total_biaya || 0), 0);
-  const budgetPaid = budgets.reduce((s, b) => s + paid(b), 0);
+  const budgetPaid = budgets.reduce((s, b) => s + getBudgetPaid(b), 0);
   const budgetOutstanding = Math.max(budgetTotal - budgetPaid, 0);
 
-  // ---------------- ADMINISTRASI ----------------
-  const docItems = administrations.filter((a) => a.is_document);
-  const docsDone = docItems.filter((a) => a.cpp_complete && a.cpw_complete).length;
-  const progressItems = administrations.filter((a) => !a.is_document);
-  const progressDone = progressItems.filter((a) => a.progress === "Sudah").length;
+  // ---------------- ADMINISTRASI (Single-pass) ----------------
+  let docsDone = 0, docItemsCount = 0, progressDone = 0, progressItemsCount = 0;
+  for (const a of administrations) {
+    if (a.is_document) {
+      docItemsCount++;
+      if (a.cpp_complete && a.cpw_complete) docsDone++;
+    } else {
+      progressItemsCount++;
+      if (a.progress === "Sudah") progressDone++;
+    }
+  }
 
   // ---------------- VENDOR / TUGAS ----------------
   const vendorDone = vendors.filter((v) => v.is_completed).length;
 
-  // ---------------- TAMU ----------------
-  const totalPax = guests.reduce((s, g) => s + Number(g.pax || 0), 0);
-  const hadir = guests.filter((g) => g.status === "Hadir");
-  const tidakHadir = guests.filter((g) => g.status === "Tidak Hadir");
-  const belum = guests.filter((g) => !g.status || g.status === "Belum" || g.status === "Tanpa Keterangan");
-  const sent = guests.filter((g) => g.invitation_sent);
-  const paxHadir = hadir.reduce((s, g) => s + Number(g.pax || 0), 0);
-  const paxTidakHadir = tidakHadir.reduce((s, g) => s + Number(g.pax || 0), 0);
-  const paxBelum = belum.reduce((s, g) => s + Number(g.pax || 0), 0);
-  const digital = guests.filter((g) => g.type === "Digital").length;
-  const fisik = guests.filter((g) => g.type === "Fisik").length;
-  const cppCount = guests.filter((g) => g.side === "CPP").length;
-  const cpwCount = guests.filter((g) => g.side === "CPW").length;
+  // ---------------- TAMU & CHECK-IN (Single-pass O(N)) ----------------
+  let totalPax = 0, paxHadir = 0, paxTidakHadir = 0, paxBelum = 0;
+  let hadirCount = 0, tidakHadirCount = 0, belumCount = 0, sentCount = 0;
+  let digital = 0, fisik = 0, cppCount = 0, cpwCount = 0;
+  let checkedInCount = 0, checkedInPax = 0, souvenirGivenCount = 0;
+
+  for (const g of guests) {
+    const p = Number(g.pax || 0);
+    totalPax += p;
+
+    if (g.status === "Hadir") {
+      hadirCount++;
+      paxHadir += p;
+    } else if (g.status === "Tidak Hadir") {
+      tidakHadirCount++;
+      paxTidakHadir += p;
+    } else {
+      belumCount++;
+      paxBelum += p;
+    }
+
+    if (g.invitation_sent) sentCount++;
+    if (g.type === "Digital") digital++;
+    else if (g.type === "Fisik") fisik++;
+
+    if (g.side === "CPP") cppCount++;
+    else if (g.side === "CPW") cpwCount++;
+
+    if (g.checked_in) {
+      checkedInCount++;
+      checkedInPax += Number(g.actual_pax || g.pax || 1);
+    }
+    if (g.souvenir_given) souvenirGivenCount++;
+  }
 
   const byGroup = countBy(guests, "group_name");
   const byPriority = countBy(guests, "priority");
@@ -867,24 +907,19 @@ function computeStats(data) {
   const nextRundown = rundowns.find((r) => !r.is_completed) || null;
   const byPhase = countBy(rundowns, "phase");
 
-  // ---------------- KADO & ANGPAO ----------------
+  // ---------------- KADO & ANGPAO (Single-pass O(N)) ----------------
   const gifts = data.gifts || [];
-  const cashGifts = gifts.filter((g) => g.gift_type === "Amplop Tunai");
-  const transferGifts = gifts.filter((g) => g.gift_type === "Transfer Bank / QRIS");
-  const physicalGifts = gifts.filter((g) => g.gift_type === "Kado Fisik");
-  const goldGifts = gifts.filter((g) => g.gift_type === "Logam Mulia");
-  const totalCash = cashGifts.reduce((s, g) => s + Number(g.amount || 0), 0);
-  const totalTransfer = transferGifts.reduce((s, g) => s + Number(g.amount || 0), 0);
-  const totalGiftAmount = totalCash + totalTransfer;
-  const thankYouPending = gifts.filter((g) => !g.thank_you_sent).length;
+  let totalCash = 0, totalTransfer = 0, totalPhysical = 0, totalGold = 0, thankYouPending = 0;
+  for (const g of gifts) {
+    const amt = Number(g.amount || 0);
+    if (g.gift_type === "Amplop Tunai") totalCash += amt;
+    else if (g.gift_type === "Transfer Bank / QRIS") totalTransfer += amt;
+    else if (g.gift_type === "Kado Fisik") totalPhysical++;
+    else if (g.gift_type === "Logam Mulia") totalGold++;
 
-  // ---------------- RECEPTION CHECK-IN ----------------
-  const checkedInGuests = guests.filter((g) => g.checked_in);
-  const checkedInPax = checkedInGuests.reduce(
-    (s, g) => s + Number(g.actual_pax || g.pax || 1),
-    0
-  );
-  const souvenirGivenCount = guests.filter((g) => g.souvenir_given).length;
+    if (!g.thank_you_sent) thankYouPending++;
+  }
+  const totalGiftAmount = totalCash + totalTransfer;
 
   return {
     finance: {
@@ -902,19 +937,19 @@ function computeStats(data) {
     adminSummary: {
       total: administrations.length,
       done: docsDone + progressDone,
-      docsTotal: docItems.length,
+      docsTotal: docItemsCount,
       docsDone,
-      progressTotal: progressItems.length,
+      progressTotal: progressItemsCount,
       progressDone,
     },
     vendorSummary: { total: vendors.length, done: vendorDone, remaining: vendors.length - vendorDone },
     guestSummary: {
       total: guests.length,
       totalPax,
-      hadir: hadir.length,
-      tidakHadir: tidakHadir.length,
-      belum: belum.length,
-      sentCount: sent.length,
+      hadir: hadirCount,
+      tidakHadir: tidakHadirCount,
+      belum: belumCount,
+      sentCount,
       paxHadir,
       paxTidakHadir,
       paxBelum,
@@ -925,7 +960,7 @@ function computeStats(data) {
       byGroup,
       byPriority,
       byOrigin,
-      checkedInCount: checkedInGuests.length,
+      checkedInCount,
       checkedInPax,
       souvenirGivenCount,
       invitationBaseUrl: settings?.invitation_base_url || "",
@@ -943,8 +978,8 @@ function computeStats(data) {
       totalCash,
       totalTransfer,
       totalGiftAmount,
-      totalPhysical: physicalGifts.length,
-      totalGold: goldGifts.length,
+      totalPhysical,
+      totalGold,
       thankYouPending,
     },
     seserahanSummary: {
