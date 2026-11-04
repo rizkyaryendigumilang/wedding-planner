@@ -520,7 +520,7 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
                   <button
                     onClick={() => remove(e)}
                     aria-label={`Hapus ${e.description}`}
-                    className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                    className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors focus-ring"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -1026,7 +1026,7 @@ function BudgetTable({
                           type="button"
                           onClick={() => startEdit(item)}
                           aria-label={`Ubah ${item.detail}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken text-ink text-xs font-medium transition active:scale-[0.97]"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl border border-line dark:border-night-line hover:bg-canvas-sunken dark:hover:bg-night-sunken text-ink text-xs font-medium transition active:scale-[0.97] focus-ring"
                         >
                           <Pencil size={13} className="text-ink-muted" />
                           <span>Ubah Termin</span>
@@ -1035,7 +1035,7 @@ function BudgetTable({
                           type="button"
                           onClick={() => removeItem(item)}
                           aria-label={`Hapus ${item.detail}`}
-                          className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                          className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors focus-ring"
                         >
                           <Trash2 size={15} />
                         </button>

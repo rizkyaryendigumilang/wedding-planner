@@ -323,7 +323,7 @@ const GuestCard = memo(function GuestCard({
           type="button"
           onClick={() => onSendWhatsApp(g)}
           aria-label={`Kirim pesan WhatsApp ke ${g.name}`}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98]"
+          className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98] focus-ring"
         >
           <WhatsAppIcon className="w-4 h-4" />
           <span>Kirim WhatsApp</span>
@@ -334,7 +334,7 @@ const GuestCard = memo(function GuestCard({
           onClick={() => onCopyMessage(g)}
           aria-label={`Salin pesan undangan ${g.name}`}
           title="Salin pesan undangan"
-          className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
         >
           {isMsgCopied ? <Check size={15} className="text-sage-600" /> : <Copy size={15} />}
         </button>
@@ -344,7 +344,7 @@ const GuestCard = memo(function GuestCard({
           onClick={() => onCopyLink(g)}
           aria-label={`Salin tautan personal ${g.name}`}
           title="Salin tautan personal"
-          className="p-2 rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
         >
           {isLinkCopied ? <Check size={15} className="text-sage-600" /> : <Link2 size={15} />}
         </button>
@@ -357,7 +357,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onToggleSentStatus(g)}
             aria-label={`Ubah status kirim undangan ${g.name}`}
             title="Klik untuk ubah status terkirim"
-            className="focus-ring rounded-lg"
+            className="focus-ring rounded-lg min-h-[32px] flex items-center"
           >
             <Badge tone={g.invitation_sent ? "sage" : "gray"}>
               {g.invitation_sent ? "Terkirim" : "Belum kirim"}
@@ -367,7 +367,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onToggleInvitation(g)}
             aria-label={`Ubah jenis undangan fisik/digital ${g.name}`}
             title="Ubah jenis fisik / digital"
-            className="focus-ring rounded-lg text-xs"
+            className="focus-ring rounded-lg text-xs min-h-[32px] flex items-center"
           >
             <Badge tone={g.type === "Digital" ? "sky" : "amber"}>{g.type}</Badge>
           </button>
@@ -375,7 +375,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onCycleStatus(g)}
             aria-label={`Ubah status kehadiran RSVP ${g.name}`}
             title="Klik untuk ubah status RSVP"
-            className="focus-ring rounded-lg"
+            className="focus-ring rounded-lg min-h-[32px] flex items-center"
           >
             <Badge tone={STATUS_TONE[g.status] || "gray"}>
               {g.status || "Belum"}
@@ -387,7 +387,7 @@ const GuestCard = memo(function GuestCard({
           type="button"
           onClick={() => onRemoveGuest(g)}
           aria-label={`Hapus ${g.name} ke Tempat Sampah`}
-          className="p-1.5 rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition focus-ring"
         >
           <Trash2 size={15} />
         </button>
@@ -994,6 +994,7 @@ export default function Guests() {
               icon={Upload}
               onClick={() => importFileRef.current?.click()}
               title="Impor daftar tamu massal dari berkas CSV"
+              className="hidden sm:inline-flex"
             >
               Impor CSV
             </Button>
@@ -1003,8 +1004,9 @@ export default function Guests() {
               icon={Settings2}
               onClick={() => setShowSettingsModal(true)}
               title="Atur link website undangan & template WA"
+              className="p-2 sm:px-3"
             >
-              Link &amp; Template
+              <span className="hidden sm:inline">Link &amp; Template</span>
             </Button>
             <Button
               variant="outline"
@@ -1012,10 +1014,19 @@ export default function Guests() {
               icon={Download}
               onClick={handleExportCsv}
               title="Download spreadsheet tamu untuk Excel / Google Sheets"
+              className="p-2 sm:px-3"
             >
-              Ekspor Excel
+              <span className="hidden sm:inline">Ekspor Excel</span>
             </Button>
-            <Button size="sm" icon={Plus} onClick={() => setShowForm((s) => !s)}>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Upload}
+              onClick={() => importFileRef.current?.click()}
+              title="Impor daftar tamu massal dari berkas CSV"
+              className="p-2 sm:hidden inline-flex"
+            />
+            <Button size="sm" icon={Plus} onClick={() => setShowForm((s) => !s)} className="flex-1 sm:flex-none">
               Tamu Baru
             </Button>
           </div>
@@ -1505,7 +1516,7 @@ export default function Guests() {
               initial="hidden"
               animate="visible"
               exit="hidden"
-              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto glass-specular"
+              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[85dvh] overflow-y-auto glass-specular"
             >
               <button
                 onClick={() => setShowSettingsModal(false)}
@@ -1606,7 +1617,7 @@ export default function Guests() {
               initial="hidden"
               animate="visible"
               exit="hidden"
-              className="relative w-full max-w-xl rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto glass-specular"
+              className="relative w-full max-w-xl rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[85dvh] overflow-y-auto glass-specular"
             >
               {!importModal.importing && (
                 <button
@@ -1756,52 +1767,52 @@ export default function Guests() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-[calc(var(--nav-height,4.25rem)+var(--safe-bottom,0px)+0.75rem)] lg:bottom-8 left-1/2 -translate-x-1/2 z-40 bg-ink dark:bg-night-card text-canvas dark:text-stone-100 px-4 py-3 rounded-3xl shadow-lift border border-line-strong/20 dark:border-night-line flex flex-wrap items-center gap-3 backdrop-blur-md max-w-[calc(100vw-2rem)] w-max"
+            className="fixed bottom-[calc(var(--nav-height,4.25rem)+var(--safe-bottom,0px)+0.75rem)] lg:bottom-8 left-1/2 -translate-x-1/2 z-40 bg-ink dark:bg-night-card text-canvas dark:text-stone-100 px-3.5 py-2.5 rounded-3xl shadow-lift border border-line-strong/20 dark:border-night-line flex items-center gap-2 backdrop-blur-md max-w-[calc(100vw-1.5rem)] overflow-x-auto no-scrollbar"
             role="region"
             aria-label="Aksi massal tamu terpilih"
           >
-            <div className="flex items-center gap-2 pr-2 border-r border-white/20">
-              <span className="w-6 h-6 rounded-full bg-rose-600 text-white font-bold text-xs flex items-center justify-center">
+            <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-white/20">
+              <span className="w-5 h-5 rounded-full bg-rose-600 text-white font-bold text-[11px] flex items-center justify-center">
                 {selectedGuestIds.size}
               </span>
-              <span className="text-xs font-semibold whitespace-nowrap">Tamu Dipilih</span>
+              <span className="text-xs font-semibold whitespace-nowrap hidden xs:inline">Dipilih</span>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => handleBatchSetInvitationSent(true)}
-                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5 shrink-0"
                 title="Tandai undangan terkirim untuk semua yang dipilih"
               >
                 <Mail size={13} />
-                <span>Tandai Terkirim</span>
+                <span className="whitespace-nowrap">Terkirim</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleBatchSetStatus("Hadir")}
-                className="px-3 py-1.5 rounded-xl bg-sage-500/20 hover:bg-sage-500/30 text-sage-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded-xl bg-sage-500/20 hover:bg-sage-500/30 text-sage-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5 shrink-0"
                 title="Tandai konfirmasi Hadir"
               >
                 <Check size={13} />
-                <span>RSVP Hadir</span>
+                <span className="whitespace-nowrap">Hadir</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleBatchRemove}
-                className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-medium transition active:scale-[0.98] flex items-center gap-1.5 shrink-0"
                 title="Hapus tamu terpilih ke Tempat Sampah"
               >
                 <Trash2 size={13} />
-                <span>Hapus</span>
+                <span className="whitespace-nowrap">Hapus</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleClearSelection}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition"
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition shrink-0"
                 aria-label="Batalkan pilihan massal"
                 title="Batal pilih (Esc)"
               >

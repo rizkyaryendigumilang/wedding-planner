@@ -33,7 +33,7 @@ function CalendarPanel({
   const today = new Date();
 
   return (
-    <div className={compact ? "w-full" : "w-[17.5rem]"}>
+    <div className={compact ? "w-full" : "w-[min(17.5rem,calc(100vw-4.5rem))]"}>
       {/* Navigasi bulan */}
       <div className="flex items-center justify-between mb-2">
         <button
@@ -131,7 +131,7 @@ function Popover({ open, onClose, children, align = "left" }) {
           exit={{ opacity: 0, y: -4, scale: 0.99 }}
           transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
           style={{ transformOrigin: align === "right" ? "top right" : "top left" }}
-          className={`absolute z-50 mt-2 p-3.5 rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line shadow-lift ${
+          className={`absolute z-50 mt-2 p-3.5 rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line shadow-lift max-w-[calc(100vw-1.5rem)] ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

@@ -548,7 +548,7 @@ export default function Rundown() {
               initial="hidden"
               animate="visible"
               exit="hidden"
-              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[90vh] overflow-y-auto scroll-area glass-specular"
+              className="relative w-full max-w-lg rounded-3xl bg-canvas-card dark:bg-night-card border border-line dark:border-night-line p-6 shadow-lift z-10 max-h-[85dvh] overflow-y-auto scroll-area glass-specular"
             >
               <button
                 onClick={() => setModalOpen(false)}
