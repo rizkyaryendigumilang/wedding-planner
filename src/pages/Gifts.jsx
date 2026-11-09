@@ -211,6 +211,16 @@ export default function Gifts() {
     }
   };
 
+  const handleDeleteGift = async (item) => {
+    if (!confirm(`Pindahkan catatan hadiah dari "${item.guest_name}" ke Tempat Sampah?`)) return;
+    try {
+      await deleteGift(item);
+      toast.info(`Catatan hadiah dari "${item.guest_name}" dipindahkan ke Tempat Sampah`);
+    } catch (err) {
+      toast.error("Gagal menghapus hadiah: " + (err?.message || ""));
+    }
+  };
+
   const handleExportCsv = () => {
     if (gifts.length === 0) return;
     const data = gifts.map((g, idx) => ({
@@ -450,7 +460,7 @@ export default function Gifts() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteGift(item)}
+                          onClick={() => handleDeleteGift(item)}
                           className="p-2 sm:p-1.5 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
                           aria-label="Hapus data hadiah"
                         >

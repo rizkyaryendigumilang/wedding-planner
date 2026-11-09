@@ -170,4 +170,4 @@ pb.beforeSend = (url, options) => {
 };
 
 export default pb;
-export { PB_URL, getEffectivePbUrl, normalizePbUrl, rewritePbUrl, isVpsPublicProxy };
+export { PB_URL, getEffectivePbUrl, normalizePbUrl, rewritePbUrl, isVpsPublicProxy, isVpsHostname };

@@ -19,6 +19,10 @@ function getTrashCollectionMeta(collectionName) {
       return { label: "Arus Kas", tone: "rose" };
     case "seserahan_items":
       return { label: "Seserahan", tone: "amber" };
+    case "rundown_events":
+      return { label: "Susunan Acara", tone: "indigo" };
+    case "wedding_gifts":
+      return { label: "Kado & Hadiah", tone: "emerald" };
     default:
       return { label: collectionName, tone: "neutral" };
   }
@@ -37,6 +41,10 @@ function renderTrashItemDetails(item) {
       return `${d.kind === "income" ? "Pemasukan" : "Pengeluaran"} • ${formatRupiah(d.amount || 0)} (${d.owner || "Bersama"})`;
     case "seserahan_items":
       return `Kategori: ${d.category || "-"} • Qty: ${d.qty || 1}${d.brand ? ` • ${d.brand}` : ""}`;
+    case "rundown_events":
+      return `${d.time_start || ""}${d.time_end ? ` - ${d.time_end}` : ""}${d.phase ? ` • ${d.phase}` : ""}${d.person_in_charge ? ` • PIC: ${d.person_in_charge}` : ""}`;
+    case "wedding_gifts":
+      return `${d.gift_type || "Hadiah"}${d.amount ? ` • ${formatRupiah(d.amount)}` : ""}${d.gift_detail ? ` • ${d.gift_detail}` : ""}`;
     default:
       return "";
   }
@@ -133,7 +141,7 @@ export default function TrashTab({
         </div>
 
         <p className="text-xs text-ink-muted leading-relaxed mt-2">
-          Item yang dihapus dari Tamu, Vendor, Anggaran, Arus Kas, atau Seserahan disimpan di sini untuk menghindari kehilangan data tidak disengaja. Anda dapat memulihkannya kembali ke data aktif kapan saja, atau menghapusnya secara permanen.
+          Item yang dihapus dari Tamu, Vendor, Anggaran, Arus Kas, Seserahan, Susunan Acara, atau Hadiah disimpan di sini untuk menghindari kehilangan data tidak disengaja. Anda dapat memulihkannya kembali ke data aktif kapan saja, atau menghapusnya secara permanen.
         </p>
 
         {/* Filter Tabs */}
@@ -146,6 +154,8 @@ export default function TrashTab({
               { id: "budgets", label: `Anggaran (${trashItems.filter((i) => i.collection_name === "budgets").length})` },
               { id: "cashflow_entries", label: `Arus Kas (${trashItems.filter((i) => i.collection_name === "cashflow_entries").length})` },
               { id: "seserahan_items", label: `Seserahan (${trashItems.filter((i) => i.collection_name === "seserahan_items").length})` },
+              { id: "rundown_events", label: `Susunan Acara (${trashItems.filter((i) => i.collection_name === "rundown_events").length})` },
+              { id: "wedding_gifts", label: `Hadiah (${trashItems.filter((i) => i.collection_name === "wedding_gifts").length})` },
             ]
               .filter((f) => f.id === "ALL" || !f.label.includes("(0)"))
               .map((f) => (

@@ -480,19 +480,27 @@ export function WeddingProvider({ children }) {
    * Data dipindahkan dari koleksi asal ke `recycle_bin` agar bisa dipulihkan kapan saja.
    */
   const moveToTrash = useCallback(
-    async (collectionName, item, itemTitle) => {
+    async (collectionName, itemOrTitle, optionalItemOrTitle) => {
+      let item = itemOrTitle;
+      let itemTitle = optionalItemOrTitle;
+      if (typeof itemOrTitle === "string" && typeof optionalItemOrTitle === "object" && optionalItemOrTitle?.id) {
+        item = optionalItemOrTitle;
+        itemTitle = itemOrTitle;
+      }
       if (!item || !item.id) return;
       const title =
-        itemTitle ||
+        (typeof itemTitle === "string" && itemTitle) ||
         item.name ||
+        item.title ||
         item.detail ||
         item.activity_name ||
         item.description ||
         "Item";
       const userIdentifier =
+        pb.authStore.record?.username ||
+        pb.authStore.record?.name ||
+        pb.authStore.record?.email ||
         pb.authStore.model?.username ||
-        pb.authStore.model?.name ||
-        pb.authStore.model?.email ||
         "Pengguna";
 
       // 1. Simpan salinan ke recycle_bin (pertahankan pemetaan couple agar
@@ -631,7 +639,7 @@ export function WeddingProvider({ children }) {
 
   const deleteRundownEvent = useCallback(
     async (eventRecord) => {
-      await moveToTrash("rundown_events", eventRecord.title || "Agenda Rundown", eventRecord);
+      await moveToTrash("rundown_events", eventRecord, eventRecord.title || "Agenda Rundown");
     },
     [moveToTrash]
   );
@@ -738,7 +746,7 @@ export function WeddingProvider({ children }) {
 
   const deleteGift = useCallback(
     async (giftRecord) => {
-      await moveToTrash("wedding_gifts", `Hadiah dari ${giftRecord.guest_name}`, giftRecord);
+      await moveToTrash("wedding_gifts", giftRecord, `Hadiah dari ${giftRecord.guest_name}`);
     },
     [moveToTrash]
   );
@@ -800,7 +808,7 @@ export function WeddingProvider({ children }) {
 }
 
 /** Semua perhitungan turunan (uang & tamu) terpusat di sini. */
-function computeStats(data) {
+export function computeStats(data) {
   const {
     couple,
     budgets,
@@ -1001,7 +1009,7 @@ function computeStats(data) {
 }
 
 
-function countBy(arr, key) {
+export function countBy(arr, key) {
   const map = new Map();
   for (const item of arr) {
     const k = item[key] || "Lainnya";
