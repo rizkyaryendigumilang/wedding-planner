@@ -10,7 +10,7 @@ export function generateMasterGuidebookHtml({
   rundowns = [],
   vendors = [],
   guests = [],
-  settings = {},
+  _settings = {},
   user,
 }) {
   const coupleTitle = getCoupleDisplayName(couple, user, "Calon Pengantin");
