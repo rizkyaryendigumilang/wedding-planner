@@ -1,4 +1,5 @@
-const CACHE_NAME = "wedding-planner-v3";
+const CACHE_NAME = "wedding-planner-v4";
+const FONT_CACHE_NAME = "wedding-fonts-v1";
 
 // Resolve scope directory as base path (e.g. "/wedding/" or "/")
 const basePath = new URL(self.registration.scope).pathname.replace(/\/?$/, "/");
@@ -32,13 +33,15 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys
+          .filter((key) => key !== CACHE_NAME && key !== FONT_CACHE_NAME)
+          .map((key) => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Fetch: network-first for PocketBase API, stale-while-revalidate for static assets
+// Fetch handler with offline strategies
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -58,9 +61,43 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Media & berkas PocketBase: network-first.
-  // F-11: cache-first membuat foto lama (atau milik akun sebelumnya di
-  // perangkat yang sama) terus tersaji. Cache kini hanya cadangan offline.
+  // Google Fonts (Cache-First untuk font files .woff2, Stale-While-Revalidate untuk CSS)
+  if (url.origin === "https://fonts.gstatic.com") {
+    event.respondWith(
+      caches.open(FONT_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (_) {
+          return cached;
+        }
+      })
+    );
+    return;
+  }
+
+  if (url.origin === "https://fonts.googleapis.com") {
+    event.respondWith(
+      caches.open(FONT_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetchPromise = fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => cached);
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Media & berkas PocketBase: network-first dengan offline cache fallback
   if (url.pathname.startsWith("/api/files/") || url.pathname.startsWith("/wedding-api/files/")) {
     event.respondWith(
       fetch(request)
@@ -93,7 +130,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets and pages: Stale-While-Revalidate
+  // Static assets (hashed JS, CSS, images) and pages: Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)

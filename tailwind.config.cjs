@@ -94,9 +94,9 @@ module.exports = {
         '5xl': '2.5rem',
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(28,25,23,0.04), 0 8px 24px -12px rgba(28,25,23,0.12)',
-        lift: '0 2px 4px rgba(28,25,23,0.05), 0 16px 40px -16px rgba(28,25,23,0.18)',
-        glow: '0 8px 32px -8px rgba(185,68,96,0.35)',
+        soft: '0 1px 2px rgba(28,25,23,0.03), 0 8px 24px -12px rgba(28,25,23,0.08)',
+        lift: '0 2px 4px rgba(28,25,23,0.04), 0 14px 36px -14px rgba(28,25,23,0.14)',
+        glow: '0 4px 18px -4px rgba(185,68,96,0.16)',
       },
       transitionTimingFunction: {
         // Kurva khas Apple: cepat di awal, mendarat halus di akhir.

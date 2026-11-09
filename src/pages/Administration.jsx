@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   FileCheck2,
@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   ClipboardList,
   Users,
+  Paperclip,
 } from "lucide-react";
 import {
   Page,
@@ -24,11 +25,21 @@ import {
 import { useWedding } from "../lib/weddingData";
 import pb from "../lib/pocketbase";
 import { pct } from "../lib/format";
+import { toast } from "sonner";
 
 const EASE = [0.22, 1, 0.36, 1];
 
 export default function Administration() {
-  const { administrations, adminSummary, loading, error, reload, addLog } = useWedding();
+  const {
+    administrations,
+    adminSummary,
+    loading,
+    error,
+    reload,
+    toggleAdminDoc,
+    toggleAdminProgress,
+    updateAdministration,
+  } = useWedding();
   const [query, setQuery] = useState("");
   const reduce = useReducedMotion();
 
@@ -50,22 +61,33 @@ export default function Administration() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
 
-  const toggleDoc = async (item, side) => {
-    const field = side === "CPP" ? "cpp_complete" : "cpw_complete";
-    await pb.collection("administrations").update(item.id, { [field]: !item[field] });
-    await addLog(
-      `Dokumen "${item.item}" (${side}) ditandai ${!item[field] ? "selesai" : "belum"}`,
-      "document"
-    );
-    reload();
-  };
+  const toggleDoc = useCallback(
+    (item, side) => {
+      toggleAdminDoc(item, side).catch((err) => toast.error("Gagal update dokumen: " + err.message));
+    },
+    [toggleAdminDoc]
+  );
 
-  const toggleProgress = async (item) => {
-    const next = item.progress === "Sudah" ? "Belum" : "Sudah";
-    await pb.collection("administrations").update(item.id, { progress: next });
-    await addLog(`"${item.item}" ditandai ${next}`, "document");
-    reload();
-  };
+  const toggleProgress = useCallback(
+    (item) => {
+      toggleAdminProgress(item).catch((err) => toast.error("Gagal update progres: " + err.message));
+    },
+    [toggleAdminProgress]
+  );
+
+  const handleUploadAttachment = useCallback(
+    async (item, file) => {
+      try {
+        const formData = new FormData();
+        formData.append("attachment", file);
+        await updateAdministration(item.id, formData);
+        toast.success(`Berkas untuk "${item.item}" berhasil diunggah!`);
+      } catch (err) {
+        toast.error("Gagal mengunggah berkas: " + (err?.message || ""));
+      }
+    },
+    [updateAdministration]
+  );
 
   if (loading) return <Loading label="Memuat administrasi…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -192,12 +214,49 @@ export default function Administration() {
                       key={item.id}
                       className="flex flex-wrap items-center gap-3 px-2 py-3 rounded-2xl hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors"
                     >
-                      <span className="flex-1 min-w-[12rem] text-sm">{item.item}</span>
+                      <div className="flex-1 min-w-[12rem]">
+                        <span className="text-sm font-medium text-ink dark:text-stone-100 block">{item.item}</span>
+                        {item.attachment && (
+                          <a
+                            href={pb.files.getURL(item, item.attachment)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:underline mt-0.5"
+                            title="Buka scan dokumen"
+                          >
+                            <Paperclip size={11} />
+                            <span>Lihat Berkas Scan</span>
+                          </a>
+                        )}
+                      </div>
 
                       {item.details && (
                         <span className="hidden md:block text-xs text-ink-faint max-w-[16rem] truncate">
                           {item.details}
                         </span>
+                      )}
+
+                      {/* Tombol Upload Berkas Cepat jika belum ada */}
+                      {!item.attachment && (
+                        <label
+                          title="Unggah scan dokumen (PDF / Foto)"
+                          className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+                        >
+                          <Paperclip size={12} />
+                          <span className="hidden sm:inline">Lampirkan</span>
+                          <input
+                            type="file"
+                            accept=".pdf,image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleUploadAttachment(item, file);
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                        </label>
                       )}
 
                       {item.is_document ? (

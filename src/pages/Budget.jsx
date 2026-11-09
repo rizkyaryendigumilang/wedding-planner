@@ -50,8 +50,23 @@ const TABS = [
 ];
 
 export default function Budget() {
-  const { budgets, cashflow, finance, loading, error, couple, settings, addLog, reload, moveToTrash } =
-    useWedding();
+  const {
+    budgets,
+    cashflow,
+    finance,
+    loading,
+    error,
+    couple,
+    settings,
+    addLog,
+    reload,
+    moveToTrash,
+    addBudget,
+    updateBudget,
+    deleteBudget,
+    addCashflow,
+    deleteCashflow,
+  } = useWedding();
   const [tab, setTab] = useState("cashflow");
   const reduce = useReducedMotion();
 
@@ -239,6 +254,8 @@ export default function Budget() {
               onChanged={reload}
               addLog={addLog}
               moveToTrash={moveToTrash}
+              addCashflow={addCashflow}
+              deleteCashflow={deleteCashflow}
             />
           )}
           {tab === "sangjit" && (
@@ -251,6 +268,9 @@ export default function Budget() {
               addLog={addLog}
               moveToTrash={moveToTrash}
               categories={budgetCategories}
+              addBudget={addBudget}
+              updateBudget={updateBudget}
+              deleteBudget={deleteBudget}
             />
           )}
           {tab === "wedding" && (
@@ -263,6 +283,9 @@ export default function Budget() {
               addLog={addLog}
               moveToTrash={moveToTrash}
               categories={budgetCategories}
+              addBudget={addBudget}
+              updateBudget={updateBudget}
+              deleteBudget={deleteBudget}
             />
           )}
         </motion.div>
@@ -286,7 +309,7 @@ function TargetStat({ label, value, tone = "" }) {
 
 /* ============================== ARUS KAS ============================== */
 
-function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) {
+function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash, addCashflow, deleteCashflow }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -319,20 +342,26 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
     if (!form.description.trim() || !form.amount) return;
     setSaving(true);
     try {
-      await pb.collection("cashflow_entries").create({
-        couple: coupleId,
-        description: form.description.trim(),
-        kind: form.kind,
-        owner: form.owner,
-        amount: Number(form.amount),
-        entry_date: `${form.entry_date} 00:00:00.000Z`,
-        sort_order: entries.length + 1,
-      });
-      await addLog(
-        `${form.kind === "income" ? "Pemasukan" : "Pengeluaran"} "${form.description.trim()}" ${formatRupiah(form.amount)} (${form.owner})`,
-        form.kind === "income" ? "info" : "payment",
-        Number(form.amount)
-      );
+      if (addCashflow) {
+        await addCashflow({
+          description: form.description.trim(),
+          kind: form.kind,
+          owner: form.owner,
+          amount: Number(form.amount),
+          entry_date: `${form.entry_date} 00:00:00.000Z`,
+          sort_order: entries.length + 1,
+        });
+      } else {
+        await pb.collection("cashflow_entries").create({
+          couple: coupleId,
+          description: form.description.trim(),
+          kind: form.kind,
+          owner: form.owner,
+          amount: Number(form.amount),
+          entry_date: `${form.entry_date} 00:00:00.000Z`,
+          sort_order: entries.length + 1,
+        });
+      }
       toast.success(`Catatan arus kas "${form.description.trim()}" berhasil disimpan`);
       reset();
       setShowForm(false);
@@ -344,7 +373,9 @@ function CashflowSection({ entries, coupleId, onChanged, addLog, moveToTrash }) 
 
   const remove = async (entry) => {
     if (!confirm(`Pindahkan catatan "${entry.description}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
-    if (moveToTrash) {
+    if (deleteCashflow) {
+      await deleteCashflow(entry);
+    } else if (moveToTrash) {
       await moveToTrash("cashflow_entries", entry, entry.description);
     } else {
       await pb.collection("cashflow_entries").delete(entry.id);
@@ -581,6 +612,9 @@ function BudgetTable({
   addLog,
   moveToTrash,
   categories = DEFAULT_BUDGET_CATEGORIES,
+  addBudget,
+  updateBudget,
+  deleteBudget,
 }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState({});
@@ -618,8 +652,12 @@ function BudgetTable({
       status: draft.status || item.status,
     };
     const newPaid = payload.termin1 + payload.termin2 + payload.termin3 + payload.termin4;
-    await pb.collection("budgets").update(item.id, payload);
-    await addLog(`Pembayaran "${item.detail}" diperbarui (${formatRupiah(newPaid)})`, "payment", newPaid);
+    if (updateBudget) {
+      await updateBudget(item.id, payload);
+    } else {
+      await pb.collection("budgets").update(item.id, payload);
+      await addLog(`Pembayaran "${item.detail}" diperbarui (${formatRupiah(newPaid)})`, "payment", newPaid);
+    }
     toast.success(`Pembayaran "${item.detail}" berhasil diperbarui (${formatRupiah(newPaid)})`);
     setEditing(null);
     onChanged();
@@ -627,7 +665,9 @@ function BudgetTable({
 
   const removeItem = async (item) => {
     if (!confirm(`Pindahkan "${item.detail}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
-    if (moveToTrash) {
+    if (deleteBudget) {
+      await deleteBudget(item);
+    } else if (moveToTrash) {
       await moveToTrash("budgets", item, item.detail);
     } else {
       await pb.collection("budgets").delete(item.id);
@@ -651,16 +691,23 @@ function BudgetTable({
   const addItem = async (e) => {
     e.preventDefault();
     if (!newItem.detail.trim()) return;
-    await pb.collection("budgets").create({
-      couple: coupleId,
+    const payload = {
       budget_type: type,
       category: newItem.category.trim() || "LAIN-LAIN",
       detail: newItem.detail.trim(),
       vendor: newItem.vendor.trim(),
       status: "Choose Vendor",
       total_biaya: Number(newItem.total_biaya) || 0,
-    });
-    await addLog(`Item anggaran baru: "${newItem.detail.trim()}"`, "info", Number(newItem.total_biaya) || 0);
+    };
+    if (addBudget) {
+      await addBudget(payload);
+    } else {
+      await pb.collection("budgets").create({
+        couple: coupleId,
+        ...payload,
+      });
+      await addLog(`Item anggaran baru: "${newItem.detail.trim()}"`, "info", Number(newItem.total_biaya) || 0);
+    }
     toast.success(`Item "${newItem.detail.trim()}" berhasil ditambahkan ke anggaran`);
     setNewItem({ category: newItem.category, detail: "", vendor: "", total_biaya: 0 });
     setAdding(false);
@@ -759,7 +806,7 @@ function BudgetTable({
 
         {groups.map(([category, rows]) => (
           <div key={category}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-600 dark:text-rose-300 mb-2">
+            <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-2">
               {category}
             </p>
 

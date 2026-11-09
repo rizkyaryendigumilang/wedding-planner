@@ -341,6 +341,84 @@ export function WeddingProvider({ children }) {
       }, 600);
     };
 
+    const COLLECTION_KEY_MAP = {
+      couples: "couple",
+      app_settings: "settings",
+      budgets: "budgets",
+      administrations: "administrations",
+      seserahan_items: "seserahan",
+      vendor_checklists: "vendors",
+      wedding_guests: "guests",
+      cashflow_entries: "cashflow",
+      activity_logs: "logs",
+      gallery_photos: "photos",
+      recycle_bin: "trashItems",
+      rundown_events: "rundowns",
+      wedding_gifts: "gifts",
+    };
+
+    const handleRealtimeEvent = (collectionName, e) => {
+      if (!e || !e.action || !e.record) return;
+      const { action, record } = e;
+      const key = COLLECTION_KEY_MAP[collectionName];
+      if (!key) return;
+
+      // Isolasi couple: pastikan record milik couple ini (kecuali app_settings tanpa couple)
+      if (record.couple && record.couple !== coupleId) {
+        return;
+      }
+
+      setLastLiveUpdate(Date.now());
+
+      if (key === "couple") {
+        if (record.id === coupleId && action === "update") {
+          setData((prev) => {
+            const next = { ...prev, couple: record };
+            saveCachedData(next);
+            return next;
+          });
+        }
+        return;
+      }
+
+      if (key === "settings") {
+        setData((prev) => {
+          const next = { ...prev, settings: { ...(prev.settings || {}), ...record } };
+          saveCachedData(next);
+          return next;
+        });
+        return;
+      }
+
+      const formattedRecord = key === "photos" ? normalizePhoto(record) : record;
+
+      setData((prev) => {
+        const list = Array.isArray(prev[key]) ? prev[key] : [];
+        let updatedList;
+
+        if (action === "create") {
+          const exists = list.some((item) => item.id === formattedRecord.id);
+          if (exists) {
+            updatedList = list.map((item) => (item.id === formattedRecord.id ? formattedRecord : item));
+          } else if (key === "logs" || key === "gifts" || key === "trashItems") {
+            updatedList = [formattedRecord, ...list].slice(0, key === "logs" ? 40 : 100);
+          } else {
+            updatedList = [...list, formattedRecord];
+          }
+        } else if (action === "update") {
+          updatedList = list.map((item) => (item.id === formattedRecord.id ? { ...item, ...formattedRecord } : item));
+        } else if (action === "delete") {
+          updatedList = list.filter((item) => item.id !== formattedRecord.id);
+        } else {
+          updatedList = list;
+        }
+
+        const nextData = { ...prev, [key]: updatedList };
+        saveCachedData(nextData);
+        return nextData;
+      });
+    };
+
     const COLLECTIONS = [
       "couples",
       "budgets",
@@ -359,8 +437,13 @@ export function WeddingProvider({ children }) {
 
     COLLECTIONS.forEach((name) => {
       pb.collection(name)
-        .subscribe("*", () => {
-          triggerReload();
+        .subscribe("*", (e) => {
+          try {
+            handleRealtimeEvent(name, e);
+          } catch (err) {
+            console.warn(`Granular update warning for ${name}, fallback to reload:`, err);
+            triggerReload();
+          }
         })
         .then(() => {
           setIsLiveConnected(true);
@@ -751,6 +834,356 @@ export function WeddingProvider({ children }) {
     [moveToTrash]
   );
 
+  // ------------------------------------------------------------------ GUESTS CRUD
+  const addGuest = useCallback(
+    async (guestData) => {
+      if (!coupleId) return null;
+      const payload = {
+        couple: coupleId,
+        status: "Belum",
+        type: "Digital",
+        pax: 1,
+        checklist: false,
+        invitation_sent: false,
+        ...guestData,
+      };
+      const created = await pb.collection("wedding_guests").create(payload);
+      addLog(`Menambahkan tamu: "${created.name}"`, "guest").catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, guests: [...(prev.guests || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const updateGuest = useCallback(async (guestId, patch) => {
+    setData((prev) => ({
+      ...prev,
+      guests: (prev.guests || []).map((g) => (g.id === guestId ? { ...g, ...patch } : g)),
+    }));
+    const updated = await pb.collection("wedding_guests").update(guestId, patch);
+    return updated;
+  }, []);
+
+  const deleteGuest = useCallback(
+    async (guestRecord) => {
+      await moveToTrash("wedding_guests", guestRecord, guestRecord.name);
+    },
+    [moveToTrash]
+  );
+
+  const batchUpdateGuests = useCallback(
+    async (ids, patch) => {
+      setData((prev) => ({
+        ...prev,
+        guests: (prev.guests || []).map((g) => (ids.includes(g.id) ? { ...g, ...patch } : g)),
+      }));
+      await Promise.all(ids.map((id) => pb.collection("wedding_guests").update(id, patch)));
+      addLog(`Memperbarui ${ids.length} tamu`, "guest").catch(() => {});
+      load(true);
+    },
+    [addLog, load]
+  );
+
+  const batchAddGuests = useCallback(
+    async (guestsList) => {
+      if (!coupleId) return [];
+      const results = [];
+      for (const g of guestsList) {
+        const created = await pb.collection("wedding_guests").create({
+          couple: coupleId,
+          status: "Belum",
+          type: "Digital",
+          pax: 1,
+          ...g,
+        });
+        results.push(created);
+      }
+      addLog(`Mengimpor ${results.length} tamu`, "guest").catch(() => {});
+      load(true);
+      return results;
+    },
+    [coupleId, addLog, load]
+  );
+
+  // ------------------------------------------------------------------ VENDORS CRUD & ATTACHMENTS
+  const addVendor = useCallback(
+    async (vendorData) => {
+      if (!coupleId) return null;
+      let created;
+      if (vendorData instanceof FormData) {
+        if (!vendorData.has("couple")) {
+          vendorData.append("couple", coupleId);
+        }
+        created = await pb.collection("vendor_checklists").create(vendorData);
+      } else {
+        created = await pb.collection("vendor_checklists").create({
+          couple: coupleId,
+          ...vendorData,
+        });
+      }
+      const name = created.activity_name || "Vendor";
+      addLog(`Menambahkan tugas vendor: "${name}"`, "task").catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, vendors: [...(prev.vendors || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const updateVendor = useCallback(async (vendorId, patchOrFormData) => {
+    if (!(patchOrFormData instanceof FormData)) {
+      setData((prev) => ({
+        ...prev,
+        vendors: (prev.vendors || []).map((v) => (v.id === vendorId ? { ...v, ...patchOrFormData } : v)),
+      }));
+    }
+    const updated = await pb.collection("vendor_checklists").update(vendorId, patchOrFormData);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        vendors: (prev.vendors || []).map((v) => (v.id === vendorId ? updated : v)),
+      };
+      saveCachedData(next);
+      return next;
+    });
+    return updated;
+  }, []);
+
+  const deleteVendor = useCallback(
+    async (vendorRecord) => {
+      await moveToTrash("vendor_checklists", vendorRecord, vendorRecord.activity_name);
+    },
+    [moveToTrash]
+  );
+
+  const toggleVendorStatus = useCallback(
+    async (vendorRecord) => {
+      const nextVal = !vendorRecord.is_completed;
+      addLog(
+        `"${vendorRecord.activity_name}" ditandai ${nextVal ? "selesai" : "belum selesai"}`,
+        "task"
+      ).catch(() => {});
+      return updateVendor(vendorRecord.id, { is_completed: nextVal });
+    },
+    [updateVendor, addLog]
+  );
+
+  const toggleVendorDp = useCallback(
+    async (vendorRecord) => {
+      const nextVal = !vendorRecord.dp_paid;
+      addLog(
+        `DP vendor "${vendorRecord.activity_name}" ditandai ${nextVal ? "sudah dibayar" : "belum dibayar"}`,
+        "task"
+      ).catch(() => {});
+      return updateVendor(vendorRecord.id, { dp_paid: nextVal });
+    },
+    [updateVendor, addLog]
+  );
+
+  const toggleVendorSettlement = useCallback(
+    async (vendorRecord) => {
+      const nextVal = !vendorRecord.settlement_paid;
+      addLog(
+        `Pelunasan vendor "${vendorRecord.activity_name}" ditandai ${nextVal ? "sudah lunas" : "belum lunas"}`,
+        "task"
+      ).catch(() => {});
+      return updateVendor(vendorRecord.id, { settlement_paid: nextVal });
+    },
+    [updateVendor, addLog]
+  );
+
+  // ------------------------------------------------------------------ ADMINISTRATIONS CRUD & ATTACHMENTS
+  const addAdministration = useCallback(
+    async (adminData) => {
+      if (!coupleId) return null;
+      let created;
+      if (adminData instanceof FormData) {
+        if (!adminData.has("couple")) {
+          adminData.append("couple", coupleId);
+        }
+        created = await pb.collection("administrations").create(adminData);
+      } else {
+        created = await pb.collection("administrations").create({
+          couple: coupleId,
+          ...adminData,
+        });
+      }
+      addLog(`Menambahkan berkas administrasi: "${created.item}"`, "document").catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, administrations: [...(prev.administrations || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const updateAdministration = useCallback(async (adminId, patchOrFormData) => {
+    if (!(patchOrFormData instanceof FormData)) {
+      setData((prev) => ({
+        ...prev,
+        administrations: (prev.administrations || []).map((a) => (a.id === adminId ? { ...a, ...patchOrFormData } : a)),
+      }));
+    }
+    const updated = await pb.collection("administrations").update(adminId, patchOrFormData);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        administrations: (prev.administrations || []).map((a) => (a.id === adminId ? updated : a)),
+      };
+      saveCachedData(next);
+      return next;
+    });
+    return updated;
+  }, []);
+
+  const deleteAdministration = useCallback(
+    async (adminRecord) => {
+      await moveToTrash("administrations", adminRecord, adminRecord.item);
+    },
+    [moveToTrash]
+  );
+
+  const toggleAdminDoc = useCallback(
+    async (adminRecord, side) => {
+      const field = side === "CPP" ? "cpp_complete" : "cpw_complete";
+      const nextVal = !adminRecord[field];
+      addLog(
+        `Dokumen "${adminRecord.item}" (${side}) ditandai ${nextVal ? "selesai" : "belum"}`,
+        "document"
+      ).catch(() => {});
+      return updateAdministration(adminRecord.id, { [field]: nextVal });
+    },
+    [updateAdministration, addLog]
+  );
+
+  const toggleAdminProgress = useCallback(
+    async (adminRecord) => {
+      const next = adminRecord.progress === "Sudah" ? "Belum" : "Sudah";
+      addLog(`"${adminRecord.item}" ditandai ${next}`, "document").catch(() => {});
+      return updateAdministration(adminRecord.id, { progress: next });
+    },
+    [updateAdministration, addLog]
+  );
+
+  // ------------------------------------------------------------------ SESERAHAN CRUD
+  const addSeserahan = useCallback(
+    async (itemData) => {
+      if (!coupleId) return null;
+      const created = await pb.collection("seserahan_items").create({
+        couple: coupleId,
+        ...itemData,
+      });
+      addLog(`Menambahkan barang seserahan: "${created.detail}"`, "task").catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, seserahan: [...(prev.seserahan || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const updateSeserahan = useCallback(async (itemId, patch) => {
+    setData((prev) => ({
+      ...prev,
+      seserahan: (prev.seserahan || []).map((s) => (s.id === itemId ? { ...s, ...patch } : s)),
+    }));
+    const updated = await pb.collection("seserahan_items").update(itemId, patch);
+    return updated;
+  }, []);
+
+  const deleteSeserahan = useCallback(
+    async (itemRecord) => {
+      await moveToTrash("seserahan_items", itemRecord, itemRecord.detail);
+    },
+    [moveToTrash]
+  );
+
+  const toggleSeserahanChecklist = useCallback(
+    async (itemRecord) => {
+      return updateSeserahan(itemRecord.id, { checklist: !itemRecord.checklist });
+    },
+    [updateSeserahan]
+  );
+
+  // ------------------------------------------------------------------ BUDGET & CASHFLOW CRUD
+  const addBudget = useCallback(
+    async (budgetData) => {
+      if (!coupleId) return null;
+      const created = await pb.collection("budgets").create({
+        couple: coupleId,
+        ...budgetData,
+      });
+      addLog(`Menambahkan pos anggaran: "${created.detail}"`, "payment", created.total_biaya || 0).catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, budgets: [...(prev.budgets || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const updateBudget = useCallback(async (budgetId, patch) => {
+    setData((prev) => ({
+      ...prev,
+      budgets: (prev.budgets || []).map((b) => (b.id === budgetId ? { ...b, ...patch } : b)),
+    }));
+    const updated = await pb.collection("budgets").update(budgetId, patch);
+    return updated;
+  }, []);
+
+  const deleteBudget = useCallback(
+    async (budgetRecord) => {
+      await moveToTrash("budgets", budgetRecord, budgetRecord.detail);
+    },
+    [moveToTrash]
+  );
+
+  const addCashflow = useCallback(
+    async (cashflowData) => {
+      if (!coupleId) return null;
+      const created = await pb.collection("cashflow_entries").create({
+        couple: coupleId,
+        ...cashflowData,
+      });
+      addLog(
+        `Arus kas ${cashflowData.kind === "income" ? "masuk" : "keluar"}: "${cashflowData.description}"`,
+        "payment",
+        cashflowData.amount || 0
+      ).catch(() => {});
+      setData((prev) => {
+        const next = { ...prev, cashflow: [...(prev.cashflow || []), created] };
+        saveCachedData(next);
+        return next;
+      });
+      return created;
+    },
+    [coupleId, addLog]
+  );
+
+  const deleteCashflow = useCallback(
+    async (cashflowRecord) => {
+      await moveToTrash(
+        "cashflow_entries",
+        cashflowRecord,
+        cashflowRecord.description || cashflowRecord.detail || "Arus Kas"
+      );
+    },
+    [moveToTrash]
+  );
+
   const value = useMemo(
     () => ({
       ...data,
@@ -774,6 +1207,36 @@ export function WeddingProvider({ children }) {
       addGift,
       updateGift,
       deleteGift,
+      // Guests
+      addGuest,
+      updateGuest,
+      deleteGuest,
+      batchUpdateGuests,
+      batchAddGuests,
+      // Vendors
+      addVendor,
+      updateVendor,
+      deleteVendor,
+      toggleVendorStatus,
+      toggleVendorDp,
+      toggleVendorSettlement,
+      // Administrations
+      addAdministration,
+      updateAdministration,
+      deleteAdministration,
+      toggleAdminDoc,
+      toggleAdminProgress,
+      // Seserahan
+      addSeserahan,
+      updateSeserahan,
+      deleteSeserahan,
+      toggleSeserahanChecklist,
+      // Budgets & Cashflow
+      addBudget,
+      updateBudget,
+      deleteBudget,
+      addCashflow,
+      deleteCashflow,
       isLiveConnected,
       lastLiveUpdate,
     }),
@@ -799,6 +1262,31 @@ export function WeddingProvider({ children }) {
       addGift,
       updateGift,
       deleteGift,
+      addGuest,
+      updateGuest,
+      deleteGuest,
+      batchUpdateGuests,
+      batchAddGuests,
+      addVendor,
+      updateVendor,
+      deleteVendor,
+      toggleVendorStatus,
+      toggleVendorDp,
+      toggleVendorSettlement,
+      addAdministration,
+      updateAdministration,
+      deleteAdministration,
+      toggleAdminDoc,
+      toggleAdminProgress,
+      addSeserahan,
+      updateSeserahan,
+      deleteSeserahan,
+      toggleSeserahanChecklist,
+      addBudget,
+      updateBudget,
+      deleteBudget,
+      addCashflow,
+      deleteCashflow,
       isLiveConnected,
       lastLiveUpdate,
     ]

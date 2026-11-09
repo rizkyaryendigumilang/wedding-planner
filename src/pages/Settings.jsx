@@ -70,6 +70,7 @@ import {
 } from "../lib/masterData";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
 import { exportToCsv, exportToJson, printReport } from "../lib/export";
+import { printMasterGuidebook } from "../lib/weddingMasterGuidebook";
 import { LOGO_URL } from "../lib/icons";
 import pb from "../lib/pocketbase";
 import { toast } from "sonner";
@@ -916,7 +917,7 @@ export default function Settings() {
         <div className="self-start sm:self-center">
           {isAnyDirty ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               Ada perubahan belum disimpan
             </span>
           ) : (
@@ -2160,6 +2161,15 @@ export default function Settings() {
 
               <div className="mt-5 pt-4 border-t border-line dark:border-night-line flex flex-col sm:flex-row gap-3">
                 <Button
+                  variant="primary"
+                  icon={Printer}
+                  className="flex-1"
+                  onClick={() => printMasterGuidebook({ couple, rundowns, vendors, guests, settings, user })}
+                  title="Cetak atau Simpan Buku Panduan Pernikahan Lengkap ke PDF"
+                >
+                  Buku Panduan Pernikahan (PDF)
+                </Button>
+                <Button
                   variant="secondary"
                   icon={FileJson}
                   className="flex-1"
@@ -2171,8 +2181,9 @@ export default function Settings() {
                   variant="outline"
                   icon={Printer}
                   onClick={printReport}
+                  title="Cetak ringkasan lembar kerja"
                 >
-                  Cetak / Simpan PDF
+                  Cetak Ringkasan
                 </Button>
               </div>
             </Card>

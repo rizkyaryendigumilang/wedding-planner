@@ -107,8 +107,18 @@ const DEFAULT_SESERAHAN_TEMPLATE = [
 ];
 
 export default function Seserahan() {
-  const { seserahan, seserahanSummary, couple, loading, error, reload, addLog, moveToTrash } =
-    useWedding();
+  const {
+    seserahan,
+    seserahanSummary,
+    couple,
+    loading,
+    error,
+    reload,
+    addLog,
+    addSeserahan,
+    deleteSeserahan,
+    toggleSeserahanChecklist,
+  } = useWedding();
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
@@ -140,45 +150,43 @@ export default function Seserahan() {
   }, [filtered]);
 
   const toggle = async (item) => {
-    await pb.collection("seserahan_items").update(item.id, { checklist: !item.checklist });
-    await addLog(
-      `Seserahan "${item.detail}" ditandai ${!item.checklist ? "sudah dibeli" : "belum"}`,
-      "task"
-    );
-    toast.success(`"${item.detail}" ditandai ${!item.checklist ? "sudah dibeli" : "belum dibeli"}`);
-    reload();
+    try {
+      await toggleSeserahanChecklist(item);
+      toast.success(`"${item.detail}" ditandai ${!item.checklist ? "sudah dibeli" : "belum dibeli"}`);
+    } catch (err) {
+      toast.error("Gagal mengubah status: " + err.message);
+    }
   };
 
   const remove = async (item) => {
     if (!confirm(`Pindahkan "${item.detail}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
-    if (moveToTrash) {
-      await moveToTrash("seserahan_items", item, item.detail);
-    } else {
-      await pb.collection("seserahan_items").delete(item.id);
-      await addLog(`Item seserahan "${item.detail}" dihapus`, "task");
-      reload();
+    try {
+      await deleteSeserahan(item);
+      toast.info(`"${item.detail}" dipindahkan ke Tempat Sampah`);
+    } catch (err) {
+      toast.error("Gagal menghapus: " + err.message);
     }
-    toast.info(`"${item.detail}" dipindahkan ke Tempat Sampah`);
   };
 
   const addItem = async (e) => {
     e.preventDefault();
     if (!form.detail.trim()) return;
-    await pb.collection("seserahan_items").create({
-      couple: couple?.id,
-      category: form.category,
-      detail: form.detail.trim(),
-      brand: form.brand.trim(),
-      qty: Number(form.qty) || 1,
-      link: form.link.trim(),
-      budget: Number(form.budget) || 0,
-      checklist: false,
-    });
-    await addLog(`Item seserahan baru: "${form.detail.trim()}"`, "task");
-    toast.success(`Item "${form.detail.trim()}" berhasil ditambahkan`);
-    setForm({ ...form, detail: "", brand: "", link: "", budget: 0 });
-    setShowForm(false);
-    reload();
+    try {
+      await addSeserahan({
+        category: form.category,
+        detail: form.detail.trim(),
+        brand: form.brand.trim(),
+        qty: Number(form.qty) || 1,
+        link: form.link.trim(),
+        budget: Number(form.budget) || 0,
+        checklist: false,
+      });
+      toast.success(`Item "${form.detail.trim()}" berhasil ditambahkan`);
+      setForm({ ...form, detail: "", brand: "", link: "", budget: 0 });
+      setShowForm(false);
+    } catch (err) {
+      toast.error("Gagal menambahkan item: " + err.message);
+    }
   };
 
   const handleApplyTemplate = async () => {

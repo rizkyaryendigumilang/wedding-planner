@@ -302,7 +302,7 @@ export default function Login() {
             transition={{ duration: 0.6 }}
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brass-500/15 border border-brass-400/30 text-brass-300 text-xs font-medium mb-6 backdrop-blur-md"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-brass-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-brass-400" />
             Official Wedding Planner Platform
           </motion.div>
 

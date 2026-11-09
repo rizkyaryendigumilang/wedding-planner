@@ -289,7 +289,7 @@ export function DateRangePicker({
           <Calendar size={16} className="text-ink-faint shrink-0" />
           <span className="min-w-0">
             {label && (
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              <span className="block text-[11px] font-medium text-ink-muted">
                 {label}
               </span>
             )}
@@ -338,7 +338,7 @@ export function DateRangePicker({
         <div className="flex flex-col lg:flex-row gap-4">
           {presets && (
             <div className="lg:w-36 shrink-0 lg:border-r lg:border-line dark:lg:border-night-line lg:pr-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-2 px-2">
+              <p className="text-[11px] font-medium text-ink-muted mb-2 px-2">
                 Cepat
               </p>
               <div className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar">

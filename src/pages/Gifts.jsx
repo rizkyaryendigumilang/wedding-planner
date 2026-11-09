@@ -415,8 +415,9 @@ export default function Gifts() {
                       </h3>
 
                       {item.item_description && (
-                        <p className="text-xs text-ink-muted mt-0.5">
-                          🎁 {item.item_description}
+                        <p className="text-xs text-ink-muted mt-0.5 flex items-center gap-1.5">
+                          <Gift size={13} className="text-rose-500 shrink-0" />
+                          <span>{item.item_description}</span>
                         </p>
                       )}
 

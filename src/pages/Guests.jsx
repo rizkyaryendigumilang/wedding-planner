@@ -16,6 +16,7 @@ import {
   Settings2,
   CheckCircle2,
   Upload,
+  Lightbulb,
 } from "lucide-react";
 import {
   Page,
@@ -36,7 +37,6 @@ import {
 import { useWedding, DEFAULT_WA_TEMPLATE } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
 import { getCppNickname, getCpwNickname, getCoupleSlug } from "../lib/couple";
-import pb from "../lib/pocketbase";
 import { exportToCsv } from "../lib/export";
 import { formatDateConfigured } from "../lib/format";
 import { formatBankAccountsForWa } from "../lib/masterData";
@@ -388,10 +388,13 @@ export default function Guests() {
     loading,
     error,
     reload,
-    addLog,
     saveSettings,
     settings,
-    moveToTrash,
+    addGuest: createGuest,
+    updateGuest,
+    deleteGuest,
+    batchUpdateGuests,
+    batchAddGuests,
   } = useWedding();
   const { user } = useAuth();
   const cppNickname = getCppNickname(couple, user);
@@ -603,14 +606,11 @@ export default function Guests() {
 
     // Tandai otomatis bahwa undangan sudah terkirim
     if (!g.invitation_sent) {
-      try {
-        await pb.collection("wedding_guests").update(g.id, { invitation_sent: true });
-        reload();
-      } catch (err) {
+      updateGuest(g.id, { invitation_sent: true }).catch((err) => {
         console.warn("Gagal update status kirim undangan:", err);
-      }
+      });
     }
-  }, [getGuestWaMessage, reload]);
+  }, [getGuestWaMessage, updateGuest]);
 
   const copyGuestMessage = useCallback((g) => {
     const msg = getGuestWaMessage(g);
@@ -770,103 +770,102 @@ export default function Guests() {
     if (importModal.rows.length === 0) return;
     setImportModal((prev) => ({ ...prev, importing: true, progress: 0 }));
 
-    let successCount = 0;
-    const coupleId = couple?.id;
-
-    for (let i = 0; i < importModal.rows.length; i++) {
-      const guestData = importModal.rows[i];
-      try {
-        await pb.collection("wedding_guests").create({
-          ...guestData,
-          couple: coupleId,
-        });
-        successCount++;
-      } catch (err) {
-        console.warn("Gagal mengimpor tamu baris ke-", i, err);
-      }
+    try {
+      const results = await batchAddGuests(importModal.rows);
       setImportModal((prev) => ({
         ...prev,
-        progress: Math.round(((i + 1) / prev.rows.length) * 100),
+        importing: false,
+        result: `Berhasil mengimpor ${results.length} tamu!`,
       }));
+      toast.success(`Berhasil mengimpor ${results.length} tamu!`);
+    } catch (err) {
+      toast.error("Gagal mengimpor tamu: " + (err?.message || ""));
+      setImportModal((prev) => ({ ...prev, importing: false }));
     }
-
-    if (addLog) {
-      await addLog(`Mengimpor ${successCount} tamu dari berkas ${importModal.fileName}`, "guest");
-    }
-    await reload();
-
-    setImportModal((prev) => ({
-      ...prev,
-      importing: false,
-      result: `Berhasil mengimpor ${successCount} dari ${prev.rows.length} tamu!`,
-    }));
   };
 
-  const addGuest = async (e) => {
+  const handleAddGuestSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    await pb.collection("wedding_guests").create({
-      couple: couple?.id,
-      ...form,
-      name: form.name.trim(),
-      pax: Number(form.pax) || 1,
-    });
-    await addLog(`Tamu baru ditambahkan: ${form.name.trim()}`, "guest");
-    toast.success(`Tamu "${form.name.trim()}" berhasil ditambahkan!`);
-    setForm({
-      side: "CPP",
-      name: "",
-      relationship: "",
-      group_name: "",
-      priority: PRIORITIES[0],
-      pax: 1,
-      origin: "",
-      type: "Digital",
-      status: "Belum",
-      phone: "",
-      invitation_url: "",
-      table_number: "",
-    });
-    setShowForm(false);
-    reload();
+    try {
+      await createGuest({
+        ...form,
+        name: form.name.trim(),
+        pax: Number(form.pax) || 1,
+      });
+      toast.success(`Tamu "${form.name.trim()}" berhasil ditambahkan!`);
+      setForm({
+        side: "CPP",
+        name: "",
+        relationship: "",
+        group_name: "",
+        priority: PRIORITIES[0],
+        pax: 1,
+        origin: "",
+        type: "Digital",
+        status: "Belum",
+        phone: "",
+        invitation_url: "",
+        table_number: "",
+      });
+      setShowForm(false);
+    } catch (err) {
+      toast.error("Gagal menambahkan tamu: " + (err?.message || ""));
+    }
   };
 
-  const removeGuest = useCallback(async (g) => {
-    if (!confirm(`Pindahkan tamu "${g.name}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
-    if (moveToTrash) {
-      await moveToTrash("wedding_guests", g, g.name);
-    } else {
-      await pb.collection("wedding_guests").delete(g.id);
-      await addLog(`Tamu "${g.name}" dihapus`, "guest");
-      reload();
-    }
-    toast.info(`"${g.name}" dipindahkan ke Tempat Sampah`);
-  }, [moveToTrash, addLog, reload]);
+  const removeGuest = useCallback(
+    async (g) => {
+      if (!confirm(`Pindahkan tamu "${g.name}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
+      try {
+        await deleteGuest(g);
+        toast.info(`"${g.name}" dipindahkan ke Tempat Sampah`);
+      } catch (err) {
+        toast.error("Gagal menghapus tamu: " + (err?.message || ""));
+      }
+    },
+    [deleteGuest]
+  );
 
-  const cycleStatus = useCallback(async (g) => {
-    const order = ["Belum", "Hadir", "Tidak Hadir", "Tanpa Keterangan"];
-    const next = order[(order.indexOf(g.status || "Belum") + 1) % order.length];
-    await pb.collection("wedding_guests").update(g.id, { status: next });
-    toast.success(`Status ${g.name}: ${next}`);
-    reload();
-  }, [reload]);
+  const cycleStatus = useCallback(
+    async (g) => {
+      const order = ["Belum", "Hadir", "Tidak Hadir", "Tanpa Keterangan"];
+      const next = order[(order.indexOf(g.status || "Belum") + 1) % order.length];
+      try {
+        await updateGuest(g.id, { status: next });
+        toast.success(`Status ${g.name}: ${next}`);
+      } catch (err) {
+        toast.error("Gagal mengubah status: " + (err?.message || ""));
+      }
+    },
+    [updateGuest]
+  );
 
-  const toggleSentStatus = useCallback(async (g) => {
-    await pb.collection("wedding_guests").update(g.id, {
-      invitation_sent: !g.invitation_sent,
-    });
-    toast.success(`Undangan untuk ${g.name} ditandai ${!g.invitation_sent ? "Terkirim" : "Belum Kirim"}`);
-    reload();
-  }, [reload]);
+  const toggleSentStatus = useCallback(
+    async (g) => {
+      const nextSent = !g.invitation_sent;
+      try {
+        await updateGuest(g.id, { invitation_sent: nextSent });
+        toast.success(`Undangan untuk ${g.name} ditandai ${nextSent ? "Terkirim" : "Belum Kirim"}`);
+      } catch (err) {
+        toast.error("Gagal mengubah status kirim: " + (err?.message || ""));
+      }
+    },
+    [updateGuest]
+  );
 
-  const toggleInvitation = useCallback(async (g) => {
-    const nextType = g.type === "Digital" ? "Fisik" : "Digital";
-    await pb.collection("wedding_guests").update(g.id, {
-      type: nextType,
-    });
-    toast.info(`Jenis undangan ${g.name} diubah ke ${nextType}`);
-    reload();
-  }, [reload]);
+  const toggleInvitation = useCallback(
+    async (g) => {
+      const nextType = g.type === "Digital" ? "Fisik" : "Digital";
+      try {
+        await updateGuest(g.id, { type: nextType });
+        toast.info(`Jenis undangan ${g.name} diubah ke ${nextType}`);
+      } catch (err) {
+        toast.error("Gagal mengubah jenis undangan: " + (err?.message || ""));
+      }
+    },
+    [updateGuest]
+  );
 
   // REC-02: Seleksi Baris & Batch Actions
   const handleToggleSelect = useCallback((id) => {
@@ -899,17 +898,14 @@ export default function Guests() {
       if (ids.length === 0) return;
       triggerHaptic("medium");
       try {
-        await Promise.all(
-          ids.map((id) => pb.collection("wedding_guests").update(id, { invitation_sent: sent }))
-        );
+        await batchUpdateGuests(ids, { invitation_sent: sent });
         toast.success(`${ids.length} tamu ditandai ${sent ? "Terkirim" : "Belum Kirim"}!`);
         setSelectedGuestIds(new Set());
-        reload();
       } catch (err) {
         toast.error("Gagal update status undangan: " + (err?.message || ""));
       }
     },
-    [selectedGuestIds, reload]
+    [selectedGuestIds, batchUpdateGuests]
   );
 
   const handleBatchSetStatus = useCallback(
@@ -918,17 +914,14 @@ export default function Guests() {
       if (ids.length === 0) return;
       triggerHaptic("medium");
       try {
-        await Promise.all(
-          ids.map((id) => pb.collection("wedding_guests").update(id, { status }))
-        );
+        await batchUpdateGuests(ids, { status });
         toast.success(`${ids.length} tamu ditandai ${status}!`);
         setSelectedGuestIds(new Set());
-        reload();
       } catch (err) {
         toast.error("Gagal update status RSVP: " + (err?.message || ""));
       }
     },
-    [selectedGuestIds, reload]
+    [selectedGuestIds, batchUpdateGuests]
   );
 
   const handleBatchRemove = useCallback(async () => {
@@ -939,19 +932,14 @@ export default function Guests() {
     try {
       const guestsToRemove = guests.filter((g) => selectedGuestIds.has(g.id));
       for (const g of guestsToRemove) {
-        if (moveToTrash) {
-          await moveToTrash("wedding_guests", g, g.name);
-        } else {
-          await pb.collection("wedding_guests").delete(g.id);
-        }
+        await deleteGuest(g);
       }
       toast.info(`${ids.length} tamu dipindahkan ke Tempat Sampah.`);
       setSelectedGuestIds(new Set());
-      reload();
     } catch (err) {
-      toast.error("Gagal menghapus tamu: " + (err?.message || ""));
+      toast.error("Gagal menghapus sebagian tamu: " + (err?.message || ""));
     }
-  }, [selectedGuestIds, guests, moveToTrash, reload]);
+  }, [selectedGuestIds, guests, deleteGuest]);
 
   if (loading) return <Loading label="Memuat daftar tamu…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -1100,7 +1088,7 @@ export default function Guests() {
           >
             <Card>
               <SectionTitle>Tambah tamu baru</SectionTitle>
-              <form onSubmit={addGuest} className="mt-4 space-y-4">
+              <form onSubmit={handleAddGuestSubmit} className="mt-4 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <Field label="Pihak">
                     <Select
@@ -1260,7 +1248,7 @@ export default function Guests() {
                   : "bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
               <span>Belum Kirim WA ({unsentWaCount})</span>
             </button>
             <button
@@ -1533,10 +1521,11 @@ export default function Guests() {
                     onChange={(e) => setBaseInvitationUrl(e.target.value)}
                     placeholder={`https://undangan.me/${coupleSlug}`}
                   />
-                  <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
-                    💡 <strong>Tips:</strong> Karena undangan dibuat di vendor/website lain, cukup
+                  <p className="text-[11px] text-ink-muted mt-1 leading-relaxed flex items-start gap-1.5">
+                    <Lightbulb size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Tips:</strong> Karena undangan dibuat di vendor/website lain, cukup
                     masukkan link dasarnya di sini. Aplikasi akan otomatis menambahkan parameter
-                    nama tamu (contoh: <code className="font-mono">?to=Budi+Santoso</code>).
+                    nama tamu (contoh: <code className="font-mono">?to=Budi+Santoso</code>).</span>
                   </p>
                 </div>
 

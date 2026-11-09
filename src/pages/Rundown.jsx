@@ -15,6 +15,7 @@ import {
   Calendar,
   Sparkles,
   X,
+  Printer,
 } from "lucide-react";
 import {
   Page,
@@ -26,7 +27,9 @@ import {
   EmptyState,
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
+import { useAuth } from "../lib/auth";
 import { exportToCsv } from "../lib/export";
+import { printMasterGuidebook } from "../lib/weddingMasterGuidebook";
 import { triggerHaptic } from "../lib/haptic";
 import { toast } from "sonner";
 import { modalBackdropVariants, modalDialogVariants } from "../lib/motion";
@@ -140,6 +143,7 @@ const DEFAULT_RUNDOWN_TEMPLATE = [
 
 export default function Rundown() {
   const reduce = useReducedMotion();
+  const { user } = useAuth();
   const {
     rundowns = [],
     rundownSummary = {},
@@ -147,6 +151,10 @@ export default function Rundown() {
     addRundownEvent,
     updateRundownEvent,
     deleteRundownEvent,
+    couple,
+    vendors = [],
+    guests = [],
+    settings = {},
   } = useWedding();
 
   const [phaseFilter, setPhaseFilter] = useState("Semua");
@@ -288,6 +296,14 @@ export default function Rundown() {
         subtitle="Susunan jadwal acara akad &amp; resepsi, lokasi, dan kontak penanggung jawab."
         action={
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              icon={Printer}
+              onClick={() => printMasterGuidebook({ couple, rundowns, vendors, guests, settings, user })}
+              title="Cetak atau Simpan Buku Panduan Pernikahan ke PDF"
+            >
+              Buku Panduan (PDF)
+            </Button>
             {rundowns.length > 0 && (
               <Button
                 variant="secondary"
@@ -362,7 +378,7 @@ export default function Rundown() {
                   onClick={() => setPhaseFilter(ph)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition active:scale-[0.97] ${
                     active
-                      ? "bg-rose-600 text-white shadow-glow"
+                      ? "bg-rose-600 text-white shadow-sm"
                       : "bg-canvas-sunken dark:bg-night-sunken text-ink-muted hover:text-ink dark:hover:text-stone-100"
                   }`}
                 >

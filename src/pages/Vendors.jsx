@@ -16,6 +16,7 @@ import {
   Coins,
   Phone,
   Banknote,
+  Paperclip,
 } from "lucide-react";
 import {
   Page,
@@ -71,6 +72,7 @@ const VendorTaskItem = memo(function VendorTaskItem({
   onToggleSettlement,
   onSendWhatsApp,
   onRemove,
+  onUploadAttachment,
 }) {
   const meta = deadlineMeta(item.deadline_date);
   const MetaIcon = meta.icon;
@@ -99,7 +101,7 @@ const VendorTaskItem = memo(function VendorTaskItem({
           >
             {item.activity_name}
           </span>
-          {(Number(item.total_cost || 0) > 0 || Number(item.dp_amount || 0) > 0 || item.vendor_phone) && (
+          {(Number(item.total_cost || 0) > 0 || Number(item.dp_amount || 0) > 0 || item.vendor_phone || item.attachment) && (
             <div className="flex items-center gap-2 mt-1 text-xs text-ink-faint flex-wrap">
               {Number(item.total_cost || 0) > 0 && (
                 <span className="font-semibold text-ink dark:text-stone-200">
@@ -120,12 +122,46 @@ const VendorTaskItem = memo(function VendorTaskItem({
                   <span>{item.vendor_phone}</span>
                 </button>
               )}
+              {item.attachment && (
+                <a
+                  href={pb.files.getURL(item, item.attachment)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 hover:underline font-medium ml-1"
+                  title="Buka lampiran berkas/invoice"
+                >
+                  <Paperclip size={11} />
+                  <span>Berkas</span>
+                </a>
+              )}
             </div>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end pl-8 sm:pl-0">
+        {/* Tombol Lampiran Berkas / Unggah */}
+        {!item.attachment && (
+          <label
+            title="Unggah berkas kontrak atau struk pembayaran"
+            className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+          >
+            <Paperclip size={12} />
+            <span className="hidden sm:inline">Lampirkan</span>
+            <input
+              type="file"
+              accept=".pdf,image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onUploadAttachment(item, file);
+                  e.target.value = "";
+                }
+              }}
+            />
+          </label>
+        )}
         {/* Tombol Toggle DP */}
         {(Number(item.total_cost || 0) > 0 || Number(item.dp_amount || 0) > 0) && (
           <button
@@ -178,8 +214,21 @@ const VendorTaskItem = memo(function VendorTaskItem({
 });
 
 export default function Vendors() {
-  const { vendors, vendorSummary, couple, settings, loading, error, reload, addLog, moveToTrash } =
-    useWedding();
+  const {
+    vendors,
+    vendorSummary,
+    couple,
+    settings,
+    loading,
+    error,
+    reload,
+    addVendor,
+    updateVendor,
+    deleteVendor,
+    toggleVendorStatus,
+    toggleVendorDp,
+    toggleVendorSettlement,
+  } = useWedding();
   const { user } = useAuth();
   const coupleName = getCoupleDisplayName(couple, user, "Calon Pengantin");
   const coupleSlug = getCoupleSlug(couple, user);
@@ -192,6 +241,7 @@ export default function Vendors() {
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, OVERDUE, WEEK, PENDING, DONE
   const [showForm, setShowForm] = useState(false);
   const [copiedBriefing, setCopiedBriefing] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState(null);
   const [notifGranted, setNotifGranted] = useState(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return false;
     return Notification.permission === "granted";
@@ -309,40 +359,17 @@ export default function Vendors() {
     [vendors]
   );
 
-  const toggle = useCallback(async (item) => {
-    await pb.collection("vendor_checklists").update(item.id, {
-      is_completed: !item.is_completed,
-    });
-    await addLog(
-      `"${item.activity_name}" ditandai ${!item.is_completed ? "selesai" : "belum selesai"}`,
-      "task"
-    );
-    reload();
-  }, [addLog, reload]);
+  const toggle = useCallback((item) => {
+    toggleVendorStatus(item).catch((err) => toast.error("Gagal ubah status: " + err.message));
+  }, [toggleVendorStatus]);
 
-  const toggleDp = useCallback(async (item) => {
-    const nextVal = !item.dp_paid;
-    await pb.collection("vendor_checklists").update(item.id, {
-      dp_paid: nextVal,
-    });
-    await addLog(
-      `DP vendor "${item.activity_name}" ditandai ${nextVal ? "sudah dibayar" : "belum dibayar"}`,
-      "task"
-    );
-    reload();
-  }, [addLog, reload]);
+  const toggleDp = useCallback((item) => {
+    toggleVendorDp(item).catch((err) => toast.error("Gagal ubah status DP: " + err.message));
+  }, [toggleVendorDp]);
 
-  const toggleSettlement = useCallback(async (item) => {
-    const nextVal = !item.settlement_paid;
-    await pb.collection("vendor_checklists").update(item.id, {
-      settlement_paid: nextVal,
-    });
-    await addLog(
-      `Pelunasan vendor "${item.activity_name}" ditandai ${nextVal ? "sudah lunas" : "belum lunas"}`,
-      "task"
-    );
-    reload();
-  }, [addLog, reload]);
+  const toggleSettlement = useCallback((item) => {
+    toggleVendorSettlement(item).catch((err) => toast.error("Gagal ubah status pelunasan: " + err.message));
+  }, [toggleVendorSettlement]);
 
   const sendVendorWhatsApp = useCallback((v) => {
     if (!v.vendor_phone) return;
@@ -364,44 +391,77 @@ export default function Vendors() {
 
   const remove = useCallback(async (item) => {
     if (!confirm(`Pindahkan tugas "${item.activity_name}" ke Tempat Sampah? Anda dapat memulihkannya kembali dari menu Pengaturan.`)) return;
-    if (moveToTrash) {
-      await moveToTrash("vendor_checklists", item, item.activity_name);
-    } else {
-      await pb.collection("vendor_checklists").delete(item.id);
-      await addLog(`Tugas "${item.activity_name}" dihapus`, "task");
-      reload();
+    try {
+      await deleteVendor(item);
+      toast.success(`Tugas "${item.activity_name}" dipindahkan ke Tempat Sampah`);
+    } catch (err) {
+      toast.error("Gagal menghapus: " + err.message);
     }
-  }, [moveToTrash, addLog, reload]);
+  }, [deleteVendor]);
+
+  const handleUploadAttachment = useCallback(async (item, file) => {
+    try {
+      const formData = new FormData();
+      formData.append("attachment", file);
+      await updateVendor(item.id, formData);
+      toast.success(`Berkas untuk "${item.activity_name}" berhasil diunggah!`);
+    } catch (err) {
+      toast.error("Gagal mengunggah berkas: " + (err?.message || ""));
+    }
+  }, [updateVendor]);
 
   const addItem = async (e) => {
     e.preventDefault();
     if (!form.activity_name.trim()) return;
-    await pb.collection("vendor_checklists").create({
-      couple: couple?.id,
-      category: form.category,
-      activity_name: form.activity_name.trim(),
-      deadline_date: form.deadline_date ? `${form.deadline_date} 00:00:00.000Z` : undefined,
-      is_completed: false,
-      total_cost: Number(form.total_cost) || 0,
-      dp_amount: Number(form.dp_amount) || 0,
-      dp_paid: Boolean(form.dp_paid),
-      settlement_paid: Boolean(form.settlement_paid),
-      vendor_phone: form.vendor_phone.trim(),
-      sort_order: vendors.length + 1,
-    });
-    await addLog(`Tugas baru: "${form.activity_name.trim()}"`, "task");
-    setForm({
-      category: CATEGORIES[0],
-      activity_name: "",
-      deadline_date: "",
-      total_cost: "",
-      dp_amount: "",
-      dp_paid: false,
-      settlement_paid: false,
-      vendor_phone: "",
-    });
-    setShowForm(false);
-    reload();
+
+    try {
+      if (attachmentFile) {
+        const formData = new FormData();
+        formData.append("category", form.category);
+        formData.append("activity_name", form.activity_name.trim());
+        if (form.deadline_date) {
+          formData.append("deadline_date", `${form.deadline_date} 00:00:00.000Z`);
+        }
+        formData.append("is_completed", "false");
+        formData.append("total_cost", String(Number(form.total_cost) || 0));
+        formData.append("dp_amount", String(Number(form.dp_amount) || 0));
+        formData.append("dp_paid", String(Boolean(form.dp_paid)));
+        formData.append("settlement_paid", String(Boolean(form.settlement_paid)));
+        formData.append("vendor_phone", form.vendor_phone.trim());
+        formData.append("sort_order", String(vendors.length + 1));
+        formData.append("attachment", attachmentFile);
+        await addVendor(formData);
+      } else {
+        await addVendor({
+          category: form.category,
+          activity_name: form.activity_name.trim(),
+          deadline_date: form.deadline_date ? `${form.deadline_date} 00:00:00.000Z` : undefined,
+          is_completed: false,
+          total_cost: Number(form.total_cost) || 0,
+          dp_amount: Number(form.dp_amount) || 0,
+          dp_paid: Boolean(form.dp_paid),
+          settlement_paid: Boolean(form.settlement_paid),
+          vendor_phone: form.vendor_phone.trim(),
+          sort_order: vendors.length + 1,
+        });
+      }
+
+      toast.success("Tugas vendor berhasil disimpan!");
+      setForm({
+        category: CATEGORIES[0],
+        activity_name: "",
+        deadline_date: "",
+        total_cost: "",
+        dp_amount: "",
+        dp_paid: false,
+        settlement_paid: false,
+        vendor_phone: "",
+      });
+      setAttachmentFile(null);
+      setShowForm(false);
+    } catch (err) {
+      toast.error("Gagal menyimpan tugas vendor: " + (err?.message || ""));
+    }
   };
 
   /**
@@ -767,6 +827,17 @@ export default function Vendors() {
                         <span>Pelunasan Sudah Lunas</span>
                       </label>
                     </div>
+
+                    <div className="sm:col-span-2 lg:col-span-4 mt-1">
+                      <Field label="Lampiran Kontrak / Struk Pembayaran (PDF / Gambar)">
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                          className="block w-full text-xs text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-500/10 file:text-rose-700 dark:file:text-rose-300 hover:file:bg-rose-500/20 cursor-pointer"
+                        />
+                      </Field>
+                    </div>
                   </div>
                 </div>
 
@@ -911,6 +982,7 @@ export default function Vendors() {
                       onToggleSettlement={toggleSettlement}
                       onSendWhatsApp={sendVendorWhatsApp}
                       onRemove={remove}
+                      onUploadAttachment={handleUploadAttachment}
                     />
                   ))}
                 </div>
