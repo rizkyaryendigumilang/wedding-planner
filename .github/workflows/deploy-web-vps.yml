@@ -12,6 +12,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.js'
+      - 'vitest.config.js'
+      - 'tests/**'
       - '.github/workflows/deploy-web-vps.yml'
   pull_request:
     branches:
@@ -24,6 +26,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.js'
+      - 'vitest.config.js'
+      - 'tests/**'
       - '.github/workflows/deploy-web-vps.yml'
   workflow_dispatch:
     inputs:
@@ -59,6 +63,9 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Run Vitest unit tests
+        run: npm test
 
       - name: Build for the /wedding/ route
         env:
