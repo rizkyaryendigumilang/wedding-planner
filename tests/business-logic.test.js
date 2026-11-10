@@ -130,5 +130,22 @@ describe("business-logic.test.js unit tests", () => {
       expect(stats.rundownSummary.done).toBe(1);
       expect(stats.rundownSummary.remaining).toBe(1);
     });
+
+    it("correctly groups seserahan budgets including backward-compatible sangjit items", () => {
+      const mockBudgets = [
+        { id: "b1", detail: "Kotak Seserahan Adat", budget_type: "seserahan", total_biaya: 2500000 },
+        { id: "b2", detail: "Kain & Pakaian Adat", budget_type: "sangjit", total_biaya: 1500000 },
+        { id: "b3", detail: "Gedung Resepsi", budget_type: "wedding", total_biaya: 25000000 },
+      ];
+
+      const seserahanBudgets = mockBudgets.filter(
+        (b) => b.budget_type === "seserahan" || b.budget_type === "sangjit"
+      );
+      const weddingBudgets = mockBudgets.filter((b) => b.budget_type === "wedding");
+
+      expect(seserahanBudgets).toHaveLength(2);
+      expect(weddingBudgets).toHaveLength(1);
+      expect(seserahanBudgets.map((b) => b.id)).toEqual(["b1", "b2"]);
+    });
   });
 });

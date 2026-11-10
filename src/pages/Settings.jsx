@@ -33,7 +33,10 @@ import {
   Shield,
   Landmark,
   Tags,
+  LifeBuoy,
 } from "lucide-react";
+import { formatUserRole } from "../lib/helpdesk";
+import HelpdeskModal from "../components/HelpdeskModal";
 import {
   Page,
   PageHeader,
@@ -166,6 +169,7 @@ export default function Settings() {
   };
 
   const [rawActiveTab, setActiveTab] = useState("acara");
+  const [helpdeskModalOpen, setHelpdeskModalOpen] = useState(false);
   const activeTab =
     isPanitia && (rawActiveTab === "pasangan" || rawActiveTab === "cadangan" || rawActiveTab === "sampah" || rawActiveTab === "rekening" || rawActiveTab === "demo")
       ? "acara"
@@ -2516,9 +2520,59 @@ export default function Settings() {
                 </Button>
               </div>
             </Card>
+
+            {/* Pusat Bantuan & Laporkan Kendala (VPS Helpdesk SSO Handoff) */}
+            <Card>
+              <SectionTitle count="SSO Helpdesk">Bantuan &amp; Laporkan Kendala</SectionTitle>
+              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                Mengalami kendala teknis, bug antarmuka, atau memerlukan bantuan pengelolaan pernikahan?
+                Buka tiket langsung ke sistem VPS Helpdesk terpusat tanpa harus login atau registrasi ulang.
+              </p>
+
+              <div className="mt-4 p-4 rounded-3xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0 border border-rose-500/20">
+                    <LifeBuoy size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-ink dark:text-stone-100 flex items-center gap-2">
+                      <span>Buat Tiket Dukungan Baru</span>
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        SSO JIT
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
+                      Sesi akun <strong className="text-ink dark:text-stone-200">{user?.name || user?.username || "Pengguna"}</strong> ({formatUserRole(user)}) dan tautan halaman aktif akan otomatis diteruskan ke formulir tiket baru.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={LifeBuoy}
+                  onClick={() => setHelpdeskModalOpen(true)}
+                  className="shrink-0 whitespace-nowrap self-start sm:self-auto"
+                >
+                  Bantuan / Lapor Kendala
+                </Button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-faint">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Terhubung ke VPS Helpdesk: <code className="font-mono text-[10px] text-ink-muted">https://43.156.236.102/helpdesk</code></span>
+              </div>
+            </Card>
           </motion.div>
         )}
       </div>
+
+      {/* Modal Terpadu Laporkan Kendala / Bantuan */}
+      <HelpdeskModal
+        isOpen={helpdeskModalOpen}
+        onClose={() => setHelpdeskModalOpen(false)}
+        user={user}
+      />
     </Page>
   );
 }

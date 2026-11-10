@@ -30,7 +30,7 @@ Gunakan akun demo berikut untuk mencoba seluruh fitur secara langsung melalui br
 - **Apa fungsinya:** Menggantikan rumus Excel yang rumit untuk mencatat uang masuk dan uang keluar selama persiapan nikah.
 - **Detail fitur yang bisa dipakai:**
   - **Pemasukan Gabungan:** Catat saldo awal dan tambahan tabungan bulanan dari Calon Pengantin Pria (CPP), Calon Pengantin Wanita (CPW), maupun dukungan orang tua.
-  - **86 Pos Pengeluaran Terpisah:** Pisahkan anggaran acara **Lamaran / Sangjit** dan **Akad & Resepsi** ke dalam kategori Gedung, Katering, Dekorasi, Rias & Busana, Dokumentasi, Suvenir, hingga Biaya Tak Terduga.
+  - **86 Pos Pengeluaran Terpisah:** Pisahkan anggaran acara **Lamaran / Seserahan** dan **Akad & Resepsi** ke dalam kategori Gedung, Katering, Dekorasi, Rias & Busana, Dokumentasi, Suvenir, hingga Biaya Tak Terduga.
   - **Perbandingan Rencana vs Pengeluaran Asli:** Lihat langsung pos mana yang masih sesuai budget dan mana yang melebihi rencana, lengkap dengan status **Belum Bayar**, **Cicilan DP**, atau **Lunas**.
   - **Kalkulator Target Menabung:** Menghitung otomatis berapa rupiah yang perlu disisihkan setiap bulan sampai hari-H agar target anggaran tercapai.
 
@@ -69,7 +69,7 @@ Gunakan akun demo berikut untuk mencoba seluruh fitur secara langsung melalui br
   - **Catatan & Status Berkas:** Tandai berkas yang sudah selesai diurus dan tambahkan catatan lokasi penyimpanan dokumen asli.
 
 ### 8. Daftar Belanja Seserahan & Link Toko Online (45 Barang)
-- **Apa fungsinya:** Mengatur daftar barang hantaran/seserahan dan angpao/kebutuhan Sangjit agar sesuai budget.
+- **Apa fungsinya:** Mengatur daftar barang hantaran dan seserahan pernikahan agar sesuai budget.
 - **Detail fitur yang bisa dipakai:**
   - **7 Kategori Seserahan:** Mulai dari Perlengkapan Ibadah, Perawatan Tubuh, Makeup, Pakaian Dalam, Busana Pesta, Sepatu & Tas, hingga Makanan/Buah.
   - **Simpan Link Shopee / Tokopedia:** Simpan tautan produk toko online langsung di tiap barang, bandingkan harga perkiraan dengan harga beli asli, dan tandai barang yang sudah dibeli atau sudah dihias di kotak seserahan.

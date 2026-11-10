@@ -35,7 +35,7 @@ Dokumen ini disusun menggunakan disiplin **Technical Writer** dan prinsip **No-A
 ### Slide 03 — Anggaran & Tabungan (`ig-03-anggaran.png`)
 - **Kicker:** `02 — ANGGARAN, ARUS KAS & TARGET TABUNGAN`
 - **Headline:** Target Rp 85 juta, terkumpul Rp 62 juta. Selisih tabungan dihitung per bulan.
-- **Deskripsi Teknis:** Catat pemasukan CPP & CPW, pisahkan anggaran Sangjit dan Resepsi di 86 pos biaya, lalu pantau selisih pagu rencana terhadap pengeluaran aktual tanpa rumus manual.
+- **Deskripsi Teknis:** Catat pemasukan CPP & CPW, pisahkan anggaran Seserahan dan Resepsi di 86 pos biaya, lalu pantau selisih pagu rencana terhadap pengeluaran aktual tanpa rumus manual.
 - **Sorotan Zoom Web View:** Kalkulator tabungan bulanan menghitung otomatis nominal yang harus disisihkan tiap bulan hingga hari-H.
 
 ### Slide 04 — Database Tamu & RSVP WhatsApp (`ig-04-tamu.png`)
@@ -89,7 +89,7 @@ Rencana nikah biasanya tercecer di 7 file spreadsheet, 3 grup WhatsApp keluarga,
 Aplikasi Wedding Planner ini menyatukan seluruh tahapan persiapan dari lamaran sampai meja buku tamu hari-H di satu sistem Web & Mobile:
 
 1. Dasbor Kesiapan: Hitung mundur hari-H, persentase kesiapan tiap modul, dan pengingat otomatis saat jadwal vendor mendekati tenggat.
-2. Anggaran & Arus Kas: Catat pemasukan CPP & CPW, pisahkan 86 pos biaya Sangjit & Resepsi, dan hitung otomatis sisa tabungan per bulan.
+2. Anggaran & Arus Kas: Catat pemasukan CPP & CPW, pisahkan 86 pos biaya Seserahan & Resepsi, dan hitung otomatis sisa tabungan per bulan.
 3. Database Tamu & RSVP: Kelola 165 undangan (281 pax) per circle dan prioritas A/B/C. Kirim pesan WhatsApp personal dengan nama tamu terisi otomatis dalam satu klik.
 4. Meja Buku Tamu Hari-H: Cari nama tamu dalam 2 detik saat tiba di gedung, catat jumlah pax aktual, suvenir, serta tamu walk-in langsung dari HP.
 5. Rundown & Kalender (.ics): Susun jadwal dari sesi rias pukul 05.00 hingga penutupan resepsi lengkap dengan nomor kontak PIC.
@@ -123,5 +123,5 @@ Komentar "DEMO" atau kirim DM untuk tautan akses demo & info pembelian.
 
 - **Tanpa kata terlarang (`delve`, `leverage`, `streamline`, `game changer`, `revolusioner`, `seamless`):** Lulus.
 - **Tanpa kontras biner palsu (`"Bukan sekadar X, tapi Y"`):** Lulus.
-- **Spesifik & lulus uji portabilitas (menyebut modul nyata: N1–N4 KUA, CPP/CPW, Sangjit, pax, suvenir, `.ics`, Shopee, `demo`/`demo123`):** Lulus.
+- **Spesifik & lulus uji portabilitas (menyebut modul nyata: N1–N4 KUA, CPP/CPW, Seserahan, pax, suvenir, `.ics`, Shopee, `demo`/`demo123`):** Lulus.
 - **Kalimat aktif dengan kata kerja langsung (`Catat`, `Kelompokkan`, `Kirim`, `Pantau`, `Bagikan`):** Lulus.

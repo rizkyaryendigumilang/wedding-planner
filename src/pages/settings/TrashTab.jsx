@@ -35,8 +35,15 @@ function renderTrashItemDetails(item) {
       return `${d.pax || 1} Pax • ${d.side || "CPP"}${d.group_name ? ` • ${d.group_name}` : ""}${d.table_number ? ` • Meja ${d.table_number}` : ""}`;
     case "vendor_checklists":
       return `Kategori: ${d.category || "-"}${d.total_cost ? ` • Biaya: ${formatRupiah(d.total_cost)}` : ""}`;
-    case "budgets":
-      return `Kategori: ${d.category || "-"} • Jenis: ${d.budget_type || "-"}${d.total_biaya ? ` • Total: ${formatRupiah(d.total_biaya)}` : ""}`;
+    case "budgets": {
+      const typeLabel =
+        d.budget_type === "sangjit" || d.budget_type === "seserahan"
+          ? "Seserahan"
+          : d.budget_type === "wedding"
+          ? "Pernikahan"
+          : d.budget_type || "-";
+      return `Kategori: ${d.category || "-"} • Jenis: ${typeLabel}${d.total_biaya ? ` • Total: ${formatRupiah(d.total_biaya)}` : ""}`;
+    }
     case "cashflow_entries":
       return `${d.kind === "income" ? "Pemasukan" : "Pengeluaran"} • ${formatRupiah(d.amount || 0)} (${d.owner || "Bersama"})`;
     case "seserahan_items":

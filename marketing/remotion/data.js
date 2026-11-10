@@ -1,10 +1,9 @@
 /**
  * Data & Naskah Penjualan Fitur — Wedding Planner
- * Disusun mengikuti prinsip Technical Writer, No-AI-Slop, dan Kill-AI-Slop:
- * - Bahasa Indonesia sehari-hari yang mudah dimengerti calon pengantin & keluarga
- * - Kalimat aktif (Active Voice), langsung menjelaskan fungsi & cara kerja tiap fitur
- * - Elaborasi sub-fitur secara konkret berdasarkan data nyata di akun demo (demo / demo123)
- * - Tanpa alamat IP server dan tanpa jargon birokrasi/klise AI
+ * Mencakup:
+ * - 10 Slide Carousel Instagram (4:5, 9:16, 1:1)
+ * - 12 Adegan Video Rekaman Live Browser (11 Menu Web Desktop Penuh + 1 Sesi Khusus HP iPhone ber-Notch)
+ *   Durasi total: 1200 frame @ 30fps = 40.0 detik (tempo cepat & ringkas untuk Reels/TikTok & Feed 4:5)
  */
 
 export const BRAND = {
@@ -62,7 +61,7 @@ export const SLIDES = [
     section: "Anggaran, Arus Kas & Target Tabungan",
     headline: "Atur budget Rp 85 juta tanpa rumus Excel. Tahu persis uang keluar ke mana.",
     subcopy:
-      "Catat pemasukan tabungan pengantin pria & wanita, pisahkan biaya Lamaran/Sangjit dan Resepsi ke dalam 86 pos pengeluaran (gedung, katering, rias, dekorasi), lalu pantau selisih rencana budget dengan pengeluaran asli beserta target menabung bulanan.",
+      "Catat pemasukan tabungan pengantin pria & wanita, pisahkan biaya Lamaran/Seserahan dan Resepsi ke dalam 86 pos pengeluaran (gedung, katering, rias, dekorasi), lalu pantau selisih rencana budget dengan pengeluaran asli beserta target menabung bulanan.",
     webShot: "d-budget",
     mobileShot: "m-budget-wedding",
     layout: "web-zoom-mobile",
@@ -148,135 +147,293 @@ export const SLIDES = [
 ];
 
 /**
- * Skenario Video Overview Remotion (Reels 9:16 & Feed 4:5)
- * Menampilkan Web View dengan animasi Zoom-In / Zoom-Out + iPhone Notch Mobile View
+ * 12 Adegan Video Rekaman Live Browser (40 Detik / 1200 Frame @ 30fps):
+ * - Adegan 1–11: Layar penuh Web Desktop masuk ke semua 11 menu satu per satu
+ *   dengan kursor aktif & efek kamera Zoom-In (ke sidebar lalu ke isi halaman) & Zoom-Out.
+ * - Adegan 12: Sesi khusus tampilan HP iPhone ber-Notch (Mobile View Live + Dark Mode + Akun Demo).
  */
 export const VIDEO_SCENES = [
   {
-    id: "intro",
-    durationInFrames: 120, // 4.0s @ 30fps
-    section: "Aplikasi Persiapan Nikah • Web & iPhone",
-    title: "Semua persiapan nikah rapi di satu tempat, tersambung di laptop dan HP.",
+    id: "01-dashboard",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 01 / 11 • DASHBOARD",
+    section: "Menu 1: Dashboard Utama & Pengingat",
+    title: "Menu Dashboard: Pantau hitung mundur & kesiapan acara dalam satu layar.",
     subtitle:
-      "Atur tabungan & budget, daftar tamu, undangan WhatsApp, jadwal vendor, berkas KUA, seserahan, hingga buku tamu resepsi tanpa pindah-pindah file spreadsheet.",
+      "Begitu masuk, langsung terlihat sisa hari menuju akad, dana tabungan terkumpul, progres persiapan, dan peringatan tugas minggu ini.",
     highlights: [
-      "Tampilan Web Desktop & HP iPhone sinkron otomatis",
-      "Hitung mundur hari-H & pengingat tugas mingguan",
-      "Akun terpisah untuk Pengantin (Penuh) & Panitia/WO",
+      "Hitung mundur waktu menuju hari-H (hari, jam, menit, detik)",
+      "Progres tabungan Rp 62 juta dari target Rp 85 juta",
+      "Pusat peringatan otomatis: tagihan vendor & follow-up tamu VIP",
     ],
+    videoClip: "web-01-dashboard.mp4",
     webShot: "d-dashboard",
     mobileShot: "m-dashboard",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.26, x: -45, y: -22 },
-      { frame: 105, scale: 1.02, x: 0, y: 0 },
+      { frame: 24, scale: 1.32, x: 95, y: 38 },
+      { frame: 64, scale: 1.24, x: -38, y: -22 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -28],
   },
   {
-    id: "budget",
-    durationInFrames: 120, // 4.0s
-    section: "Anggaran, Arus Kas & Tabungan",
-    title: "Atur budget Rp 85 juta di 86 pos biaya tanpa pusing rumus manual.",
+    id: "02-itinerary",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 02 / 11 • ITINERARY",
+    section: "Menu 2: Itinerary & Rundown Hari-H",
+    title: "Menu Itinerary: Susunan acara menit demi menit & kontak WA PIC.",
     subtitle:
-      "Catat tabungan pengantin pria & wanita, pisahkan biaya Lamaran dan Resepsi, lalu pantau otomatis selisih rencana budget dengan pengeluaran asli.",
+      "Atur jadwal rias subuh, prosesi akad, hingga resepsi. Dilengkapi tombol hubungi penanggung jawab (PIC) & ekspor ke Google/Apple Calendar (.ics).",
     highlights: [
-      "Pisahkan pos biaya Lamaran/Sangjit & Resepsi",
-      "Hitung otomatis target tabungan per bulan hingga hari-H",
-      "Pantau status lunas, cicilan DP, dan sisa tagihan",
+      "Filter jadwal per sesi: Persiapan, Akad Nikah, & Resepsi",
+      "Tombol WhatsApp langsung ke PIC tiap seksi acara",
+      "Ekspor jadwal ke aplikasi Kalender HP (.ics) & file CSV",
     ],
+    videoClip: "web-02-itinerary.mp4",
+    webShot: "d-rundown",
+    mobileShot: "m-rundown",
+    cameraKeyframes: [
+      { frame: 0, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: 35 },
+      { frame: 64, scale: 1.25, x: -42, y: -20 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
+    ],
+  },
+  {
+    id: "03-reception",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 03 / 11 • MEJA TAMU",
+    section: "Menu 3: Meja Buku Tamu & Check-In Resepsi",
+    title: "Menu Meja Tamu: Cari nama tamu 2 detik, tandai hadir & suvenir.",
+    subtitle:
+      "Dipakai oleh petugas penerima tamu di lobi gedung untuk mencatat kehadiran aktual, jumlah orang masuk, nomor meja VIP, dan tamu walk-in.",
+    highlights: [
+      "Pencarian nama tamu instan saat antrean di gedung resepsi",
+      "Catat jumlah orang hadir (pax), meja VIP, & pengambilan suvenir",
+      "Tambah tamu baru yang datang langsung di tempat (Walk-In)",
+    ],
+    videoClip: "web-03-reception.mp4",
+    webShot: "d-reception",
+    mobileShot: "m-reception",
+    cameraKeyframes: [
+      { frame: 0, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: 28 },
+      { frame: 64, scale: 1.26, x: -40, y: -18 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
+    ],
+  },
+  {
+    id: "04-budget",
+    mode: "web-full",
+    durationInFrames: 105,
+    menuBadge: "MENU 04 / 11 • ANGGARAN",
+    section: "Menu 4: Anggaran, Arus Kas, Seserahan & Pernikahan",
+    title: "Menu Anggaran: Kelola arus kas, biaya Seserahan, & 86 pos pernikahan.",
+    subtitle:
+      "Catat pemasukan tabungan pengantin pria & wanita, pindah antar tab Arus Kas, Seserahan, dan Pernikahan, serta pantau sisa tagihan vendor.",
+    highlights: [
+      "3 Sub-Tab Lengkap: Arus Kas Tabungan, Seserahan, & Pernikahan",
+      "Bandingkan rencana budget vs pengeluaran asli di 86 pos biaya",
+      "Hitung otomatis target tabungan per bulan sampai hari-H",
+    ],
+    videoClip: "web-04-budget.mp4",
     webShot: "d-budget",
     mobileShot: "m-budget-wedding",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.28, x: -42, y: -25 },
-      { frame: 105, scale: 1.02, x: 0, y: 0 },
+      { frame: 24, scale: 1.34, x: 105, y: 20 },
+      { frame: 72, scale: 1.28, x: -42, y: -25 },
+      { frame: 98, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -36],
   },
   {
-    id: "guests",
-    durationInFrames: 120, // 4.0s
-    section: "Daftar Tamu & Undangan WhatsApp",
-    title: "Kelola 165 undangan (281 orang) & kirim pesan WhatsApp sekali klik.",
+    id: "05-gifts",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 05 / 11 • KADO & ANGPAO",
+    section: "Menu 5: Rekap Kado, Amplop Tunai, QRIS & Emas",
+    title: "Menu Kado & Angpao: Catat amplop tunai, transfer QRIS, & kado fisik.",
     subtitle:
-      "Kelompokkan tamu dari pihak pria/wanita, keluarga, teman kantor, dan prioritas A/B/C. Pesan WhatsApp otomatis menyapa nama masing-masing tamu.",
+      "Rekap seluruh tanda kasih dari tamu undangan beserta taksiran nilai dan penanda status pengiriman pesan ucapan terima kasih.",
     highlights: [
-      "Template pesan WhatsApp otomatis berisi nama tamu",
-      "Filter cepat status konfirmasi hadir (RSVP) & jumlah orang",
-      "Impor & ekspor data tamu lewat file CSV/Excel kapan saja",
+      "Pisahkan kategori: Amplop Tunai, Transfer/QRIS, Emas, & Kado Fisik",
+      "Tandai tamu yang sudah dikirimi ucapan terima kasih",
+      "Data kado & nominal uang otomatis dikunci dari akun Panitia",
     ],
+    videoClip: "web-05-gifts.mp4",
+    webShot: "d-gifts",
+    mobileShot: "m-gifts",
+    cameraKeyframes: [
+      { frame: 0, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: 12 },
+      { frame: 64, scale: 1.25, x: -40, y: -20 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
+    ],
+  },
+  {
+    id: "06-guests",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 06 / 11 • DAFTAR TAMU",
+    section: "Menu 6: Database Tamu & Kirim Undangan WhatsApp",
+    title: "Menu Tamu: Kelola 165 undangan (281 orang) & kirim WA sekali klik.",
+    subtitle:
+      "Kelompokkan tamu dari pihak pria/wanita, keluarga, teman kantor, dan prioritas A/B/C. Kirim pesan WhatsApp otomatis menyapa nama tamu.",
+    highlights: [
+      "Tombol Kirim WA otomatis menyisipkan nama tamu & link undangan",
+      "Filter cepat berdasarkan pihak CPP/CPW, kategori, & prioritas A/B/C",
+      "Impor dan ekspor daftar tamu lewat file Excel/CSV",
+    ],
+    videoClip: "web-06-guests.mp4",
     webShot: "d-guests",
     mobileShot: "m-guests",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.26, x: -38, y: -24 },
-      { frame: 105, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: 4 },
+      { frame: 64, scale: 1.26, x: -42, y: -22 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -32],
   },
   {
-    id: "harih",
-    durationInFrames: 120, // 4.0s
-    section: "Meja Buku Tamu & Rundown Hari-H",
-    title: "Check-in tamu di gedung 2 detik & jadwal acara menit demi menit.",
+    id: "07-vendors",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 07 / 11 • VENDOR",
+    section: "Menu 7: Checklist Tugas & Jatuh Tempo Vendor",
+    title: "Menu Vendor: Pantau 52 tugas vendor dari booking hingga lunas.",
     subtitle:
-      "Petugas buku tamu cukup buka dari HP untuk mencatat tamu hadir, suvenir, dan tamu walk-in. Jadwal rundown lengkap dengan kontak WA penanggung jawab (PIC).",
+      "Lacak progres survei gedung, food tasting katering, fitting busana, hingga tanggal jatuh tempo pembayaran DP setiap vendor.",
     highlights: [
-      "Layar khusus penerima tamu: cari nama & check-in instan",
-      "Rundown Persiapan, Akad, & Resepsi mulai pukul 05.00",
-      "Simpan jadwal acara ke Google & Apple Calendar (.ics)",
+      "52 daftar tugas persiapan vendor dari H-12 bulan sampai hari-H",
+      "Penanda sisa hari menuju tanggal jatuh tempo pembayaran",
+      "Filter tugas yang belum selesai, sedang berjalan, atau tuntas",
     ],
-    webShot: "d-reception",
-    mobileShot: "m-rundown",
+    videoClip: "web-07-vendors.mp4",
+    webShot: "d-vendors",
+    mobileShot: "m-vendors",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.26, x: -42, y: -22 },
-      { frame: 105, scale: 1.02, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: -4 },
+      { frame: 64, scale: 1.25, x: -38, y: -20 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -34],
   },
   {
-    id: "vendors-seserahan",
-    durationInFrames: 120, // 4.0s
-    section: "Vendor, Berkas KUA & Seserahan",
-    title: "52 tugas vendor, 59 berkas KUA (N1–N4), & 45 barang seserahan.",
+    id: "08-administration",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 08 / 11 • ADMINISTRASI KUA",
+    section: "Menu 8: Syarat Berkas KUA & Catatan Sipil",
+    title: "Menu Administrasi: Cek 59 syarat dokumen KUA (N1–N4) pria & wanita.",
     subtitle:
-      "Pantau tenggat pembayaran DP vendor, cek kelengkapan surat nikah KUA pria & wanita, serta simpan link belanja Shopee/Tokopedia untuk tiap seserahan.",
+      "Panduan lengkap pengurusan surat pengantar RT/RW, kelurahan, puskesmas, hingga pendaftaran KUA untuk CPP dan CPW secara berdampingan.",
     highlights: [
-      "Indikator sisa hari menuju jatuh tempo pembayaran vendor",
-      "Checklist dokumen N1–N4, puskesmas, & rekomendasi KUA",
-      "Daftar belanja seserahan dengan link toko online langsung",
+      "59 checklist berkas KUA terpisah untuk Pengantin Pria & Wanita",
+      "Meliputi surat N1–N4, KTP, KK, pasfoto latar biru, & imunisasi TT",
+      "Pantau persentase kelengkapan dokumen legal sebelum pendaftaran",
     ],
-    webShot: "d-vendors",
+    videoClip: "web-08-administration.mp4",
+    webShot: "d-administration",
+    mobileShot: "m-administration",
+    cameraKeyframes: [
+      { frame: 0, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: -12 },
+      { frame: 64, scale: 1.25, x: -38, y: -20 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
+    ],
+  },
+  {
+    id: "09-seserahan",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 09 / 11 • SESERAHAN",
+    section: "Menu 9: Daftar Belanja Seserahan & Link Toko Online",
+    title: "Menu Seserahan: 45 barang hantaran lengkap dengan link Shopee.",
+    subtitle:
+      "Simpan link produk Shopee/Tokopedia di setiap barang seserahan, bandingkan harga perkiraan dengan harga beli, dan tandai status pembelian.",
+    highlights: [
+      "45 barang seserahan terbagi rapi ke dalam 7 kategori hantaran",
+      "Simpan & buka link toko online (Shopee/Tokopedia) sekali klik",
+      "Perbandingan otomatis total estimasi vs pengeluaran belanja asli",
+    ],
+    videoClip: "web-09-seserahan.mp4",
+    webShot: "d-seserahan",
     mobileShot: "m-seserahan",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.26, x: -40, y: -22 },
-      { frame: 105, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: -20 },
+      { frame: 64, scale: 1.25, x: -40, y: -20 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -30],
   },
   {
-    id: "gifts-cta",
-    durationInFrames: 120, // 4.0s
-    section: "Rekap Amplop, Privasi & Akun Demo",
-    title: "Catat amplop & kado dengan aman. Coba akun demo sekarang.",
+    id: "10-gallery",
+    mode: "web-full",
+    durationInFrames: 90,
+    menuBadge: "MENU 10 / 11 • GALERI",
+    section: "Menu 10: Galeri Foto & Moodboard Referensi",
+    title: "Menu Galeri: Simpan foto referensi dekorasi, busana, & dokumentasi.",
     subtitle:
-      "Rekap amplop tunai, QRIS, emas, dan kado fisik. Data keuangan terkunci rapat dari akun Panitia/WO. Uji semua fiturnya gratis menggunakan akun demo.",
+      "Kumpulkan foto inspirasi pelaminan, baju akad, rias, hingga foto prewedding di satu galeri bersama agar mudah ditunjukkan ke vendor.",
     highlights: [
-      "Rekap amplop tunai, QRIS, emas & status ucapan terima kasih",
-      "Mode Terang & Mode Gelap yang nyaman di mata",
-      "Coba gratis dengan Username: demo | Password: demo123",
+      "Kelompokkan foto berdasarkan kategori: Dekorasi, Busana, & Rias",
+      "Tampilan galeri bersih yang bisa diakses oleh pasangan & WO",
+      "Unggah foto referensi beserta catatan detail untuk vendor",
     ],
-    webShot: "d-gifts",
-    mobileShot: "m-dashboard-dark",
-    isOutro: true,
+    videoClip: "web-10-gallery.mp4",
+    webShot: "d-dashboard",
+    mobileShot: "m-dashboard",
     cameraKeyframes: [
       { frame: 0, scale: 1.0, x: 0, y: 0 },
-      { frame: 55, scale: 1.24, x: -40, y: -20 },
-      { frame: 105, scale: 1.02, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: -28 },
+      { frame: 60, scale: 1.24, x: -36, y: -18 },
+      { frame: 85, scale: 1.0, x: 0, y: 0 },
     ],
-    mobileScroll: [0, -24],
+  },
+  {
+    id: "11-settings",
+    mode: "web-full",
+    durationInFrames: 95,
+    menuBadge: "MENU 11 / 11 • PENGATURAN",
+    section: "Menu 11: Pengaturan Profil, Rekening QRIS, Adat & Tema",
+    title: "Menu Pengaturan: Atur profil pengantin, rekening QRIS, adat, & akses.",
+    subtitle:
+      "Sesuaikan nama pasangan, tanggal & gedung acara, nomor rekening/QRIS amplop digital, kategori adat, zona waktu, hingga tempat sampah data.",
+    highlights: [
+      "Sub-tab Rekening & QRIS, Kategori & Adat, serta Zona Waktu & Tema",
+      "Pemisahan hak akses akun Pengantin (Penuh) vs akun Panitia/WO",
+      "Fitur Recycle Bin (Tempat Sampah) untuk memulihkan data terhapus",
+    ],
+    videoClip: "web-11-settings.mp4",
+    webShot: "d-dashboard",
+    mobileShot: "m-settings",
+    cameraKeyframes: [
+      { frame: 0, scale: 1.0, x: 0, y: 0 },
+      { frame: 22, scale: 1.34, x: 105, y: -34 },
+      { frame: 64, scale: 1.24, x: -36, y: -18 },
+      { frame: 90, scale: 1.0, x: 0, y: 0 },
+    ],
+  },
+  {
+    id: "12-mobile-showcase",
+    mode: "mobile-showcase",
+    durationInFrames: 155,
+    menuBadge: "SESI MOBILE VIEW • IPHONE NOTCH",
+    section: "Tampilan Mobile HP iPhone (Mode Terang & Gelap)",
+    title: "Tampilan HP iPhone ber-Notch: Praktis dibawa ke gedung & survei vendor.",
+    subtitle:
+      "Buka dari HP kapan saja dengan navigasi tab bawah yang nyaman di jempol, lengkap dengan Mode Terang & Mode Gelap. Coba akun demonya sekarang!",
+    highlights: [
+      "Navigasi bawah iPhone: Dashboard, Itinerary, Meja Tamu, & Anggaran",
+      "Mode Terang & Mode Gelap (Dark Mode) sekali sentuh",
+      "Uji gratis seluruh 11 menu -> Username: demo | Password: demo123",
+    ],
+    videoClip: "mobile-12-showcase.mp4",
+    webShot: "d-dashboard",
+    mobileShot: "m-dashboard-dark",
+    isOutro: true,
   },
 ];

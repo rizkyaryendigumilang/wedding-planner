@@ -1,11 +1,13 @@
-import { Img, staticFile } from "remotion";
+import { Img, OffthreadVideo, staticFile } from "remotion";
 
 /**
  * High-Craft iPhone Pro Mockup dengan Notch / Dynamic Island khas iPhone,
- * bezel titanium, tombol samping fisik, status bar iOS, dan home indicator.
+ * mendukung pemutaran video rekaman live mobile (<OffthreadVideo>) maupun
+ * gambar tangkapan layar (<Img>).
  */
 export const IPhoneMockup = ({
   shotName = "m-dashboard",
+  videoFile = null,
   width = 360,
   scrollY = 0,
   screenScale = 1,
@@ -111,14 +113,14 @@ export const IPhoneMockup = ({
           boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)",
         }}
       >
-        {/* Gambar Tangkapan Layar Mobile Live (dimulai tepat di bawah Safe Area Notch iOS) */}
+        {/* Area Viewport Mobile (dimulai tepat di bawah Safe Area Notch iOS hingga di atas Home Indicator) */}
         <div
           style={{
             position: "absolute",
-            top: notchHeight + 12,
+            top: notchHeight + 8,
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 14,
             overflow: "hidden",
           }}
         >
@@ -127,19 +129,32 @@ export const IPhoneMockup = ({
               width: "100%",
               height: "100%",
               transform: `translateY(${scrollY}px) scale(${screenScale})`,
-              transformOrigin: "top center",
+              transformOrigin: "center center",
             }}
           >
-            <Img
-              src={staticFile(`marketing/shots/${shotName}.png`)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "top center",
-                display: "block",
-              }}
-            />
+            {videoFile ? (
+              <OffthreadVideo
+                src={staticFile(`marketing/live-clips/${videoFile}`)}
+                muted
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "fill",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <Img
+                src={staticFile(`marketing/shots/${shotName}.png`)}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "top center",
+                  display: "block",
+                }}
+              />
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Link, NavLink, useLocation, useOutlet } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff } from "lucide-react";
+import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
@@ -11,11 +11,13 @@ import { Avatar } from "./Avatar";
 import { getCoupleDisplayName } from "../lib/couple";
 import { EASE_EXPO_OUT, EASE_POWER_IN } from "../lib/motion";
 import { useModalA11y } from "../lib/useModalA11y";
+import HelpdeskModal from "./HelpdeskModal";
 
 const WEDDING_DATE = "2028-02-17";
 
 export default function Layout() {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
   const { couple, reload, loading, isLiveConnected } = useWedding();
   const { user, logout, isSuperuser, isPanitia, isDemo, demoDaysLeft } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
@@ -234,6 +236,11 @@ export default function Layout() {
             disabled={loading}
           />
           <SidebarAction
+            icon={<LifeBuoy size={17} />}
+            label="Bantuan & Dukungan"
+            onClick={() => setHelpModalOpen(true)}
+          />
+          <SidebarAction
             icon={<LogOut size={17} />}
             label="Keluar"
             onClick={logout}
@@ -446,6 +453,14 @@ export default function Layout() {
                     }}
                   />
                   <SheetAction
+                    icon={<LifeBuoy size={18} />}
+                    label="Bantuan & Dukungan"
+                    onClick={() => {
+                      setSheetOpen(false);
+                      setHelpModalOpen(true);
+                    }}
+                  />
+                  <SheetAction
                     icon={<LogOut size={18} />}
                     label="Keluar"
                     tone="danger"
@@ -460,6 +475,13 @@ export default function Layout() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Modal Terpadu Laporkan Kendala / Bantuan */}
+      <HelpdeskModal
+        isOpen={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+        user={user}
+      />
     </div>
   );
 }

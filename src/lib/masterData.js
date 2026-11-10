@@ -17,7 +17,7 @@ export const TRADITIONAL_CUSTOM_PRESETS = [
   "Siraman & Sungkeman",
   "Pengajian & Doa Bersama",
   "Malam Midodareni",
-  "Adat Sangjit / Tea Pai",
+  "Adat Seserahan & Lamaran",
   "Martumpol & Adat Batak",
   "Akad Nikah / Pemberkatan",
   "Ngunduh Mantu",

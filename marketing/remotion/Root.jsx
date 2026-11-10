@@ -33,6 +33,27 @@ export const RemotionRoot = () => {
           height={1350}
           defaultProps={{ format: "feed", singleSceneIndex: null, cleanText: false }}
         />
+
+        {/* Clean Masters (No Headline Text) for fast slicing into Concat Modular Clips */}
+        <Composition
+          id="OverviewReelsClean"
+          component={OverviewVideo}
+          durationInFrames={TOTAL_VIDEO_FRAMES}
+          fps={30}
+          width={1080}
+          height={1920}
+          defaultProps={{ format: "reels", singleSceneIndex: null, cleanText: true }}
+        />
+
+        <Composition
+          id="OverviewFeedClean"
+          component={OverviewVideo}
+          durationInFrames={TOTAL_VIDEO_FRAMES}
+          fps={30}
+          width={1080}
+          height={1350}
+          defaultProps={{ format: "feed", singleSceneIndex: null, cleanText: true }}
+        />
       </Folder>
 
       {/* Klip Adegan Modular Bersih (Tanpa Teks Judul) untuk Diedit Manual di Concat */}

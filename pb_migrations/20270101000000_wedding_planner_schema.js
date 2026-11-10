@@ -115,7 +115,7 @@ migrate(
     }
 
     // =====================================================================
-    // 2. budgets — Engagement/Sangjit + Wedding budget items (termin)
+    // 2. budgets — Engagement/Seserahan + Wedding budget items (termin)
     // =====================================================================
     {
       const c = app.findCollectionByNameOrId("budgets");
@@ -124,7 +124,7 @@ migrate(
           rel("couple", findId("couples"), { cascadeDelete: true, maxSelect: 1 })
         )
       );
-      c.fields.add(new Field(select("budget_type", ["sangjit", "wedding"])));
+      c.fields.add(new Field(select("budget_type", ["seserahan", "wedding", "sangjit"])));
       c.fields.add(new Field(text("category", { max: 120 })));
       c.fields.add(new Field(text("detail", { required: true })));
       c.fields.add(new Field(text("status", { max: 60 })));

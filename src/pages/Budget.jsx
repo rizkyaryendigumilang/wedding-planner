@@ -44,8 +44,8 @@ import { DEFAULT_BUDGET_CATEGORIES } from "../lib/masterData";
 const EASE = [0.22, 1, 0.36, 1];
 
 const TABS = [
-  { id: "cashflow", label: "Arus kas" },
-  { id: "sangjit", label: "Sangjit" },
+  { id: "cashflow", label: "Arus Kas" },
+  { id: "seserahan", label: "Seserahan" },
   { id: "wedding", label: "Pernikahan" },
 ];
 
@@ -79,7 +79,9 @@ export default function Budget() {
   if (loading) return <Loading label="Memuat anggaran…" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
-  const sangjit = budgets.filter((b) => b.budget_type === "sangjit");
+  const seserahan = budgets.filter(
+    (b) => b.budget_type === "seserahan" || b.budget_type === "sangjit"
+  );
   const wedding = budgets.filter((b) => b.budget_type === "wedding");
   const savedPct = pct(finance.balance, finance.targetBudget);
 
@@ -96,13 +98,13 @@ export default function Budget() {
       }));
       exportToCsv("rekap-arus-kas-pernikahan.csv", data);
     } else {
-      const targetItems = tab === "sangjit" ? sangjit : wedding;
+      const targetItems = tab === "seserahan" ? seserahan : wedding;
       if (targetItems.length === 0) return;
       const data = targetItems.map((b, idx) => {
         const paid = getBudgetPaid(b);
         return {
           No: idx + 1,
-          Tipe: b.budget_type,
+          Tipe: b.budget_type === "sangjit" ? "seserahan" : b.budget_type,
           Kategori: b.category,
           "Pos Pengeluaran": b.detail,
           Vendor: b.vendor || "-",
@@ -124,8 +126,8 @@ export default function Budget() {
     <Page>
       <PageHeader
         eyebrow="Keuangan"
-        title="Anggaran & arus kas"
-        subtitle="Rincian biaya pertunangan, pernikahan, dan arus kas persiapan."
+        title="Anggaran & Arus Kas"
+        subtitle="Rincian biaya seserahan, pernikahan, dan arus kas persiapan."
         icon={Wallet}
         action={
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
@@ -258,12 +260,12 @@ export default function Budget() {
               deleteCashflow={deleteCashflow}
             />
           )}
-          {tab === "sangjit" && (
+          {tab === "seserahan" && (
             <BudgetTable
-              title="Anggaran sangjit"
-              items={sangjit}
+              title="Anggaran Seserahan"
+              items={seserahan}
               coupleId={couple?.id}
-              type="sangjit"
+              type="seserahan"
               onChanged={reload}
               addLog={addLog}
               moveToTrash={moveToTrash}
@@ -275,7 +277,7 @@ export default function Budget() {
           )}
           {tab === "wedding" && (
             <BudgetTable
-              title="Anggaran pernikahan"
+              title="Anggaran Pernikahan"
               items={wedding}
               coupleId={couple?.id}
               type="wedding"

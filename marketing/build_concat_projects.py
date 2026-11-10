@@ -1,15 +1,22 @@
 """
-Builds editable Concat Desktop projects (9:16 Reels & 4:5 Feed) using Concat's
-built-in headless MCP server (`C:\\Program Files\\Concat\\concat.exe --mcp headless`).
+Builds editable Concat Desktop projects using Concat's built-in headless MCP server
+(`C:\\Program Files\\Concat\\concat.exe --mcp headless`):
 
-Each Concat project includes:
-- Track T1 (Base Video Track): 6 modular animated scene clips (Web View Zoom-In/Zoom-Out + iPhone Notch)
-  with smooth Dissolve transitions — so the user can trim, reorder, remove, or add scenes.
-- Track T2 (Editable Headline Titles — above video): Native Concat Text Titles for each scene's main headline
-  — click in Concat to edit words, font, size, color, or position.
-- Track T3 (Editable Subcopy Titles — above video): Native Concat Text Titles for each scene's feature explanation.
-- Media Bin: All 6 modular scenes, the full rendered video, all 13 Instagram PNG slides,
-  and live Web & Mobile screenshots ready to drag and drop onto the timeline.
+1. `Wedding-Planner-Reels-9x16` (1080x1920 @ 30fps):
+   - Track T1: 12 modular scene clips (each displaying BOTH Web Desktop + iPhone Notch Mobile View)
+   - Track T2: Editable Headline Titles
+   - Track T3: Editable Subtitle / Feature Explanations
+   - Media Bin: All 23 RAW live recordings (`web-01..11.mp4`, `mobile-01..12.mp4`),
+     continuous raw tours (`raw-web-live-tour.mp4`, `raw-mobile-iphone-tour.mp4`),
+     all raw screenshots (`d-*.png`, `m-*.png`), and Instagram slides.
+
+2. `Wedding-Planner-Feed-4x5` (1080x1350 @ 30fps):
+   - Same structure for 4:5 Instagram Portrait Feed + all RAW files in Media Bin.
+
+3. `Wedding-Planner-Raw-Live-Layers` (1080x1920 @ 30fps):
+   - Track T1 (Raw Web Browser Track): Raw `web-01..11.mp4` clips directly on T1
+   - Track T2 (Raw Mobile iPhone Track): Raw `mobile-01..11.mp4` clips layered on T2 (Picture-in-Picture)
+   - Track T3 & T4: Editable Headline & Subtitle Titles
 """
 
 import base64
@@ -27,34 +34,100 @@ PROJECTS_DIR = MARKETING_DIR / "concat-projects"
 
 SCENES = [
     {
-        "id": "intro",
-        "title": "Semua persiapan nikah rapi di satu tempat,\ntersambung di laptop dan HP.",
-        "subtitle": "Atur tabungan & budget, daftar tamu, undangan WhatsApp,\njadwal vendor, berkas KUA, seserahan, hingga buku tamu resepsi.",
+        "id": "01-dashboard",
+        "web_raw": "web-01-dashboard.mp4",
+        "mob_raw": "mobile-01-dashboard.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Dashboard: Pantau hitung mundur &\nkesiapan acara dalam satu layar.",
+        "subtitle": "Terlihat sisa hari menuju akad, dana tabungan terkumpul,\nprogres persiapan, dan peringatan tugas minggu ini.",
     },
     {
-        "id": "budget",
-        "title": "Atur budget Rp 85 juta di 86 pos biaya\ntanpa pusing rumus manual.",
-        "subtitle": "Catat tabungan pengantin pria & wanita, pisahkan biaya Lamaran\ndan Resepsi, lalu pantau selisih budget vs pengeluaran asli.",
+        "id": "02-itinerary",
+        "web_raw": "web-02-itinerary.mp4",
+        "mob_raw": "mobile-02-itinerary.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Itinerary: Susunan acara menit demi\nmenit & kontak WA PIC.",
+        "subtitle": "Atur jadwal rias subuh, akad, hingga resepsi. Dilengkapi\ntombol hubungi PIC & ekspor ke Google/Apple Calendar (.ics).",
     },
     {
-        "id": "guests",
-        "title": "Kelola 165 undangan (281 orang) &\nkirim pesan WhatsApp sekali klik.",
-        "subtitle": "Kelompokkan tamu per keluarga, teman kantor, dan prioritas A/B/C.\nPesan WhatsApp otomatis menyapa nama masing-masing tamu.",
+        "id": "03-reception",
+        "web_raw": "web-03-reception.mp4",
+        "mob_raw": "mobile-03-reception.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Meja Tamu: Cari nama tamu 2 detik,\ntandai hadir & suvenir.",
+        "subtitle": "Dipakai penerima tamu di lobi gedung untuk mencatat kehadiran\naktual, jumlah orang masuk, meja VIP, dan tamu walk-in.",
     },
     {
-        "id": "harih",
-        "title": "Check-in tamu di gedung 2 detik &\njadwal acara menit demi menit.",
-        "subtitle": "Petugas buku tamu cukup buka dari HP untuk catat tamu hadir & suvenir.\nJadwal rundown lengkap dengan kontak WA PIC & ekspor kalender.",
+        "id": "04-budget",
+        "web_raw": "web-04-budget.mp4",
+        "mob_raw": "mobile-04-budget.mp4",
+        "dur": 105 / 30.0,
+        "title": "Menu Anggaran: Kelola arus kas, biaya\nSeserahan, & 86 pos pernikahan.",
+        "subtitle": "Catat pemasukan tabungan pengantin pria & wanita, pindah antar\ntab Arus Kas, Seserahan, dan Pernikahan, serta pantau sisa tagihan.",
     },
     {
-        "id": "vendors-seserahan",
-        "title": "52 tugas vendor, 59 berkas KUA (N1-N4),\n& 45 barang seserahan.",
-        "subtitle": "Pantau tenggat bayar DP vendor, cek kelengkapan surat nikah KUA,\ndan simpan link belanja Shopee/Tokopedia untuk tiap seserahan.",
+        "id": "05-gifts",
+        "web_raw": "web-05-gifts.mp4",
+        "mob_raw": "mobile-05-gifts.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Kado & Angpao: Catat amplop tunai,\ntransfer QRIS, & kado fisik.",
+        "subtitle": "Rekap seluruh tanda kasih dari tamu undangan beserta taksiran\nnilai dan status pengiriman pesan ucapan terima kasih.",
     },
     {
-        "id": "gifts-cta",
-        "title": "Catat amplop & kado dengan aman.\nCoba akun demo sekarang.",
-        "subtitle": "Rekap amplop tunai, QRIS, emas, dan kado fisik. Data keuangan\nterkunci dari akun Panitia. Uji gratis: demo / demo123.",
+        "id": "06-guests",
+        "web_raw": "web-06-guests.mp4",
+        "mob_raw": "mobile-06-guests.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Tamu: Kelola 165 undangan (281 orang)\n& kirim WA sekali klik.",
+        "subtitle": "Kelompokkan tamu per keluarga, teman kantor, dan prioritas A/B/C.\nKirim pesan WhatsApp otomatis menyapa nama tamu.",
+    },
+    {
+        "id": "07-vendors",
+        "web_raw": "web-07-vendors.mp4",
+        "mob_raw": "mobile-07-vendors.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Vendor: Pantau 52 tugas vendor dari\nbooking hingga lunas.",
+        "subtitle": "Lacak progres survei gedung, food tasting katering, fitting busana,\nhingga tanggal jatuh tempo pembayaran DP setiap vendor.",
+    },
+    {
+        "id": "08-administration",
+        "web_raw": "web-08-administration.mp4",
+        "mob_raw": "mobile-08-administration.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Administrasi: Cek 59 syarat dokumen\nKUA (N1-N4) pria & wanita.",
+        "subtitle": "Panduan pengurusan surat pengantar RT/RW, kelurahan, puskesmas,\nhingga pendaftaran KUA untuk CPP dan CPW berdampingan.",
+    },
+    {
+        "id": "09-seserahan",
+        "web_raw": "web-09-seserahan.mp4",
+        "mob_raw": "mobile-09-seserahan.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Seserahan: 45 barang hantaran lengkap\ndengan link Shopee.",
+        "subtitle": "Simpan link produk Shopee/Tokopedia di setiap barang seserahan,\nbandingkan harga perkiraan vs harga beli asli.",
+    },
+    {
+        "id": "10-gallery",
+        "web_raw": "web-10-gallery.mp4",
+        "mob_raw": "mobile-10-gallery.mp4",
+        "dur": 90 / 30.0,
+        "title": "Menu Galeri: Simpan foto referensi dekorasi,\nbusana, & dokumentasi.",
+        "subtitle": "Kumpulkan foto inspirasi pelaminan, baju akad, rias, hingga\nfoto prewedding agar mudah ditunjukkan ke vendor.",
+    },
+    {
+        "id": "11-settings",
+        "web_raw": "web-11-settings.mp4",
+        "mob_raw": "mobile-11-settings.mp4",
+        "dur": 95 / 30.0,
+        "title": "Menu Pengaturan: Atur profil pengantin,\nrekening QRIS, adat, & akses.",
+        "subtitle": "Sesuaikan nama pasangan, gedung acara, nomor rekening/QRIS,\nkategori adat, zona waktu, hingga akses Panitia.",
+    },
+    {
+        "id": "12-mobile-showcase",
+        "web_raw": "web-01-dashboard.mp4",
+        "mob_raw": "mobile-12-showcase.mp4",
+        "dur": 155 / 30.0,
+        "title": "Tampilan HP iPhone ber-Notch: Praktis\ndibawa ke gedung & survei vendor.",
+        "subtitle": "Buka dari HP kapan saja dengan navigasi tab bawah & Mode Gelap.\nUji gratis sekarang: demo / demo123.",
     },
 ]
 
@@ -128,6 +201,23 @@ class ConcatMCPClient:
         self.proc.terminate()
 
 
+def get_all_raw_files(is_reels=True):
+    raw_files = [
+        CONCAT_ASSETS_DIR / "raw-web-live-tour.mp4",
+        CONCAT_ASSETS_DIR / "raw-mobile-iphone-tour.mp4",
+        OUT_DIR / ("overview-reels-9x16.mp4" if is_reels else "overview-feed-4x5.mp4"),
+    ]
+    for sc in SCENES:
+        raw_files.append(CONCAT_ASSETS_DIR / sc["web_raw"])
+        raw_files.append(CONCAT_ASSETS_DIR / sc["mob_raw"])
+    if SHOTS_DIR.exists():
+        for png in sorted(SHOTS_DIR.glob("*.png")):
+            raw_files.append(png)
+    for slide_png in sorted(OUT_DIR.glob("ig-*.png")):
+        raw_files.append(slide_png)
+    return raw_files
+
+
 def build_project(client: ConcatMCPClient, name: str, width: int, height: int, prefix: str, is_reels: bool):
     proj_path = PROJECTS_DIR / name
     if proj_path.exists():
@@ -152,12 +242,10 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
     tl_state = client.call("timeline_read", {"path": path_str})
     timeline_id = tl_state["timeline"]["id"]
     tracks = tl_state["timeline"]["tracks"]
-    # In Concat: T1 (index 0) is the bottom/base video track; T2 (index 1) & T3 (index 2) render OVER T1!
     video_track_id = tracks[0]["id"]
     headline_track_id = tracks[1]["id"]
     subtitle_track_id = tracks[2]["id"]
 
-    # Set warm paper background
     client.call(
         "timeline_background",
         {
@@ -167,15 +255,15 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
         },
     )
 
-    # 1. Import 6 modular scene clips
+    # 1. Import 12 modular scene clips (Web + Mobile iPhone view combined)
     scene_media_ids = []
     for idx, sc in enumerate(SCENES):
-        clip_file = CONCAT_ASSETS_DIR / f"{prefix}-scene-0{idx + 1}-{sc['id']}.mp4"
+        clip_file = CONCAT_ASSETS_DIR / f"{prefix}-scene-{idx + 1:02d}-{sc['id']}.mp4"
         res = client.call("media_import", {"path": path_str, "file": str(clip_file)})
         scene_media_ids.append(res["createdId"])
         print(f"  + Imported modular scene clip: {clip_file.name} -> {res['createdId']}")
 
-    # 2. Lay down all 6 scene clips end-to-end on Track T1 (bottom video track)
+    # 2. Lay down all 12 scene clips end-to-end on Track T1
     client.call(
         "clips_add_sequence",
         {
@@ -186,31 +274,30 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
         },
     )
 
-    # Read back clip IDs on Track T1 to add smooth Dissolve transitions
     tl_state = client.call("timeline_read", {"path": path_str})
     video_clips = [c for c in tl_state["timeline"]["clips"] if c["track"] == video_track_id]
     for idx, vc in enumerate(video_clips):
         patch = {}
         if idx == 0:
-            patch["fadeIn"] = 0.25
+            patch["fadeIn"] = 0.2
         else:
-            patch["transitionIn"] = {"id": "concat.dissolve", "duration": 0.35}
+            patch["transitionIn"] = {"id": "concat.dissolve", "duration": 0.28}
         if idx == len(video_clips) - 1:
-            patch["fadeOut"] = 0.35
+            patch["fadeOut"] = 0.3
         client.call("clip_update", {"path": path_str, "clipId": vc["id"], "patch": patch})
 
-    # 3. Add Editable Native Concat Text Titles on T2 (Headline) & T3 (Subcopy) ABOVE the video!
+    # 3. Add Editable Native Concat Text Titles on T2 (Headline) & T3 (Subcopy)
     left_align_x = -0.068
-    head_font_size = 0.0202 if is_reels else 0.0245
-    head_offset_y = -0.375 if is_reels else -0.348
-    sub_font_size = 0.0112 if is_reels else 0.0135
-    sub_offset_y = -0.285 if is_reels else -0.242
+    head_font_size = 0.0195 if is_reels else 0.0235
+    head_offset_y = -0.382 if is_reels else -0.356
+    sub_font_size = 0.0108 if is_reels else 0.0132
+    sub_offset_y = -0.314 if is_reels else -0.270
 
     for idx, sc in enumerate(SCENES):
-        start_sec = idx * 4.0
-        dur_sec = 4.0
+        vc = video_clips[idx]
+        start_sec = vc["start"]
+        dur_sec = vc["duration"]
 
-        # Add Editable Headline Title Clip on T2 (above T1)
         h_res = client.call(
             "title_add",
             {
@@ -226,7 +313,7 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
                     "fontWeight": 800,
                     "color": "#1c1917",
                     "align": "left",
-                    "lineHeight": 1.18,
+                    "lineHeight": 1.16,
                     "maxWidth": 0.86,
                     "shadow": False,
                 },
@@ -247,11 +334,10 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
             {
                 "path": path_str,
                 "clipId": h_id,
-                "patch": {"fadeIn": 0.2, "fadeOut": 0.2},
+                "patch": {"fadeIn": 0.15, "fadeOut": 0.15},
             },
         )
 
-        # Add Editable Subtitle / Feature Explanation Clip on T3 (above T2)
         s_res = client.call(
             "title_add",
             {
@@ -267,7 +353,7 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
                     "fontWeight": 500,
                     "color": "#44403c",
                     "align": "left",
-                    "lineHeight": 1.38,
+                    "lineHeight": 1.36,
                     "maxWidth": 0.86,
                     "shadow": False,
                 },
@@ -288,50 +374,19 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
             {
                 "path": path_str,
                 "clipId": s_id,
-                "patch": {"fadeIn": 0.2, "fadeOut": 0.2},
+                "patch": {"fadeIn": 0.15, "fadeOut": 0.15},
             },
         )
 
-    # 4. Import full rendered video, all 13 Instagram PNG slides, and live screenshots into Media Bin
-    extra_files = [
-        OUT_DIR / ("overview-reels-9x16.mp4" if is_reels else "overview-feed-4x5.mp4"),
-        OUT_DIR / "ig-01-cover.png",
-        OUT_DIR / "ig-02-dasbor.png",
-        OUT_DIR / "ig-03-anggaran.png",
-        OUT_DIR / "ig-04-tamu.png",
-        OUT_DIR / "ig-05-resepsi.png",
-        OUT_DIR / "ig-06-rundown.png",
-        OUT_DIR / "ig-07-vendor.png",
-        OUT_DIR / "ig-08-admin-seserahan.png",
-        OUT_DIR / "ig-09-kado-privasi.png",
-        OUT_DIR / "ig-10-cta.png",
-        OUT_DIR / "story-01-cover.png",
-        OUT_DIR / "story-10-cta.png",
-        OUT_DIR / "square-01-cover.png",
-        SHOTS_DIR / "d-dashboard.png",
-        SHOTS_DIR / "d-budget.png",
-        SHOTS_DIR / "d-guests.png",
-        SHOTS_DIR / "d-reception.png",
-        SHOTS_DIR / "d-rundown.png",
-        SHOTS_DIR / "d-vendors.png",
-        SHOTS_DIR / "d-administration.png",
-        SHOTS_DIR / "d-seserahan.png",
-        SHOTS_DIR / "d-gifts.png",
-        SHOTS_DIR / "m-dashboard.png",
-        SHOTS_DIR / "m-dashboard-dark.png",
-        SHOTS_DIR / "m-budget-wedding.png",
-        SHOTS_DIR / "m-guests.png",
-        SHOTS_DIR / "m-reception.png",
-        SHOTS_DIR / "m-rundown.png",
-        SHOTS_DIR / "m-vendors.png",
-        SHOTS_DIR / "m-seserahan.png",
-    ]
-    for ef in extra_files:
+    # 4. Import ALL RAW FILES (web-01..11.mp4, mobile-01..12.mp4, raw tours, raw PNG shots) into Media Bin!
+    imported_count = 0
+    for ef in get_all_raw_files(is_reels=is_reels):
         if ef.exists():
             client.call("media_import", {"path": path_str, "file": str(ef)})
+            imported_count += 1
+    print(f"  + Imported {imported_count} raw Web & Mobile video/image files into Media Bin")
 
-    # Render a preview frame from Concat's compositor to verify alignment
-    prev = client.call("preview_frame", {"path": path_str, "time": 2.0})
+    prev = client.call("preview_frame", {"path": path_str, "time": 1.2})
     for item in prev if isinstance(prev, list) else []:
         if item.get("type") == "image" and item.get("data"):
             img_bytes = base64.b64decode(item["data"])
@@ -345,7 +400,158 @@ def build_project(client: ConcatMCPClient, name: str, width: int, height: int, p
     return proj_path
 
 
+def build_raw_multilayer_project(client: ConcatMCPClient, name="Wedding-Planner-Raw-Live-Layers"):
+    """
+    Creates a pure RAW multi-track project (just like Kept-Modular-Live-Layers) where:
+    - Track T1 holds the RAW Web Browser recordings (`web-01-dashboard.mp4` .. `web-11-settings.mp4`)
+    - Track T2 holds the RAW Mobile iPhone recordings (`mobile-01-dashboard.mp4` .. `mobile-12-showcase.mp4`)
+      layered as Picture-in-Picture on top of the Web Browser so the user can move/scale them independently!
+    - Track T3 holds the Editable Text Titles for each menu.
+    """
+    proj_path = PROJECTS_DIR / name
+    if proj_path.exists():
+        shutil.rmtree(proj_path)
+
+    print(f"\n=== Building Pure Raw Multi-Track Project: {name} (1080x1920 @ 30fps) ===")
+    client.call(
+        "project_create",
+        {
+            "location": str(PROJECTS_DIR),
+            "name": name,
+            "video": {
+                "width": 1080,
+                "height": 1920,
+                "rateNum": 30,
+                "rateDen": 1,
+                "colorSpace": "sdr",
+            },
+        },
+    )
+    path_str = str(proj_path)
+    tl_state = client.call("timeline_read", {"path": path_str})
+    timeline_id = tl_state["timeline"]["id"]
+    tracks = tl_state["timeline"]["tracks"]
+    web_track_id = tracks[0]["id"]       # T1: Raw Web Clips
+    mob_track_id = tracks[1]["id"]       # T2: Raw Mobile iPhone Clips (PiP overlay)
+    title_track_id = tracks[2]["id"]     # T3: Editable Titles
+
+    client.call(
+        "timeline_background",
+        {
+            "path": path_str,
+            "timelineId": timeline_id,
+            "background": {"kind": "color", "color": "#faf7f4"},
+        },
+    )
+
+    cursor_sec = 0.0
+    imported_media = {}
+    for idx, sc in enumerate(SCENES):
+        dur_sec = round(sc["dur"], 2)
+        web_file = str(CONCAT_ASSETS_DIR / sc["web_raw"])
+        mob_file = str(CONCAT_ASSETS_DIR / sc["mob_raw"])
+
+        if web_file not in imported_media:
+            imported_media[web_file] = client.call("media_import", {"path": path_str, "file": web_file})["createdId"]
+        if mob_file not in imported_media:
+            imported_media[mob_file] = client.call("media_import", {"path": path_str, "file": mob_file})["createdId"]
+
+        w_media = imported_media[web_file]
+        m_media = imported_media[mob_file]
+
+        # Place Raw Web Clip on Track T1
+        w_clip = client.call(
+            "clip_add",
+            {
+                "path": path_str,
+                "trackId": web_track_id,
+                "mediaId": w_media,
+                "start": cursor_sec,
+                "duration": dur_sec,
+            },
+        )["createdId"]
+        client.call(
+            "clip_transform",
+            {
+                "path": path_str,
+                "clipId": w_clip,
+                "scale": 0.92,
+                "offsetX": 0.0,
+                "offsetY": -0.06,
+            },
+        )
+
+        # Place Raw Mobile iPhone Clip on Track T2 (Picture-in-Picture on bottom-right)
+        m_clip = client.call(
+            "clip_add",
+            {
+                "path": path_str,
+                "trackId": mob_track_id,
+                "mediaId": m_media,
+                "start": cursor_sec,
+                "duration": dur_sec,
+            },
+        )["createdId"]
+        client.call(
+            "clip_transform",
+            {
+                "path": path_str,
+                "clipId": m_clip,
+                "scale": 0.44 if idx < 11 else 0.78,
+                "offsetX": 0.25 if idx < 11 else 0.0,
+                "offsetY": 0.23 if idx < 11 else 0.06,
+            },
+        )
+
+        # Place Editable Title on Track T3
+        t_clip = client.call(
+            "title_add",
+            {
+                "path": path_str,
+                "trackId": title_track_id,
+                "start": cursor_sec,
+                "duration": dur_sec,
+                "offsetY": -0.37,
+                "style": {
+                    "content": f"{sc['title']}\n{sc['subtitle']}",
+                    "fontFamily": "Inter",
+                    "fontSize": 0.017,
+                    "fontWeight": 700,
+                    "color": "#1c1917",
+                    "align": "left",
+                    "lineHeight": 1.25,
+                    "maxWidth": 0.88,
+                    "shadow": False,
+                },
+            },
+        )["createdId"]
+        client.call(
+            "clip_transform",
+            {
+                "path": path_str,
+                "clipId": t_clip,
+                "offsetX": -0.04,
+                "offsetY": -0.37,
+            },
+        )
+
+        cursor_sec = round(cursor_sec + dur_sec, 2)
+
+    # Also import continuous raw tours and rendered videos into Media Bin
+    for ef in get_all_raw_files(is_reels=True):
+        if ef.exists():
+            client.call("media_import", {"path": path_str, "file": str(ef)})
+
+    client.call("project_save", {"path": path_str})
+    client.call("project_close", {"path": path_str, "save": True})
+    print(f"=== Saved Pure Raw Multi-Track Project: {proj_path} ===")
+    return proj_path
+
+
 def main():
+    # Close any open Concat GUI window first so it doesn't lock or overwrite the project files
+    subprocess.run(["taskkill", "/F", "/IM", "concat.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
     client = ConcatMCPClient()
     try:
@@ -365,7 +571,11 @@ def main():
             prefix="feed",
             is_reels=False,
         )
-        print("\nAll Concat projects created and saved!")
+        build_raw_multilayer_project(
+            client,
+            name="Wedding-Planner-Raw-Live-Layers",
+        )
+        print("\nAll 3 Concat projects created and saved with full RAW Web & Mobile files!")
     finally:
         client.close()
 

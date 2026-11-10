@@ -111,7 +111,7 @@ async function run() {
   const wedding = read("wedding_budget.json");
   let budgetCount = 0;
   for (const [type, items] of [
-    ["sangjit", engagement],
+    ["seserahan", engagement],
     ["wedding", wedding],
   ]) {
     for (const it of items) {
@@ -136,7 +136,7 @@ async function run() {
       }
     }
   }
-  log(`- budgets: ${budgetCount} item (sangjit + wedding)`);
+  log(`- budgets: ${budgetCount} item (seserahan + wedding)`);
 
   // administrations
   const admins = read("administrations.json");

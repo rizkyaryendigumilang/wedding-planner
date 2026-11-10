@@ -8,7 +8,7 @@ Aplikasi perencanaan pernikahan (target **17 Februari 2028**, target tabungan
 | Rute | Modul | Isi |
 | --- | --- | --- |
 | `/` | Dashboard | Countdown, kesehatan anggaran, ringkasan semua modul, audit aktivitas |
-| `/budget` | Sangjit & Wedding Budget | Cashflow CPP/CPW, budget sangjit & wedding, termin pembayaran |
+| `/budget` | Anggaran Seserahan & Pernikahan | Arus kas CPP/CPW, anggaran seserahan & pernikahan, termin pembayaran vendor |
 | `/administration` | Administrasi & Dokumen | Berkas legal CPP/CPW + checklist persiapan (13 seksi) |
 | `/vendors` | Vendor Checklist & Countdown | 55 tugas persiapan dengan tenggat waktu |
 | `/guests` | Daftar Tamu | 165 tamu (CPP/CPW), circle, prioritas A/B/C, pax, digital/fisik |

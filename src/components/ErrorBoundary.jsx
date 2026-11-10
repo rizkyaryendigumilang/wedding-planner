@@ -1,5 +1,6 @@
 import React from "react";
-import { AlertTriangle, RefreshCw, Home, Trash2 } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, Trash2, LifeBuoy } from "lucide-react";
+import HelpdeskModal from "./HelpdeskModal";
 
 /**
  * Komponen batas penanganan kesalahan (Error Boundary) untuk mencegah
@@ -8,7 +9,7 @@ import { AlertTriangle, RefreshCw, Home, Trash2 } from "lucide-react";
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, isHelpModalOpen: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -79,6 +80,15 @@ export default class ErrorBoundary extends React.Component {
 
               <button
                 type="button"
+                onClick={() => this.setState({ isHelpModalOpen: true })}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 font-medium text-sm hover:bg-rose-500/20 transition"
+              >
+                <LifeBuoy size={16} />
+                Laporkan Kendala ke Helpdesk
+              </button>
+
+              <button
+                type="button"
                 onClick={this.handleClearCacheAndReload}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-ink-muted hover:text-rose-600 dark:hover:text-rose-400 text-xs transition"
               >
@@ -98,6 +108,12 @@ export default class ErrorBoundary extends React.Component {
                 </pre>
               </details>
             )}
+
+            <HelpdeskModal
+              isOpen={this.state.isHelpModalOpen}
+              onClose={() => this.setState({ isHelpModalOpen: false })}
+              initialComplaint={`Terjadi galat antarmuka runtime:\n${this.state.error?.toString() || ""}\n\nStack:\n${(this.state.errorInfo?.componentStack || "").slice(0, 1000)}`}
+            />
           </div>
         </div>
       );

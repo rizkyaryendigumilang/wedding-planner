@@ -154,7 +154,7 @@ export default function CategoriesAdatTab({
         <div className="flex items-center gap-2 mt-4">
           <Input
             type="text"
-            placeholder="Ketik kategori baru (contoh: Acara Siraman, Sangjit, After Party)"
+            placeholder="Ketik kategori baru (contoh: Acara Siraman, Seserahan, After Party)"
             value={newBudgetCatInput}
             onChange={(e) => setNewBudgetCatInput(e.target.value)}
             onKeyDown={(e) => {

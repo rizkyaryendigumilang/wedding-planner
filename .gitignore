@@ -47,3 +47,8 @@ scratch/
 # Python cache
 __pycache__/
 *.py[cod]
+
+# Marketing temporary recordings and video working caches
+marketing/live-recordings/
+marketing/concat-assets/*.mp4
+marketing/concat-projects/**/cache/

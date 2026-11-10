@@ -1,13 +1,16 @@
-import { Img, staticFile } from "remotion";
+import { Img, OffthreadVideo, staticFile } from "remotion";
 
 /**
- * WebBrowserMockup — Menampilkan tampilan Web Desktop (1440x900 @2x)
- * lengkap dengan top bar browser modern dan kamera
- * yang mendukung efek Zoom-In & Zoom-Out + Pan secara mulus.
+ * WebBrowserMockup — Menampilkan tampilan Web Desktop (1440x900)
+ * lengkap dengan top bar browser modern yang menutup/mengganti URL bar
+ * (sehingga IP server tertutup 100%), serta mendukung pemutaran video
+ * rekaman live browser (<OffthreadVideo>) maupun gambar statis (<Img>),
+ * dengan efek kamera Zoom-In & Zoom-Out + Pan yang mulus.
  */
 export const WebBrowserMockup = ({
   shotName = "d-dashboard",
-  width = 880,
+  videoFile = null,
+  width = 928,
   zoomScale = 1,
   panX = 0,
   panY = 0,
@@ -16,7 +19,13 @@ export const WebBrowserMockup = ({
   style = {},
 }) => {
   const screenHeight = Math.round(width * (900 / 1440));
-  const barHeight = Math.max(30, Math.round(width * 0.038));
+  const barHeight = Math.max(32, Math.round(width * 0.038));
+
+  // Jaga agar panX & panY tidak pernah melewati tepi luar halaman 1440x900 saat zoom
+  const maxSafeX = zoomScale > 1 ? (width * (zoomScale - 1)) / (2 * zoomScale) : 0;
+  const maxSafeY = zoomScale > 1 ? (screenHeight * (zoomScale - 1)) / (2 * zoomScale) : 0;
+  const safePanX = Math.max(-maxSafeX, Math.min(maxSafeX, panX));
+  const safePanY = Math.max(-maxSafeY, Math.min(maxSafeY, panY));
 
   return (
     <div
@@ -38,7 +47,7 @@ export const WebBrowserMockup = ({
             "0 36px 72px -28px rgba(20, 17, 24, 0.48), 0 12px 26px -14px rgba(20, 17, 24, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.14)",
         }}
       >
-        {/* Top Browser Chrome Bar */}
+        {/* Top Browser Chrome Bar (Menutup URL / IP Server) */}
         <div
           style={{
             height: barHeight,
@@ -79,22 +88,23 @@ export const WebBrowserMockup = ({
             />
           </div>
 
-          {/* Address Bar (Tanpa IP) */}
+          {/* Address Bar Bersih (Tanpa IP) */}
           <div
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.09)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 8,
-              padding: "4px 16px",
-              color: "#d6d3d1",
+              padding: "4px 18px",
+              color: "#e7e5e4",
               fontFamily: "ui-monospace, 'SFMono-Regular', Menlo, monospace",
-              fontSize: Math.max(10, Math.round(width * 0.0135)),
-              fontWeight: 500,
+              fontSize: Math.max(11, Math.round(width * 0.0135)),
+              fontWeight: 600,
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}
           >
+            <span>🔒</span>
             <span>{urlText}</span>
           </div>
 
@@ -116,21 +126,35 @@ export const WebBrowserMockup = ({
             style={{
               width: "100%",
               height: "100%",
-              transform: `scale(${zoomScale}) translate(${panX}px, ${panY}px)`,
+              transform: `scale(${zoomScale}) translate(${safePanX}px, ${safePanY}px)`,
               transformOrigin: "center center",
               willChange: "transform",
             }}
           >
-            <Img
-              src={staticFile(`marketing/shots/${shotName}.png`)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "top left",
-                display: "block",
-              }}
-            />
+            {videoFile ? (
+              <OffthreadVideo
+                src={staticFile(`marketing/live-clips/${videoFile}`)}
+                muted
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "top left",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <Img
+                src={staticFile(`marketing/shots/${shotName}.png`)}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "top left",
+                  display: "block",
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
