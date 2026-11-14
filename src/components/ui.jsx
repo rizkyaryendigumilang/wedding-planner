@@ -55,12 +55,12 @@ export function PageHeader({ title, subtitle, icon: Icon, action, eyebrow }) {
   );
 }
 
-export function Card({ children, className = "", padded = true, as: Tag = "div", ...rest }) {
+export function Card({ children, className = "", padded = true, interactive = false, as: Tag = "div", ...rest }) {
   return (
     <Tag
-      className={`bg-canvas-card dark:bg-night-card rounded-3xl border border-line dark:border-night-line shadow-soft ${
-        padded ? "p-5 sm:p-6" : ""
-      } ${className}`}
+      className={`${
+        interactive ? "surface-interactive" : "bg-canvas-card dark:bg-night-card border border-line/80 dark:border-night-line/80 rounded-3xl shadow-soft"
+      } ${padded ? "p-5 sm:p-6" : ""} ${className}`}
       {...rest}
     >
       {children}
@@ -208,16 +208,16 @@ export function ToggleRow({ icon: Icon, label, hint, checked, onChange, disabled
 
 export function Badge({ children, tone = "gray", className = "" }) {
   const tones = {
-    gray: "bg-canvas-sunken text-ink-muted dark:bg-night-sunken dark:text-stone-300",
-    rose: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
-    sage: "bg-sage-500/14 text-sage-700 dark:text-sage-300",
-    amber: "bg-brass-400/18 text-brass-700 dark:text-brass-300",
-    sky: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
-    plum: "bg-violet-500/12 text-violet-700 dark:text-violet-300",
+    gray: "bg-canvas-sunken text-ink-muted border-line/60 dark:bg-night-sunken dark:text-stone-300 dark:border-night-line/60",
+    rose: "bg-rose-500/12 text-rose-700 border-rose-500/20 dark:text-rose-300 dark:border-rose-400/20",
+    sage: "bg-sage-500/14 text-sage-700 border-sage-500/20 dark:text-sage-300 dark:border-sage-400/20",
+    amber: "bg-brass-400/18 text-brass-700 border-brass-500/20 dark:text-brass-300 dark:border-brass-400/20",
+    sky: "bg-sky-500/12 text-sky-700 border-sky-500/20 dark:text-sky-300 dark:border-sky-400/20",
+    plum: "bg-violet-500/12 text-violet-700 border-violet-500/20 dark:text-violet-300 dark:border-violet-400/20",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${tones[tone] || tones.gray} ${className}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border whitespace-nowrap transition-colors ${tones[tone] || tones.gray} ${className}`}
     >
       {children}
     </span>
@@ -225,8 +225,8 @@ export function Badge({ children, tone = "gray", className = "" }) {
 }
 
 /**
- * Kartu statistik. Angka ditampilkan dengan `tabular-nums` supaya lebar digit
- * tidak berubah-ubah saat nilainya diperbarui.
+ * Kartu statistik dengan Bento layout rhythm & umpan balik sentuhan fisik.
+ * Angka ditampilkan dengan `tabular-nums` dan optical tracking agar tidak goyang saat update.
  */
 export const StatCard = memo(function StatCard({
   label,
@@ -239,24 +239,24 @@ export const StatCard = memo(function StatCard({
   compactValue = false,
 }) {
   const tones = {
-    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-300",
-    sage: "bg-sage-500/12 text-sage-600 dark:text-sage-300",
-    amber: "bg-brass-400/16 text-brass-600 dark:text-brass-300",
-    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-300",
-    plum: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
-    neutral: "bg-canvas-sunken text-ink-muted dark:bg-night-sunken dark:text-stone-300",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20",
+    sage: "bg-sage-500/12 text-sage-600 dark:text-sage-300 border border-sage-500/20",
+    amber: "bg-brass-400/16 text-brass-600 dark:text-brass-300 border border-brass-400/25",
+    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/20",
+    plum: "bg-violet-500/10 text-violet-600 dark:text-violet-300 border border-violet-500/20",
+    neutral: "bg-canvas-sunken text-ink-muted dark:bg-night-sunken dark:text-stone-300 border border-line/60 dark:border-night-line/60",
   };
 
   const reduce = useReducedMotion();
   const body = (
-    <Card className="h-full group relative overflow-hidden">
+    <Card interactive={Boolean(to)} className="h-full group relative overflow-hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-ink-faint">
             {label}
           </p>
           <p
-            className={`font-display font-semibold mt-1.5 text-ink dark:text-stone-50 tabular-nums ${
+            className={`font-display font-semibold mt-1.5 text-ink dark:text-stone-50 tabular-nums tracking-tight ${
               compactValue ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
             }`}
           >
@@ -265,7 +265,7 @@ export const StatCard = memo(function StatCard({
           {sub && <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">{sub}</p>}
         </div>
         {Icon && (
-          <div className={`p-2.5 rounded-2xl shrink-0 ${tones[tone] || tones.rose}`}>
+          <div className={`p-2.5 rounded-2xl shrink-0 transition-transform duration-200 group-hover:scale-105 ${tones[tone] || tones.rose}`}>
             <Icon size={19} strokeWidth={1.9} />
           </div>
         )}
@@ -273,7 +273,7 @@ export const StatCard = memo(function StatCard({
       {to && (
         <ArrowRight
           size={15}
-          className="absolute bottom-5 right-5 text-ink-faint opacity-0 -translate-x-1 transition-[opacity,transform] duration-200 ease-glide group-hover:opacity-100 group-hover:translate-x-0"
+          className="absolute bottom-5 right-5 text-ink-faint opacity-0 -translate-x-1.5 transition-[opacity,transform] duration-200 ease-glide group-hover:opacity-100 group-hover:translate-x-0"
         />
       )}
     </Card>
@@ -424,15 +424,15 @@ export function ErrorState({ message, onRetry }) {
 
 export function EmptyState({ message, hint, icon: Icon, action }) {
   return (
-    <div className="flex flex-col items-center justify-center py-14 text-center gap-2.5">
+    <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
       {Icon && (
-        <div className="p-3 rounded-2xl bg-canvas-sunken dark:bg-night-sunken text-ink-faint">
-          <Icon size={22} strokeWidth={1.7} />
+        <div className="p-3.5 rounded-2xl bg-canvas-sunken/90 dark:bg-night-sunken/90 border border-line/70 dark:border-night-line/70 text-ink-faint shadow-soft mb-3">
+          <Icon size={24} strokeWidth={1.7} />
         </div>
       )}
-      <p className="text-sm text-ink-muted max-w-xs">{message}</p>
-      {hint && <p className="text-xs text-ink-faint max-w-xs">{hint}</p>}
-      {action}
+      <p className="text-sm font-medium text-ink dark:text-stone-200 max-w-sm">{message}</p>
+      {hint && <p className="text-xs text-ink-muted mt-1 max-w-xs leading-relaxed">{hint}</p>}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
@@ -527,7 +527,7 @@ export function Table({ head, children, className = "" }) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line/70 dark:divide-night-line/70">{children}</tbody>
+          <tbody className="divide-y divide-line/70 dark:divide-night-line/70 [&>tr]:transition-colors [&>tr]:duration-150 [&>tr:hover]:bg-canvas-sunken/40 dark:[&>tr:hover]:bg-night-sunken/40">{children}</tbody>
         </table>
       </div>
     </div>

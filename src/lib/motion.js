@@ -98,3 +98,45 @@ export const modalDialogVariants = {
     transition: APPLE_SPRINGS.default,
   },
 };
+
+/**
+ * Variasi stagger kontainer untuk Bento Grid dan daftar kartu modular.
+ * Mencegah semua elemen meloncat sekaligus, memberikan efek air terjun bertahap (~40ms).
+ */
+export const bentoContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.045,
+      delayChildren: 0.02,
+    },
+  },
+};
+
+/**
+ * Variasi item bento individual dengan initial scale 0.96 (Emil Kowalski: never scale from 0).
+ */
+export const bentoItemVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.96,
+    y: 10,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: APPLE_SPRINGS.default,
+  },
+};
+
+/**
+ * Spring transisi untuk indikator tab aktif (Shared Layout).
+ */
+export const tabIndicatorSpring = {
+  type: "spring",
+  stiffness: 420,
+  damping: 34,
+  mass: 0.8,
+};

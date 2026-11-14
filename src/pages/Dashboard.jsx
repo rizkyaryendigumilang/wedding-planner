@@ -41,6 +41,7 @@ import {
   monthlySavingNeeded,
   daysUntil,
 } from "../lib/format";
+import { bentoContainerVariants } from "../lib/motion";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -386,8 +387,13 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* ========================= KARTU STATISTIK ========================= */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* ========================= KARTU STATISTIK (Bento Grid) ========================= */}
+      <motion.section
+        variants={bentoContainerVariants}
+        initial={reduce ? false : "hidden"}
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+      >
         {isPanitia ? (
           <StatCard
             label="Itinerary Hari-H"
@@ -395,6 +401,7 @@ export default function Dashboard() {
             sub="agenda terselesaikan"
             icon={Clock3}
             tone="rose"
+            to="/rundown"
             delay={0}
           />
         ) : (
@@ -408,6 +415,7 @@ export default function Dashboard() {
             }
             icon={Wallet}
             tone="rose"
+            to="/budget"
             delay={0}
           />
         )}
@@ -417,6 +425,7 @@ export default function Dashboard() {
           sub={`${guestSummary.totalPax} pax • ${guestSummary.hadir} sudah konfirmasi`}
           icon={Users}
           tone="sky"
+          to="/guests"
           delay={0.05}
         />
         <StatCard
@@ -425,6 +434,7 @@ export default function Dashboard() {
           sub="administrasi, vendor & seserahan"
           icon={CheckCircle2}
           tone="sage"
+          to="/vendors"
           delay={0.1}
         />
         <StatCard
@@ -433,9 +443,10 @@ export default function Dashboard() {
           sub={vendorSummary.remaining === 0 ? "semua tugas beres" : "tugas belum selesai"}
           icon={MODULE_ICONS.vendors}
           tone="amber"
+          to="/vendors"
           delay={0.15}
         />
-      </section>
+      </motion.section>
 
       {/* ========================= GALERI (kondisional) ========================= */}
       {/* Foto hanya muncul setelah ditandai "sudah prewedding". Sebelum itu
@@ -746,12 +757,12 @@ function PhotoTile({ photo, index }) {
 
 function MoneyBlock({ icon: Icon, tone, label, value }) {
   return (
-    <div className="rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 p-3.5">
-      <div className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${tone}`}>
-        <Icon size={13} />
+    <div className="rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line/50 dark:border-night-line/50 p-4 transition-colors hover:border-line-strong dark:hover:border-night-line">
+      <div className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] ${tone}`}>
+        <Icon size={14} strokeWidth={2} />
         {label}
       </div>
-      <p className="font-display text-lg sm:text-xl font-semibold mt-1.5 tabular-nums text-ink dark:text-stone-50">
+      <p className="font-display text-lg sm:text-xl font-semibold mt-1.5 tabular-nums tracking-tight text-ink dark:text-stone-50">
         {typeof value === "number" ? formatRupiah(value) : value}
       </p>
     </div>
@@ -761,8 +772,8 @@ function MoneyBlock({ icon: Icon, tone, label, value }) {
 function MiniStat({ label, value, tone = "" }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] text-ink-faint truncate" title={label}>{label}</p>
-      <p className={`text-sm font-semibold mt-0.5 tabular-nums ${tone || "text-ink dark:text-stone-100"}`}>
+      <p className="text-[11px] font-medium text-ink-faint truncate" title={label}>{label}</p>
+      <p className={`text-sm font-semibold mt-0.5 tabular-nums tracking-tight ${tone || "text-ink dark:text-stone-100"}`}>
         {formatCompact(value)}
       </p>
     </div>
@@ -772,15 +783,15 @@ function MiniStat({ label, value, tone = "" }) {
 function ModuleRow({ to, module, label, value, progress, tone }) {
   const Icon = MODULE_ICONS[module];
   return (
-    <Link to={to} className="block group focus-ring rounded-2xl">
+    <Link to={to} className="block group focus-ring rounded-2xl p-2 -mx-2 hover:bg-canvas-sunken/50 dark:hover:bg-night-sunken/50 transition-colors">
       <div className="flex items-center gap-2.5 mb-1.5">
-        <Icon size={15} className="text-ink-faint shrink-0" strokeWidth={2} />
-        <span className="text-[13px] flex-1 truncate text-ink-muted group-hover:text-ink dark:group-hover:text-stone-100 transition-colors">
+        <Icon size={15} className="text-ink-faint shrink-0 group-hover:text-ink dark:group-hover:text-stone-200 transition-colors" strokeWidth={2} />
+        <span className="text-[13px] font-medium flex-1 truncate text-ink-muted group-hover:text-ink dark:group-hover:text-stone-100 transition-colors">
           {label}
         </span>
         <ArrowUpRight
-          size={13}
-          className="text-ink-faint opacity-60 sm:opacity-0 sm:-translate-x-1 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-[opacity,transform] duration-200 ease-glide shrink-0"
+          size={14}
+          className="text-ink-faint opacity-60 sm:opacity-0 sm:-translate-x-1.5 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-[opacity,transform] duration-200 ease-glide shrink-0"
         />
       </div>
       <ProgressBar value={progress} tone={tone} height="h-1.5" />

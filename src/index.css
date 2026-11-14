@@ -80,9 +80,37 @@
 }
 
 @layer components {
-  /* Kartu dasar seluruh aplikasi. */
+  /* Kartu dasar seluruh aplikasi dengan kedalaman halus dan border tipis elegan. */
   .surface {
-    @apply bg-canvas-card dark:bg-night-card border border-line dark:border-night-line rounded-3xl shadow-soft;
+    @apply bg-canvas-card dark:bg-night-card border border-line/80 dark:border-night-line/80 rounded-3xl shadow-soft;
+  }
+
+  /* Kartu interaktif: umpan balik sentuhan fisik mikro & hover halus pada perangkat presisi (mouse). */
+  .surface-interactive {
+    @apply surface transition-[transform,box-shadow,border-color] duration-200 ease-glide;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .surface-interactive:hover {
+      @apply -translate-y-0.5 shadow-lift border-line-strong dark:border-night-line;
+    }
+  }
+  .surface-interactive:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  /* Tipografi modern dengan optical tracking terukur */
+  .display-title {
+    @apply font-display tracking-tight leading-[1.12];
+    letter-spacing: -0.02em;
+  }
+
+  .eyebrow-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.11em] text-ink-faint;
+  }
+
+  .metric-value {
+    @apply font-display font-semibold tabular-nums tracking-tight;
+    font-feature-settings: "tnum" 1, "cv05" 1;
   }
 
   /* Area yang bisa digulir tanpa menggeser halaman di belakangnya. */

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   BarChart3,
   Download,
@@ -206,29 +207,41 @@ export default function Analytics() {
       </div>
 
       {/* Tab Filter Navigasi */}
-      <div className="flex items-center gap-2 border-b border-line dark:border-night-line pb-px overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-1.5 border-b border-line dark:border-night-line pb-px overflow-x-auto no-scrollbar">
         {[
           { id: "overview", label: "Ringkasan Eksekutif", icon: TrendingUp },
           { id: "rsvp", label: "Funnel Kehadiran Tamu", icon: Users },
           { id: "budget", label: "Alokasi Anggaran", icon: Wallet },
           { id: "exports", label: "Pusat Laporan & Ekspor", icon: FileSpreadsheet },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveReportTab(t.id);
-            }}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
-              activeReportTab === t.id
-                ? "border-rose-600 text-rose-600 dark:border-rose-400 dark:text-rose-300"
-                : "border-transparent text-ink-muted hover:text-ink dark:hover:text-stone-300"
-            }`}
-          >
-            <span>{t.label}</span>
-          </button>
-        ))}
+        ].map((t) => {
+          const Icon = t.icon;
+          const isActive = activeReportTab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => {
+                triggerHaptic("selection");
+                setActiveReportTab(t.id);
+              }}
+              className={`relative pb-3 px-3.5 text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-2 focus-ring rounded-lg ${
+                isActive
+                  ? "text-rose-600 dark:text-rose-300"
+                  : "text-ink-muted hover:text-ink dark:hover:text-stone-300"
+              }`}
+            >
+              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
+              <span>{t.label}</span>
+              {isActive && (
+                <motion.span
+                  layoutId="analytics-active-tab"
+                  transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                  className="absolute inset-x-0 bottom-0 h-0.5 bg-rose-600 dark:bg-rose-400 rounded-full"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ======================= TAB 1: OVERVIEW ======================= */}

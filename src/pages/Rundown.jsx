@@ -16,6 +16,9 @@ import {
   Sparkles,
   X,
   Printer,
+  FastForward,
+  FileText,
+  Copy,
 } from "lucide-react";
 import {
   Page,
@@ -28,6 +31,11 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
+import {
+  computeRundownShift,
+  generateVendorBriefText,
+  VENDOR_BRIEF_CATEGORIES,
+} from "../lib/rundownShifter";
 import { exportToCsv } from "../lib/export";
 import { printMasterGuidebook } from "../lib/weddingMasterGuidebook";
 import { triggerHaptic } from "../lib/haptic";
@@ -163,8 +171,20 @@ export default function Rundown() {
   const [editingItem, setEditingItem] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
 
-  // Aksesibilitas modal agenda (Body Scroll Lock & Escape untuk menutup)
+  // State untuk Dynamic Rundown Shifter
+  const [shifterModal, setShifterModal] = useState(false);
+  const [shiftDelta, setShiftDelta] = useState(15);
+  const [shiftStartIndex, setShiftStartIndex] = useState(0);
+  const [shiftingBusy, setShiftingBusy] = useState(false);
+
+  // State untuk Vendor Brief Sheet
+  const [briefModal, setBriefModal] = useState(false);
+  const [briefCategory, setBriefCategory] = useState("all");
+
+  // Aksesibilitas modal agenda, shifter, & brief (Body Scroll Lock & Escape untuk menutup)
   useModalA11y(modalOpen, () => setModalOpen(false));
+  useModalA11y(shifterModal, () => setShifterModal(false));
+  useModalA11y(briefModal, () => setBriefModal(false));
 
   const [form, setForm] = useState({
     phase: "Akad / Pemberkatan",
@@ -289,6 +309,46 @@ export default function Rundown() {
     ? Math.round((rundownSummary.done / rundownSummary.total) * 100)
     : 0;
 
+  const shiftedPreview = useMemo(() => {
+    return computeRundownShift(rundowns, shiftDelta, shiftStartIndex);
+  }, [rundowns, shiftDelta, shiftStartIndex]);
+
+  const handleApplyShift = async () => {
+    setShiftingBusy(true);
+    try {
+      const itemsToUpdate = shiftedPreview.filter((item) => item.is_shifted);
+      for (const item of itemsToUpdate) {
+        await updateRundownEvent(item.id, {
+          time_start: item.time_start_new,
+          time_end: item.time_end_new,
+        });
+      }
+      triggerHaptic("success");
+      toast.success(
+        `Berhasil! ${itemsToUpdate.length} agenda digeser ${shiftDelta > 0 ? "+" : ""}${shiftDelta} menit.`
+      );
+      setShifterModal(false);
+    } catch (err) {
+      toast.error("Gagal menggeser jadwal: " + (err?.message || ""));
+    } finally {
+      setShiftingBusy(false);
+    }
+  };
+
+  const vendorBriefText = useMemo(() => {
+    return generateVendorBriefText({
+      vendorCategory: briefCategory,
+      couple,
+      rundowns,
+      vendors,
+      guestSummary: {
+        total: guests?.length || 0,
+        totalPax: guests?.reduce((s, g) => s + (Number(g.pax) || 1), 0) || 0,
+        hadir: guests?.filter((g) => g.rsvp_status === "Hadir" || g.checked_in).length || 0,
+      },
+    });
+  }, [briefCategory, couple, rundowns, vendors, guests]);
+
   return (
     <Page>
       <PageHeader
@@ -296,25 +356,49 @@ export default function Rundown() {
         subtitle="Susunan jadwal acara akad &amp; resepsi, lokasi, dan kontak penanggung jawab."
         action={
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+            {rundowns.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={FastForward}
+                  onClick={() => setShifterModal(true)}
+                  title="Geser jam agenda secara dinamis jika acara molor"
+                >
+                  Geser Jam
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={FileText}
+                  onClick={() => setBriefModal(true)}
+                  title="Lembar ringkasan briefing vendor catering, foto, MUA, dsb."
+                >
+                  Briefing Vendor
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
+              size="sm"
+              icon={Download}
+              onClick={handleExportCsv}
+              title="Unduh jadwal rundown dalam format CSV"
+              className="hidden sm:inline-flex"
+            >
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               icon={Printer}
               onClick={() => printMasterGuidebook({ couple, rundowns, vendors, guests, settings, user })}
               title="Cetak atau Simpan Buku Panduan Pernikahan ke PDF"
+              className="hidden lg:inline-flex"
             >
-              Buku Panduan (PDF)
+              Buku Panduan
             </Button>
-            {rundowns.length > 0 && (
-              <Button
-                variant="secondary"
-                icon={Download}
-                onClick={handleExportCsv}
-                className="hidden sm:inline-flex"
-              >
-                Unduh CSV
-              </Button>
-            )}
-            <Button icon={Plus} onClick={openCreateModal}>
+            <Button size="sm" icon={Plus} onClick={openCreateModal}>
               Tambah Agenda
             </Button>
           </div>
@@ -709,6 +793,260 @@ export default function Rundown() {
                   </Button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal 2: Dynamic Rundown Shifter */}
+      <AnimatePresence>
+        {shifterModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="absolute inset-0 bg-ink/50 dark:bg-black/70 backdrop-blur-sm"
+              onClick={() => setShifterModal(false)}
+            />
+            <motion.div
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="relative w-full max-w-2xl bg-canvas-card dark:bg-night-card rounded-3xl border border-line dark:border-night-line shadow-lift p-6 space-y-5 max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-line dark:border-night-line shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <FastForward size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-semibold text-lg text-ink dark:text-stone-50">
+                      Geser Jam Acara Dinamis
+                    </h3>
+                    <p className="text-xs text-ink-muted">
+                      Otomatis sesuaikan jam rangkaian acara berikutnya saat prosesi di lapangan molor
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShifterModal(false)}
+                  className="p-1.5 rounded-xl text-ink-faint hover:text-ink transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 overflow-y-auto scroll-area pr-1 flex-1">
+                {/* Pilihan Menit Pergeseran */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-ink-faint mb-2">
+                    Durasi Pergeseran Waktu
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[10, 15, 20, 30, 45, 60, -15].map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => {
+                          setShiftDelta(mins);
+                          triggerHaptic("selection");
+                        }}
+                        className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition ${
+                          shiftDelta === mins
+                            ? "bg-amber-500 text-stone-900 shadow-soft"
+                            : "bg-canvas-sunken dark:bg-night-sunken text-ink-muted hover:text-ink"
+                        }`}
+                      >
+                        {mins > 0 ? `+${mins} Menit (Mundur)` : `${mins} Menit (Maju)`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Titik Mulai Pergeseran */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-ink-faint mb-1.5">
+                    Mulai Geser Dari Agenda
+                  </label>
+                  <select
+                    value={shiftStartIndex}
+                    onChange={(e) => setShiftStartIndex(Number(e.target.value))}
+                    className="field text-sm"
+                  >
+                    {rundowns.map((r, idx) => (
+                      <option key={r.id} value={idx}>
+                        {idx + 1}. [{r.time_start}] {r.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Pratinjau Perubahan Jam */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-ink-faint mb-2">
+                    Pratinjau Perubahan Jam
+                  </label>
+                  <div className="rounded-2xl border border-line dark:border-night-line overflow-hidden">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-canvas-sunken dark:bg-night-sunken text-ink-faint font-semibold uppercase text-[10px]">
+                        <tr>
+                          <th className="py-2 px-3">Agenda</th>
+                          <th className="py-2 px-3">Jam Lama</th>
+                          <th className="py-2 px-3">Jam Baru</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line/60 dark:divide-night-line/60">
+                        {shiftedPreview.map((item) => (
+                          <tr
+                            key={item.id}
+                            className={
+                              item.is_shifted
+                                ? "bg-amber-500/10 dark:bg-amber-950/20 font-medium"
+                                : "opacity-60"
+                            }
+                          >
+                            <td className="py-2 px-3 truncate max-w-[200px]">{item.title}</td>
+                            <td className="py-2 px-3 text-ink-muted tabular-nums">
+                              {item.time_start} {item.time_end ? `- ${item.time_end}` : ""}
+                            </td>
+                            <td className="py-2 px-3 text-amber-700 dark:text-amber-300 font-bold tabular-nums">
+                              {item.is_shifted ? (
+                                <span>
+                                  {item.time_start_new} {item.time_end_new ? `- ${item.time_end_new}` : ""}
+                                </span>
+                              ) : (
+                                "Tetap"
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-line dark:border-night-line flex items-center justify-end gap-2.5 shrink-0">
+                <Button variant="secondary" onClick={() => setShifterModal(false)} disabled={shiftingBusy}>
+                  Batal
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleApplyShift}
+                  disabled={shiftingBusy}
+                  className="!bg-amber-600 hover:!bg-amber-700"
+                >
+                  {shiftingBusy ? "Menerapkan..." : "Terapkan Pergeseran Waktu"}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal 3: Vendor Brief Sheet Generator */}
+      <AnimatePresence>
+        {briefModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="absolute inset-0 bg-ink/50 dark:bg-black/70 backdrop-blur-sm"
+              onClick={() => setBriefModal(false)}
+            />
+            <motion.div
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="relative w-full max-w-2xl bg-canvas-card dark:bg-night-card rounded-3xl border border-line dark:border-night-line shadow-lift p-6 space-y-5 max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-line dark:border-night-line shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <FileText size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-semibold text-lg text-ink dark:text-stone-50">
+                      Lembar Briefing Vendor
+                    </h3>
+                    <p className="text-xs text-ink-muted">
+                      Ringkasan instruksi operasional hari-H siap kirim via WhatsApp atau cetak
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBriefModal(false)}
+                  className="p-1.5 rounded-xl text-ink-faint hover:text-ink transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Selector Kategori Vendor */}
+              <div className="flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+                {VENDOR_BRIEF_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setBriefCategory(cat.id);
+                      triggerHaptic("selection");
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                      briefCategory === cat.id
+                        ? "bg-rose-600 text-white shadow-soft"
+                        : "bg-canvas-sunken dark:bg-night-sunken text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Text Preview Box */}
+              <div className="flex-1 overflow-y-auto scroll-area bg-canvas-sunken/60 dark:bg-night-sunken/60 p-4 rounded-2xl border border-line dark:border-night-line">
+                <pre className="text-xs font-mono whitespace-pre-wrap text-ink dark:text-stone-200 leading-relaxed select-all">
+                  {vendorBriefText}
+                </pre>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-line dark:border-night-line flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+                <Button
+                  variant="neutral"
+                  size="sm"
+                  icon={Printer}
+                  onClick={() => window.print()}
+                >
+                  Cetak Lembar
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={Copy}
+                    onClick={() => {
+                      navigator.clipboard.writeText(vendorBriefText);
+                      triggerHaptic("success");
+                      toast.success("Teks briefing vendor berhasil disalin ke papan klip!");
+                    }}
+                  >
+                    Salin Teks WhatsApp
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setBriefModal(false)}>
+                    Tutup
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

@@ -11,7 +11,12 @@ import {
   X,
   TableProperties,
   Download,
+  Share2,
+  Maximize2,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Page,
   PageHeader,
@@ -23,6 +28,7 @@ import {
 } from "../components/ui";
 import { useWedding } from "../lib/weddingData";
 import { getCppNickname, getCpwNickname } from "../lib/couple";
+import { getCrewKioskUrl, generateCrewWhatsAppShareMessage } from "../lib/kiosk";
 import pb from "../lib/pocketbase";
 import { exportToCsv } from "../lib/export";
 import { triggerHaptic } from "../lib/haptic";
@@ -48,9 +54,19 @@ export default function Reception() {
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'checked-in', 'pending'
   const [sideFilter, setSideFilter] = useState("ALL"); // 'ALL', 'CPP', 'CPW'
   const [walkInModal, setWalkInModal] = useState(false);
+  const [crewModal, setCrewModal] = useState(false);
 
-  // Aksesibilitas modal walk-in (Body Scroll Lock & Escape untuk menutup)
+  // Aksesibilitas modal walk-in & crew link (Body Scroll Lock & Escape untuk menutup)
   useModalA11y(walkInModal, () => setWalkInModal(false));
+  useModalA11y(crewModal, () => setCrewModal(false));
+
+  const kioskUrl = useMemo(() => {
+    return getCrewKioskUrl(couple?.id || guests[0]?.couple);
+  }, [couple, guests]);
+
+  const coupleName = useMemo(() => {
+    return `${getCppNickname(couple)} & ${getCpwNickname(couple)}`;
+  }, [couple]);
   const [walkInForm, setWalkInForm] = useState({
     name: "",
     side: "CPP",
@@ -211,14 +227,34 @@ export default function Reception() {
             {guests.length > 0 && (
               <Button
                 variant="outline"
+                size="sm"
                 icon={Download}
                 onClick={handleExportCsv}
-                className="hidden sm:inline-flex"
+                className="hidden md:inline-flex"
               >
-                Unduh Rekap CSV
+                Rekap CSV
               </Button>
             )}
-            <Button icon={Plus} onClick={() => setWalkInModal(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Share2}
+              onClick={() => setCrewModal(true)}
+              title="Bagikan Tautan Meja Resepsi untuk Panitia Tanpa Login"
+            >
+              Tautan Kru
+            </Button>
+            <Link to="/kiosk">
+              <Button
+                variant="neutral"
+                size="sm"
+                icon={Maximize2}
+                title="Buka Mode Kios Layar Penuh untuk Meja Resepsi"
+              >
+                Mode Kios
+              </Button>
+            </Link>
+            <Button size="sm" icon={Plus} onClick={() => setWalkInModal(true)}>
               Tamu Walk-in
             </Button>
           </div>
@@ -616,6 +652,105 @@ export default function Reception() {
                   </Button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Tautan Kru Meja Resepsi (Tanpa Login) */}
+      <AnimatePresence>
+        {crewModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="absolute inset-0 bg-ink/50 dark:bg-black/70 backdrop-blur-sm"
+              onClick={() => setCrewModal(false)}
+            />
+            <motion.div
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="relative w-full max-w-lg bg-canvas-card dark:bg-night-card rounded-3xl border border-line dark:border-night-line shadow-lift p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-line dark:border-night-line">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <Share2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-semibold text-lg text-ink dark:text-stone-50">
+                      Tautan Kru Meja Resepsi
+                    </h3>
+                    <p className="text-xs text-ink-muted">Akses instan panitia tanpa perlu login akun atau password</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCrewModal(false)}
+                  className="p-1.5 rounded-xl text-ink-faint hover:text-ink transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-canvas-sunken/70 dark:bg-night-sunken/70 border border-line/60 dark:border-night-line/60 text-xs text-ink-muted space-y-2 leading-relaxed">
+                <p>
+                  🛡️ <strong>Keamanan Data Terjamin:</strong> Tautan ini hanya dapat membuka halaman pencarian dan check-in kehadiran tamu. Panitia <em>tidak dapat melihat data anggaran keuangan, vendor, atau pengaturan sensitif lainnya</em>.
+                </p>
+                <p>
+                  📱 <strong>Siap Digunakan di Tablet &amp; HP:</strong> Panitia cukup mengklik tautan di WhatsApp untuk langsung membuka mode kios resepsi.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                  URL Meja Resepsi Kru
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={kioskUrl}
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-line dark:border-night-line bg-canvas dark:bg-night font-mono text-xs text-ink dark:text-stone-300 outline-none select-all"
+                  />
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    icon={Copy}
+                    onClick={() => {
+                      navigator.clipboard.writeText(kioskUrl);
+                      triggerHaptic("success");
+                      toast.success("Tautan kru berhasil disalin ke papan klip!");
+                    }}
+                  >
+                    Salin
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(
+                    generateCrewWhatsAppShareMessage({ coupleName, kioskUrl })
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:flex-1"
+                >
+                  <Button variant="primary" className="w-full !bg-emerald-600 hover:!bg-emerald-700">
+                    Bagikan via WhatsApp
+                  </Button>
+                </a>
+                <Link to="/kiosk" className="w-full sm:w-auto">
+                  <Button variant="outline" icon={ExternalLink} className="w-full sm:w-auto">
+                    Uji Tampilan Kios
+                  </Button>
+                </Link>
+              </div>
             </motion.div>
           </div>
         )}

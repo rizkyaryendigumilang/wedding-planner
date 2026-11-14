@@ -14,6 +14,7 @@ import SessionExpiredModal from "./components/SessionExpiredModal";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Rundown = lazy(() => import("./pages/Rundown"));
 const Reception = lazy(() => import("./pages/Reception"));
+const ReceptionKiosk = lazy(() => import("./pages/ReceptionKiosk"));
 const Budget = lazy(() => import("./pages/Budget"));
 const Gifts = lazy(() => import("./pages/Gifts"));
 const Administration = lazy(() => import("./pages/Administration"));
@@ -68,6 +69,14 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route
+          path="/kiosk"
+          element={
+            <WeddingProvider>
+              <ReceptionKiosk />
+            </WeddingProvider>
+          }
+        />
         <Route
           element={
             <RequireAuth>
