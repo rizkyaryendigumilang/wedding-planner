@@ -8,6 +8,7 @@ import { WeddingProvider } from "./lib/weddingData";
 import Layout from "./components/Layout";
 import { Loading } from "./components/ui";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SessionExpiredModal from "./components/SessionExpiredModal";
 
 // Route Lazy Loading untuk memecah bundle menjadi chunk terpisah
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -21,6 +22,13 @@ const Guests = lazy(() => import("./pages/Guests"));
 const Seserahan = lazy(() => import("./pages/Seserahan"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const Settings = lazy(() => import("./pages/Settings"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const HelpSupport = lazy(() => import("./pages/HelpSupport"));
+const Forbidden = lazy(() => import("./pages/system/Forbidden"));
+const ServerError = lazy(() => import("./pages/system/ServerError"));
+const Maintenance = lazy(() => import("./pages/system/Maintenance"));
+const OfflineView = lazy(() => import("./pages/system/OfflineView"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
@@ -94,6 +102,13 @@ function AppRoutes() {
           <Route path="seserahan" element={<Seserahan />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="help" element={<HelpSupport />} />
+          <Route path="403" element={<Forbidden />} />
+          <Route path="500" element={<ServerError />} />
+          <Route path="maintenance" element={<Maintenance />} />
+          <Route path="offline" element={<OfflineView />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
@@ -123,6 +138,7 @@ export default function App() {
       <ThemeProvider>
         <ThemedToaster />
         <AuthProvider>
+          <SessionExpiredModal />
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <AppRoutes />
           </BrowserRouter>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Link, NavLink, useLocation, useOutlet } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff, LifeBuoy } from "lucide-react";
+import { RefreshCw, LogOut, MoreHorizontal, X, Pencil, AlertTriangle, WifiOff, LifeBuoy, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { useWedding } from "../lib/weddingData";
 import { useAuth } from "../lib/auth";
@@ -12,16 +12,30 @@ import { getCoupleDisplayName } from "../lib/couple";
 import { EASE_EXPO_OUT, EASE_POWER_IN } from "../lib/motion";
 import { useModalA11y } from "../lib/useModalA11y";
 import HelpdeskModal from "./HelpdeskModal";
+import NotificationCenterModal from "./NotificationCenterModal";
+import { generateNotifications } from "../lib/notifications";
 
 const WEDDING_DATE = "2028-02-17";
 
 export default function Layout() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
-  const { couple, reload, loading, isLiveConnected } = useWedding();
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
+  const weddingData = useWedding();
+  const { couple, reload, loading, isLiveConnected } = weddingData;
   const { user, logout, isSuperuser, isPanitia, isDemo, demoDaysLeft } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
   const location = useLocation();
+
+  const unreadNotifCount = useMemo(() => {
+    try {
+      const notifs = generateNotifications(weddingData);
+      const read = JSON.parse(localStorage.getItem("wedding_read_notifications") || "[]");
+      return notifs.filter((n) => !read.includes(n.id)).length;
+    } catch (_) {
+      return 0;
+    }
+  }, [weddingData]);
 
   const ThemeIcon = isDark ? UI_ICONS.light : UI_ICONS.dark;
 
@@ -75,6 +89,7 @@ export default function Layout() {
         { to: "/guests", label: "Tamu", icon: "guests" },
         { to: "/vendors", label: "Vendor", icon: "vendors" },
         { to: "/gallery", label: "Galeri", icon: "gallery" },
+        { to: "/help", label: "Pusat Bantuan", icon: "help" },
         { to: "/settings", label: "Pengaturan", icon: "settings" },
       ];
     }
@@ -89,6 +104,9 @@ export default function Layout() {
       { to: "/administration", label: "Administrasi", icon: "administration" },
       { to: "/seserahan", label: "Seserahan", icon: "seserahan" },
       { to: "/gallery", label: "Galeri", icon: "gallery" },
+      { to: "/analytics", label: "Analitik & Laporan", icon: "analytics" },
+      { to: "/users", label: "Tim & Akses", icon: "users" },
+      { to: "/help", label: "Pusat Bantuan", icon: "help" },
       { to: "/settings", label: "Pengaturan", icon: "settings" },
     ];
   }, [isPanitia]);
@@ -185,20 +203,34 @@ export default function Layout() {
 
       {/* ===================== Sidebar (desktop) ===================== */}
       <aside className="hidden lg:flex w-[16.5rem] shrink-0 flex-col border-r border-line dark:border-night-line bg-canvas-card dark:bg-night-card">
-        <div className="flex items-center gap-3 px-5 py-5">
-          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-1.5 grid place-items-center shadow-glow shrink-0 border border-white/20">
-            <img
-              src={LOGO_URL}
-              alt="Logo Wedding Rings"
-              className="w-full h-full object-contain filter drop-shadow"
-            />
+        <div className="flex items-center justify-between px-5 py-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 p-1.5 grid place-items-center shadow-glow shrink-0 border border-white/20">
+              <img
+                src={LOGO_URL}
+                alt="Logo Wedding Rings"
+                className="w-full h-full object-contain filter drop-shadow"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="font-display font-semibold truncate text-ink dark:text-stone-50">
+                {coupleName}
+              </p>
+              <p className="text-[11px] text-ink-faint">17 Februari 2028</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-display font-semibold truncate text-ink dark:text-stone-50">
-              {coupleName}
-            </p>
-            <p className="text-[11px] text-ink-faint">17 Februari 2028</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setNotifModalOpen(true)}
+            aria-label="Pusat Notifikasi"
+            className="relative p-2 rounded-xl text-ink-muted hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors focus-ring shrink-0"
+            title="Pusat Notifikasi & Peringatan"
+          >
+            <Bell size={18} />
+            {unreadNotifCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </button>
         </div>
 
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto scroll-area">
@@ -272,6 +304,17 @@ export default function Layout() {
                 {current ? coupleName : "Wedding Planner"}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setNotifModalOpen(true)}
+              aria-label="Pusat Notifikasi"
+              className="relative p-2 rounded-xl text-ink-muted hover:bg-canvas-sunken dark:hover:bg-night-sunken transition-colors focus-ring"
+            >
+              <Bell size={18} />
+              {unreadNotifCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              )}
+            </button>
             <button
               onClick={toggleTheme}
               aria-label={isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
@@ -481,6 +524,12 @@ export default function Layout() {
         isOpen={helpModalOpen}
         onClose={() => setHelpModalOpen(false)}
         user={user}
+      />
+
+      {/* Modal Pusat Notifikasi */}
+      <NotificationCenterModal
+        isOpen={notifModalOpen}
+        onClose={() => setNotifModalOpen(false)}
       />
     </div>
   );

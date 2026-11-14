@@ -90,11 +90,11 @@ const BUTTON_VARIANTS = {
 };
 
 const BUTTON_SIZES = {
-  sm: "text-[13px] px-3 py-2 rounded-xl gap-1.5",
-  md: "text-sm px-4 py-2.5 rounded-2xl gap-2",
-  lg: "text-[15px] px-5 py-3.5 rounded-2xl gap-2",
-  // Target sentuh minimal 44px — ukuran ikon tunggal yang nyaman di jempol.
-  icon: "p-2.5 rounded-xl",
+  sm: "text-[13px] px-3 py-2 rounded-xl gap-1.5 min-h-[38px] sm:min-h-0",
+  md: "text-sm px-4 py-2.5 rounded-2xl gap-2 min-h-[44px]",
+  lg: "text-[15px] px-5 py-3.5 rounded-2xl gap-2 min-h-[48px]",
+  // Target sentuh standar Apple / WCAG minimal 44x44px — ukuran ikon tunggal yang nyaman di jempol.
+  icon: "p-2.5 min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl",
 };
 
 /**

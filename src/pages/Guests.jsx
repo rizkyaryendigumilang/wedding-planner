@@ -155,7 +155,7 @@ const GuestRow = memo(function GuestRow({
             onClick={() => onCopyMessage(g)}
             aria-label={`Salin teks pesan undangan untuk ${g.name}`}
             title="Salin teks pesan undangan"
-            className="p-1.5 rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+            className="p-2 min-w-[34px] min-h-[34px] flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
           >
             {isMsgCopied ? (
               <Check size={14} className="text-sage-600" />
@@ -169,7 +169,7 @@ const GuestRow = memo(function GuestRow({
             onClick={() => onCopyLink(g)}
             aria-label={`Salin tautan undangan personal untuk ${g.name}`}
             title="Salin tautan undangan personal"
-            className="p-1.5 rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition"
+            className="p-2 min-w-[34px] min-h-[34px] flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
           >
             {isLinkCopied ? (
               <Check size={14} className="text-sage-600" />
@@ -301,13 +301,13 @@ const GuestCard = memo(function GuestCard({
         {g.group_name && <span>Grup: {g.group_name}</span>}
       </div>
 
-      {/* Baris 3: Tombol Aksi WhatsApp & Salin */}
+      {/* Baris 3: Tombol Aksi WhatsApp & Salin (Target Sentuh Standar Apple 44x44px) */}
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"
           onClick={() => onSendWhatsApp(g)}
           aria-label={`Kirim pesan WhatsApp ke ${g.name}`}
-          className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98] focus-ring"
+          className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] text-xs font-semibold transition active:scale-[0.98] focus-ring"
         >
           <WhatsAppIcon className="w-4 h-4" />
           <span>Kirim WhatsApp</span>
@@ -318,7 +318,7 @@ const GuestCard = memo(function GuestCard({
           onClick={() => onCopyMessage(g)}
           aria-label={`Salin pesan undangan ${g.name}`}
           title="Salin pesan undangan"
-          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring active:scale-[0.96]"
         >
           {isMsgCopied ? <Check size={15} className="text-sage-600" /> : <Copy size={15} />}
         </button>
@@ -328,7 +328,7 @@ const GuestCard = memo(function GuestCard({
           onClick={() => onCopyLink(g)}
           aria-label={`Salin tautan personal ${g.name}`}
           title="Salin tautan personal"
-          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-line dark:border-night-line text-ink-faint hover:text-ink hover:bg-canvas-sunken dark:hover:bg-night-sunken transition focus-ring active:scale-[0.96]"
         >
           {isLinkCopied ? <Check size={15} className="text-sage-600" /> : <Link2 size={15} />}
         </button>
@@ -341,7 +341,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onToggleSentStatus(g)}
             aria-label={`Ubah status kirim undangan ${g.name}`}
             title="Klik untuk ubah status terkirim"
-            className="focus-ring rounded-lg min-h-[32px] flex items-center"
+            className="focus-ring rounded-lg min-h-[34px] flex items-center"
           >
             <Badge tone={g.invitation_sent ? "sage" : "gray"}>
               {g.invitation_sent ? "Terkirim" : "Belum kirim"}
@@ -351,7 +351,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onToggleInvitation(g)}
             aria-label={`Ubah jenis undangan fisik/digital ${g.name}`}
             title="Ubah jenis fisik / digital"
-            className="focus-ring rounded-lg text-xs min-h-[32px] flex items-center"
+            className="focus-ring rounded-lg text-xs min-h-[34px] flex items-center"
           >
             <Badge tone={g.type === "Digital" ? "sky" : "amber"}>{g.type}</Badge>
           </button>
@@ -359,7 +359,7 @@ const GuestCard = memo(function GuestCard({
             onClick={() => onCycleStatus(g)}
             aria-label={`Ubah status kehadiran RSVP ${g.name}`}
             title="Klik untuk ubah status RSVP"
-            className="focus-ring rounded-lg min-h-[32px] flex items-center"
+            className="focus-ring rounded-lg min-h-[34px] flex items-center"
           >
             <Badge tone={STATUS_TONE[g.status] || "gray"}>
               {g.status || "Belum"}
@@ -371,7 +371,7 @@ const GuestCard = memo(function GuestCard({
           type="button"
           onClick={() => onRemoveGuest(g)}
           aria-label={`Hapus ${g.name} ke Tempat Sampah`}
-          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition focus-ring"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition focus-ring active:scale-[0.94]"
         >
           <Trash2 size={15} />
         </button>

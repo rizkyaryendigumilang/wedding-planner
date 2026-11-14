@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Settings as SettingsIcon,
@@ -9,22 +9,18 @@ import {
   Palette,
   Image as ImageIcon,
   FileSpreadsheet,
-  FileJson,
   ShieldCheck,
   Laptop,
   Save,
   ExternalLink,
   Check,
   LogOut,
-  Download,
-  Printer,
   Radio,
   RefreshCw,
   KeyRound,
   AlertTriangle,
   RotateCcw,
   CheckCheck,
-  Upload,
   Eye,
   EyeOff,
   UserPlus,
@@ -34,6 +30,7 @@ import {
   Landmark,
   Tags,
   LifeBuoy,
+  Webhook,
 } from "lucide-react";
 import { formatUserRole } from "../lib/helpdesk";
 import HelpdeskModal from "../components/HelpdeskModal";
@@ -56,6 +53,9 @@ import RekeningQrisTab from "./settings/RekeningQrisTab";
 import CategoriesAdatTab from "./settings/CategoriesAdatTab";
 import TimezoneThemeTab from "./settings/TimezoneThemeTab";
 import TrashTab from "./settings/TrashTab";
+import QuickFriendInviteCard from "./settings/QuickFriendInviteCard";
+import IntegrationsTab from "./settings/IntegrationsTab";
+import BackupTab from "./settings/BackupTab";
 import { Avatar } from "../components/Avatar";
 import { PWAInstallButton, PWAInstallBanner } from "../components/PWAInstallPrompt";
 import { useWedding, DEFAULT_WA_TEMPLATE } from "../lib/weddingData";
@@ -72,8 +72,6 @@ import {
   formatBankAccountsForWa,
 } from "../lib/masterData";
 import { isDriveFolder, toDriveOpenUrl } from "../lib/photos";
-import { exportToCsv, exportToJson, printReport } from "../lib/export";
-import { printMasterGuidebook } from "../lib/weddingMasterGuidebook";
 import { LOGO_URL } from "../lib/icons";
 import pb from "../lib/pocketbase";
 import { toast } from "sonner";
@@ -91,6 +89,7 @@ const TABS = [
   { id: "acara", label: "Acara & Pasangan", icon: Heart },
   { id: "pasangan", label: "Akun & Hak Akses", icon: Users },
   { id: "rekening", label: "Rekening & QRIS", icon: Landmark },
+  { id: "integrasi", label: "Integrasi & Cloud", icon: Webhook },
   { id: "kategori", label: "Kategori & Adat", icon: Tags },
   { id: "undangan", label: "Undangan & WA", icon: Send },
   { id: "alerts", label: "Peringatan", icon: Bell },
@@ -254,10 +253,6 @@ export default function Settings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passSaving, setPassSaving] = useState(false);
   const [passStatus, setPassStatus] = useState(null);
-
-  // --- Impor / Restore JSON ---
-  const fileInputRef = useRef(null);
-  const [restoreStatus, setRestoreStatus] = useState(null);
 
   // --- Kontrol Akun Demo (khusus admin) ---
   const [demoActionId, setDemoActionId] = useState(null);
@@ -679,113 +674,6 @@ export default function Settings() {
     }
   };
 
-  // 7. Ekspor CSV
-  const exportGuestsCsv = () => {
-    const headers = [
-      { key: "name", label: t("Nama Tamu") },
-      { key: "category", label: t("Kategori") },
-      { key: "side", label: "Pihak" },
-      { key: "priority", label: t("Prioritas") },
-      { key: "pax", label: t("Jumlah Pax") },
-      { key: "status", label: t("Status RSVP") },
-      { key: "phone", label: t("No. WhatsApp") },
-      { key: "invitation_sent", label: "Sudah Kirim Undangan", format: (v) => (v ? "Ya" : "Belum") },
-      { key: "invitation_url", label: "Link Undangan Personal" },
-      { key: "notes", label: "Catatan" },
-    ];
-    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
-    exportToCsv(`Daftar_Tamu_${couplePrefix}.csv`, headers, guests);
-  };
-
-  const exportBudgetsCsv = () => {
-    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
-    const headers = [
-      { key: "category", label: t("Kategori") },
-      { key: "item", label: "Nama Pos / Item" },
-      { key: "allocated", label: "Alokasi Target (Rp)", format: (v) => v || 0 },
-      { key: "actual", label: "Realisasi (Rp)", format: (v) => v || 0 },
-      { key: "selisih", label: "Selisih (Rp)", format: (_, r) => (r.allocated || 0) - (r.actual || 0) },
-      { key: "paid_by", label: "Ditanggung Oleh" },
-      { key: "notes", label: "Catatan" },
-    ];
-    exportToCsv(`Rencana_Anggaran_${couplePrefix}.csv`, headers, budgets);
-  };
-
-  const exportVendorsCsv = () => {
-    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
-    const headers = [
-      { key: "category", label: t("Kategori") },
-      { key: "name", label: "Nama Vendor" },
-      { key: "contact", label: "Kontak / PIC" },
-      { key: "phone", label: "No. HP / WA" },
-      { key: "cost", label: "Biaya (Rp)", format: (v) => v || 0 },
-      { key: "due_date", label: "Tenggat Waktu" },
-      { key: "done", label: "Status Selesai", format: (v) => (v ? "Selesai" : "Belum") },
-      { key: "notes", label: "Catatan" },
-    ];
-    exportToCsv(`Daftar_Vendor_${couplePrefix}.csv`, headers, vendors);
-  };
-
-  const exportSeserahanCsv = () => {
-    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
-    const headers = [
-      { key: "side", label: "Pihak (CPP/CPW)" },
-      { key: "box_number", label: "Nomor Kotak" },
-      { key: "title", label: "Nama Barang / Item" },
-      { key: "purchased", label: "Sudah Dibeli", format: (v) => (v ? "Sudah" : "Belum") },
-      { key: "packed", label: "Sudah Dihias/Bungkus", format: (v) => (v ? "Sudah" : "Belum") },
-      { key: "cost", label: "Biaya (Rp)", format: (v) => v || 0 },
-      { key: "notes", label: "Catatan" },
-    ];
-    exportToCsv(`Daftar_Seserahan_${couplePrefix}.csv`, headers, seserahan);
-  };
-
-  const exportFullBackupJson = () => {
-    const snapshotData = {
-      exported_at: new Date().toISOString(),
-      couple,
-      settings,
-      budgets,
-      cashflow,
-      administrations,
-      vendors,
-      guests,
-      seserahan,
-      rundowns,
-      gifts,
-      logs,
-    };
-    const couplePrefix = couple?.cpp_nickname && couple?.cpw_nickname ? `${couple.cpp_nickname}_${couple.cpw_nickname}` : "Pernikahan";
-    const dateStr = new Date().toISOString().slice(0, 10);
-    exportToJson(`Backup_${couplePrefix}_${dateStr}.json`, snapshotData);
-  };
-
-  // 8. Pulihkan dari berkas JSON
-  const handleRestoreFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (!parsed || typeof parsed !== "object") {
-          throw new Error("Berkas JSON tidak valid.");
-        }
-        setRestoreStatus({
-          type: "confirm",
-          date: parsed.exported_at ? new Date(parsed.exported_at).toLocaleString("id-ID") : "Tidak tercatat",
-          summary: `Tamu: ${parsed.guests?.length || 0}, Anggaran: ${parsed.budgets?.length || 0}, Vendor: ${parsed.vendors?.length || 0}, Rundown: ${parsed.rundowns?.length || 0}, Kado: ${parsed.gifts?.length || 0}`,
-          data: parsed,
-        });
-      } catch (err) {
-        setRestoreStatus({ type: "error", message: "Gagal membaca berkas: " + err.message });
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
   // 9. Bersihkan Cache & Muat Ulang PWA
   const clearCacheAndReload = async () => {
     if ("caches" in window) {
@@ -1097,6 +985,18 @@ export default function Settings() {
             transition={{ duration: 0.3, ease: EASE }}
             className="space-y-6"
           >
+            {/* Generator Akses Teman & Password Sementara (Eksklusif Superadmin) */}
+            {isAdmin && (
+              <QuickFriendInviteCard
+                isAdmin={isAdmin}
+                currentUser={user}
+                partnerUsers={partnerUsers}
+                refreshUsers={refreshUsers}
+                cppUser={cppUser}
+                cpwUser={cpwUser}
+              />
+            )}
+
             <Card>
               <div className="flex items-center justify-between">
                 <SectionTitle count="Skema 2 Akun">Kolaborasi Akun Pengantin (CPP &amp; CPW)</SectionTitle>
@@ -1628,6 +1528,15 @@ export default function Settings() {
           />
         )}
 
+        {/* ===================== TAB INTEGRASI & CLOUD ===================== */}
+        {activeTab === "integrasi" && (
+          <IntegrationsTab
+            settings={settings}
+            saveSettings={saveSettings}
+            saving={savingSettings}
+          />
+        )}
+
         {/* ===================== TAB KATEGORI & ADAT (FITUR 3) ===================== */}
         {activeTab === "kategori" && (
           <CategoriesAdatTab
@@ -2065,190 +1974,21 @@ export default function Settings() {
 
         {/* ===================== TAB 7: EKSPOR & CADANGAN ===================== */}
         {activeTab === "cadangan" && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className="space-y-6"
-          >
-            <Card>
-              <SectionTitle count="Excel • JSON • PDF">Ekspor &amp; Cadangan Data</SectionTitle>
-              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Unduh berkas spreadsheet Excel untuk dibagikan ke Wedding Organizer atau simpan berkas cadangan database untuk arsip.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="p-3.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium text-xs">
-                      <FileSpreadsheet size={16} />
-                      <span>Excel / CSV Daftar Tamu</span>
-                    </div>
-                    <p className="text-xs text-ink-muted mt-1">
-                      {guests.length} tamu, kontak WhatsApp, status RSVP, dan pihak.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Download}
-                    className="mt-3 w-full"
-                    onClick={exportGuestsCsv}
-                  >
-                    Unduh CSV Tamu
-                  </Button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium text-xs">
-                      <FileSpreadsheet size={16} />
-                      <span>Excel / CSV Anggaran</span>
-                    </div>
-                    <p className="text-xs text-ink-muted mt-1">
-                      {budgets.length} pos anggaran, alokasi target, dan realisasi biaya.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Download}
-                    className="mt-3 w-full"
-                    onClick={exportBudgetsCsv}
-                  >
-                    Unduh CSV Anggaran
-                  </Button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium text-xs">
-                      <FileSpreadsheet size={16} />
-                      <span>Excel / CSV Vendor</span>
-                    </div>
-                    <p className="text-xs text-ink-muted mt-1">
-                      {vendors.length} vendor, PIC, nomor WhatsApp, biaya, dan tenggat waktu.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Download}
-                    className="mt-3 w-full"
-                    onClick={exportVendorsCsv}
-                  >
-                    Unduh CSV Vendor
-                  </Button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-canvas-sunken/60 dark:bg-night-sunken/60 border border-line dark:border-night-line flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium text-xs">
-                      <FileSpreadsheet size={16} />
-                      <span>Excel / CSV Seserahan</span>
-                    </div>
-                    <p className="text-xs text-ink-muted mt-1">
-                      Checklist {seserahan.length} item seserahan &amp; hantaran CPP/CPW.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Download}
-                    className="mt-3 w-full"
-                    onClick={exportSeserahanCsv}
-                  >
-                    Unduh CSV Seserahan
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-line dark:border-night-line flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant="primary"
-                  icon={Printer}
-                  className="flex-1"
-                  onClick={() => printMasterGuidebook({ couple, rundowns, vendors, guests, settings, user })}
-                  title="Cetak atau Simpan Buku Panduan Pernikahan Lengkap ke PDF"
-                >
-                  Buku Panduan Pernikahan (PDF)
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={FileJson}
-                  className="flex-1"
-                  onClick={exportFullBackupJson}
-                >
-                  Unduh Cadangan Penuh (.json)
-                </Button>
-                <Button
-                  variant="outline"
-                  icon={Printer}
-                  onClick={printReport}
-                  title="Cetak ringkasan lembar kerja"
-                >
-                  Cetak Ringkasan
-                </Button>
-              </div>
-            </Card>
-
-            {/* Pulihkan Data dari Cadangan JSON */}
-            <Card>
-              <div className="flex items-center justify-between">
-                <SectionTitle count="Pemulihan">Pulihkan Data dari Berkas (.json)</SectionTitle>
-                <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Upload size={16} />
-                </span>
-              </div>
-              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Punya berkas snapshot cadangan JSON yang pernah diunduh sebelumnya? Anda dapat memeriksanya di sini.
-              </p>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json,application/json"
-                className="hidden"
-                onChange={handleRestoreFile}
-              />
-
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  icon={Upload}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Pilih Berkas Cadangan (.json)
-                </Button>
-              </div>
-
-              {restoreStatus && (
-                <div className="mt-4 p-4 rounded-2xl bg-canvas-sunken dark:bg-night-sunken border border-line dark:border-night-line text-xs">
-                  {restoreStatus.type === "confirm" ? (
-                    <div>
-                      <div className="flex items-center gap-2 text-sage-600 dark:text-sage-400 font-semibold mb-1">
-                        <Check size={16} /> Berkas Cadangan Terverifikasi
-                      </div>
-                      <p className="text-ink-muted">
-                        Waktu ekspor: <strong>{restoreStatus.date}</strong>
-                      </p>
-                      <p className="text-ink-muted mt-0.5">
-                        Ringkasan isi: {restoreStatus.summary}
-                      </p>
-                      <p className="text-[11px] text-ink-faint mt-2">
-                        Data aman dan siap dipakai untuk pemulihan sewaktu-waktu.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-rose-600 flex items-center gap-2">
-                      <AlertTriangle size={15} />
-                      <span>{restoreStatus.message}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          </motion.div>
+          <BackupTab
+            couple={couple}
+            settings={settings}
+            budgets={budgets}
+            cashflow={cashflow}
+            administrations={administrations}
+            vendors={vendors}
+            guests={guests}
+            seserahan={seserahan}
+            rundowns={rundowns}
+            gifts={gifts}
+            logs={logs}
+            user={user}
+            t={t}
+          />
         )}
 
         {/* ===================== TAB 8: KATA SANDI & KEAMANAN ===================== */}

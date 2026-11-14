@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import pb from "./pocketbase";
 import { useAuth } from "./auth";
 import { toDirectImageUrl, toDriveOpenUrl, guessAltFromUrl } from "./photos";
+import { saveAutoBackupSnapshot } from "./autoBackup";
 
 /**
  * WeddingDataContext
@@ -124,8 +125,10 @@ function saveCachedData(freshData) {
   if (typeof window === "undefined" || !freshData?.couple) return;
   try {
     const coupleId = freshData.couple.id;
-    const ownerId = freshData.couple.owner;
-    const serialized = JSON.stringify({
+    const targetKey = getScopedCacheKey(coupleId);
+
+    // Filter logs & photos down to light essentials for cache efficiency
+    const cachePayload = {
       couple: freshData.couple,
       budgets: freshData.budgets,
       administrations: freshData.administrations,
@@ -133,20 +136,53 @@ function saveCachedData(freshData) {
       vendors: freshData.vendors,
       guests: freshData.guests,
       cashflow: freshData.cashflow,
-      logs: (freshData.logs || []).slice(0, 30),
+      logs: (freshData.logs || []).slice(0, 15),
       settings: freshData.settings,
-      photos: freshData.photos,
-      trashItems: freshData.trashItems || [],
+      photos: (freshData.photos || []).map((p) => ({
+        id: p.id,
+        src: p.src,
+        fullSrc: p.fullSrc,
+        alt: p.alt,
+        isRenderable: p.isRenderable,
+      })),
+      trashItems: (freshData.trashItems || []).slice(0, 20),
       rundowns: freshData.rundowns || [],
       gifts: freshData.gifts || [],
       cachedAt: Date.now(),
-    });
+    };
 
-    if (coupleId) localStorage.setItem(getScopedCacheKey(coupleId), serialized);
-    if (ownerId && ownerId !== coupleId) localStorage.setItem(getScopedCacheKey(ownerId), serialized);
-    localStorage.setItem("wedding_planner_cache_v2", serialized);
+    const serialized = JSON.stringify(cachePayload);
+    localStorage.setItem(targetKey, serialized);
+
+    // Auto-Sync Snapshot Cadangan Lapisan 1 secara otomatis
+    try {
+      saveAutoBackupSnapshot(freshData);
+    } catch (_) {}
+
+    // Hapus duplikat key legacy untuk menghemat kuota localStorage 5MB
+    if (localStorage.getItem("wedding_planner_cache_v2") && targetKey !== "wedding_planner_cache_v2") {
+      try {
+        localStorage.removeItem("wedding_planner_cache_v2");
+      } catch (_) {}
+    }
   } catch (err) {
-    console.warn("Gagal menyimpan cache lokal:", err);
+    if (err?.name === "QuotaExceededError" || err?.code === 22) {
+      console.warn("Kapasitas LocalStorage penuh, menyimpan data inti saja...");
+      try {
+        const minimalPayload = JSON.stringify({
+          couple: freshData.couple,
+          budgets: freshData.budgets,
+          vendors: freshData.vendors,
+          guests: freshData.guests,
+          rundowns: freshData.rundowns,
+          settings: freshData.settings,
+          cachedAt: Date.now(),
+        });
+        localStorage.setItem(getScopedCacheKey(freshData.couple.id), minimalPayload);
+      } catch (_) {}
+    } else {
+      console.warn("Gagal menyimpan cache lokal:", err);
+    }
   }
 }
 
@@ -223,51 +259,52 @@ export function WeddingProvider({ children }) {
         return;
       }
 
+      // 1. Tahap Prioritas 1: Data inti pernikahan untuk Dashboard, Tamu, Resepsi, & Rundown
       const [
         budgets,
-        administrations,
-        seserahan,
         vendors,
         guests,
         cashflow,
-        logs,
-        photosRaw,
-        settings,
-        trashItems,
         rundowns,
-        gifts,
+        settings,
       ] = await Promise.all([
         pb.collection("budgets").getFullList({ filter: `couple="${coupleId}"`, sort: "budget_type,category" }).catch(() => []),
-        pb.collection("administrations").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }),
-        pb.collection("seserahan_items").getFullList({ filter: `couple="${coupleId}"`, sort: "category" }),
-        pb.collection("vendor_checklists").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }),
-        pb.collection("wedding_guests").getFullList({ filter: `couple="${coupleId}"`, sort: "name" }),
+        pb.collection("vendor_checklists").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }).catch(() => []),
+        pb.collection("wedding_guests").getFullList({ filter: `couple="${coupleId}"`, sort: "name" }).catch(() => []),
         pb.collection("cashflow_entries").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }).catch(() => []),
-        // Capped query: ambil 40 aktivitas terbaru untuk mencegah unduhan ribuan log historis
-        pb
-          .collection("activity_logs")
-          .getList(1, 40, { filter: `couple="${coupleId}"`, sort: "-created" })
-          .then((res) => res.items)
-          .catch(() => []),
-        // Koleksi tambahan: boleh kosong, jangan sampai menggagalkan seluruh muatan.
-        pb
-          .collection("gallery_photos")
-          .getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order,-created" })
-          .catch(() => []),
+        pb.collection("rundown_events").getFullList({ filter: `couple="${coupleId}"`, sort: "time_start,sort_order" }).catch(() => []),
         pb
           .collection("app_settings")
           .getFirstListItem(`couple="${coupleId}"`)
           .catch(() => pb.collection("app_settings").getFirstListItem(`owner_key="default"`))
           .catch(() => null),
+      ]);
+
+      // 2. Tahap Prioritas 2: Modul sekunder & media (mencegah saturasi koneksi simultan)
+      const [
+        administrations,
+        seserahan,
+        logs,
+        photosRaw,
+        trashItems,
+        gifts,
+      ] = await Promise.all([
+        pb.collection("administrations").getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order" }).catch(() => []),
+        pb.collection("seserahan_items").getFullList({ filter: `couple="${coupleId}"`, sort: "category" }).catch(() => []),
+        pb
+          .collection("activity_logs")
+          .getList(1, 40, { filter: `couple="${coupleId}"`, sort: "-created" })
+          .then((res) => res.items)
+          .catch(() => []),
+        pb
+          .collection("gallery_photos")
+          .getFullList({ filter: `couple="${coupleId}"`, sort: "sort_order,-created" })
+          .catch(() => []),
         pb
           .collection("recycle_bin")
           .getList(1, 50, { filter: `couple="${coupleId}"`, sort: "-created" })
           .catch(() => pb.collection("recycle_bin").getList(1, 50, { sort: "-created" }))
           .then((res) => res.items || [])
-          .catch(() => []),
-        pb
-          .collection("rundown_events")
-          .getFullList({ filter: `couple="${coupleId}"`, sort: "time_start,sort_order" })
           .catch(() => []),
         pb
           .collection("wedding_gifts")

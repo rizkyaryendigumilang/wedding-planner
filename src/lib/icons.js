@@ -17,6 +17,8 @@ import {
   Upload,
   Save,
   Trash2,
+  BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 
 /**
@@ -36,6 +38,10 @@ export const MODULE_ICONS = {
   rundown: Clock,
   reception: UserCheck,
   gifts: Coins,
+  users: Users,
+  analytics: BarChart3,
+  help: LifeBuoy,
+  notifications: Bell,
 };
 
 /**
