@@ -1,29 +1,45 @@
-name: Build Mobile Apps (APK & IPA)
+name: Build & Release Mobile Apps (APK & IPA)
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'index.html'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'vite.config.js'
-      - 'capacitor.config.json'
-      - 'android/**'
-      - 'ios/**'
-      - '.github/workflows/build-and-sync-vps.yml'
+    tags:
+      - 'v*'
+    paths-ignore:
+      - 'docs/**'
+      - 'marketing/**'
+      - 'README.md'
+      - '.gitignore'
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag Versi Rilis (misal: v1.0.0). Kosongkan untuk membaca versi otomatis dari package.json'
+        required: false
+        default: ''
+      release_title:
+        description: 'Judul Rilis (misal: Wedding Planner v1.0.0 — Rilis Perdana & Perbaikan Bug)'
+        required: false
+        default: ''
+      release_notes:
+        description: 'Keterangan Perbaikan Bug / Changelog Rilis'
+        required: false
+        default: ''
+      is_prerelease:
+        description: 'Tandai sebagai Pre-release (Beta)?'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -106,6 +122,8 @@ jobs:
   build-ios:
     name: Build iOS IPA (unsigned)
     runs-on: macos-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -209,3 +227,125 @@ jobs:
           ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/id_ed25519" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p -- '$VPS_TARGET_DIR'"
           scp -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$HOME/.ssh/id_ed25519" -P "$VPS_PORT" app-latest.ipa "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/app-latest.ipa"
           echo "Unsigned IPA uploaded successfully. It is not signed for normal iPhone installation."
+
+  publish-release:
+    name: Publish GitHub Release (APK & IPA)
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-latest-android-apk
+          path: release-assets
+
+      - name: Download iOS IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: app-latest-ios-ipa-unsigned
+          path: release-assets
+
+      - name: Determine Version & Prepare Release Files
+        id: prep
+        run: |
+          set -euo pipefail
+
+          # 1. Baca versi dari package.json
+          PKG_VERSION="$(node -p "require('./package.json').version || '1.0.0'")"
+
+          # 2. Tentukan release tag
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            RELEASE_TAG="${{ github.ref_name }}"
+            RAW_VERSION="${RELEASE_TAG#v}"
+          elif [[ -n "${{ github.event.inputs.tag_name }}" ]]; then
+            RELEASE_TAG="${{ github.event.inputs.tag_name }}"
+            RAW_VERSION="${RELEASE_TAG#v}"
+          else
+            RELEASE_TAG="v${PKG_VERSION}"
+            RAW_VERSION="${PKG_VERSION}"
+          fi
+
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${RAW_VERSION}" >> "$GITHUB_OUTPUT"
+
+          # 3. Tentukan Judul Rilis
+          if [[ -n "${{ github.event.inputs.release_title }}" ]]; then
+            RELEASE_TITLE="${{ github.event.inputs.release_title }}"
+          else
+            RELEASE_TITLE="Wedding Planner Mobile ${RELEASE_TAG}"
+          fi
+          echo "title=${RELEASE_TITLE}" >> "$GITHUB_OUTPUT"
+
+          # 4. Salin berkas dengan penamaan versi yang terstandarisasi
+          cd release-assets
+          cp app-latest.apk "wedding-planner-${RELEASE_TAG}.apk"
+          cp app-latest.ipa "wedding-planner-${RELEASE_TAG}-unsigned.ipa"
+
+          # 5. Buat Checksum SHA256 untuk verifikasi integritas berkas
+          sha256sum "wedding-planner-${RELEASE_TAG}.apk" "wedding-planner-${RELEASE_TAG}-unsigned.ipa" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd ..
+
+      - name: Generate Changelog & Release Notes
+        id: notes
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.prep.outputs.tag }}"
+          NOTES_FILE="$RUNNER_TEMP/release_notes.md"
+
+          cat << 'EOF' > "$NOTES_FILE"
+          ## 📱 Rilis Aplikasi Mobile Wedding Planner
+
+          Paket aplikasi mobile resmi siap unduh untuk Android (`.apk`) dan iOS (`.ipa`).
+
+          ### 📦 Berkas Unduhan
+          | Platform | Nama Berkas | Keterangan |
+          |---|---|---|
+          | 🤖 **Android** | `wedding-planner-TAG.apk` | Siap diinstal langsung di smartphone & tablet Android |
+          | 🍎 **iOS** | `wedding-planner-TAG-unsigned.ipa` | Paket IPA iOS (Unsigned / Sideloading) |
+          | 🔒 **Verifikasi** | `SHA256SUMS.txt` | Checksum integritas berkas SHA256 |
+
+          EOF
+
+          sed -i "s/TAG/${TAG}/g" "$NOTES_FILE"
+
+          # Keterangan Perbaikan Bug / Changelog
+          CUSTOM_NOTES="${{ github.event.inputs.release_notes }}"
+          if [[ -n "$CUSTOM_NOTES" ]]; then
+            echo -e "\n### 🛠️ Keterangan Pembaruan & Perbaikan Bug\n$CUSTOM_NOTES\n" >> "$NOTES_FILE"
+          else
+            echo -e "\n### 🛠️ Catatan Perubahan Terkini" >> "$NOTES_FILE"
+            git log -n 10 --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" >> "$NOTES_FILE"
+            echo -e "\n" >> "$NOTES_FILE"
+          fi
+
+          cat << 'EOF' >> "$NOTES_FILE"
+          ### 💡 Petunjuk Instalasi
+          - **Android (`.apk`)**: Unduh berkas `.apk` langsung ke perangkat Android Anda, buka berkas dari pengelola unduhan, dan aktifkan opsi *Izinkan instalasi dari sumber tidak dikenal* bila diminta sistem.
+          - **iOS (`.ipa`)**: Berkas `.ipa` belum ditandatangani sertifikat pengembang Apple (*unsigned*). Anda dapat memasangnya pada iPhone/iPad memakai alat bantuan sideloading seperti **AltStore**, **Sideloadly**, atau **TrollStore**.
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prep.outputs.tag }}
+          name: ${{ steps.prep.outputs.title }}
+          body_path: ${{ runner.temp }}/release_notes.md
+          files: |
+            release-assets/wedding-planner-*.apk
+            release-assets/wedding-planner-*.ipa
+            release-assets/SHA256SUMS.txt
+          draft: false
+          prerelease: ${{ github.event.inputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

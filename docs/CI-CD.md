@@ -28,12 +28,18 @@
   - If either health check fails within 30 seconds, an automated rollback script restores the previous backup to `/srv/www/wedding-planner`, captures the faulty build snapshot to `.wedding-planner-failed-<sha>-<run_id>`, and halts the pipeline with an error (red status).
   - Only after all health checks succeed are older backups pruned (retaining the 5 most recent while always preserving the active release backup).
 
-### Mobile: `build-and-sync-vps.yml`
+### Mobile & GitHub Releases: `build-and-sync-vps.yml`
 
-- Builds Android debug APK and an **unsigned** iOS IPA as separate artifacts (14-day retention).
-- Builds mobile web assets with base path `/`, independently from the web build's `/wedding/` base path.
-- Runs on relevant application/mobile changes to `main`, or manually through `workflow_dispatch`.
-- Upload to the VPS is optional and uses the separate `VPS_TARGET_DIR`. It requires a verified SSH host key. An unsigned IPA is not ready for normal installation on an iPhone; signing and distribution are separate work.
+- **Otomatisasi GitHub Releases**:
+  - Mengompilasi berkas **Android Debug APK** (`wedding-planner-vX.X.X.apk`) dan **iOS Unsigned IPA** (`wedding-planner-vX.X.X-unsigned.ipa`).
+  - Menghitung checksum integritas `SHA256SUMS.txt`.
+  - Mempublikasikan **GitHub Release** secara otomatis pada halaman *Releases* repository lengkap dengan penomoran versi, tautan download langsung untuk APK/IPA, dan rincian perbaikan bug / changelog.
+- **Triggers**:
+  - **Git Tag (`v*`)**: Memicu build dan rilis versi baru secara otomatis (misal: `git tag v1.0.1 && git push origin v1.0.1`, atau lewat `npm run release:patch`).
+  - **Push ke `main`**: Mengompilasi dan memperbarui rilis versi terkini.
+  - **Manual `workflow_dispatch`**: Mendukung input kustom versi, judul rilis, catatan perbaikan bug manual, dan opsi pre-release (beta).
+- **Upload Opsional ke VPS**:
+  - Berkas `.apk` dan `.ipa` dapat disinkronkan ke VPS via SCP jika `VPS_TARGET_DIR` dikonfigurasi.
 
 ## GitHub Actions Configuration
 

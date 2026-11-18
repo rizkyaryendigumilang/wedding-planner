@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
       if (Number.isFinite(expires) && expires < Date.now()) {
         pb.authStore.clear();
         setUser(null);
-        const err = new Error("Akun demo telah kadaluarsa (lebih dari 7 hari).");
+        const err = new Error("Masa berlaku akun demo telah berakhir. Silakan hubungi admin untuk perpanjangan akses.");
         err.code = "demo_expired";
         throw err;
       }

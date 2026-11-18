@@ -1,7 +1,7 @@
 {
   "name": "wedding-planner",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,9 @@
     "test": "vitest run",
     "preview": "vite preview",
     "seed": "node seed.js",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:major": "npm version major && git push --follow-tags",
     "cap:sync": "cap sync",
     "cap:build": "vite build && cap sync",
     "cap:android": "cap open android",
